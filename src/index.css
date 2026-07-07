@@ -1,0 +1,134 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
+@layer base {
+  :root {
+    --background: 220 20% 97%;
+    --foreground: 220 25% 10%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 220 25% 10%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 25% 10%;
+
+    --primary: 220 72% 50%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 220 14% 92%;
+    --secondary-foreground: 220 25% 20%;
+
+    --muted: 220 14% 95%;
+    --muted-foreground: 220 10% 46%;
+
+    --accent: 160 60% 40%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 14% 89%;
+    --input: 220 14% 89%;
+    --ring: 220 72% 50%;
+
+    --radius: 0.625rem;
+
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+
+    --success: 160 60% 40%;
+    --success-foreground: 0 0% 100%;
+
+    --info: 200 80% 50%;
+    --info-foreground: 0 0% 100%;
+
+    --sidebar-background: 220 30% 11%;
+    --sidebar-foreground: 220 14% 78%;
+    --sidebar-primary: 220 72% 60%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 220 25% 16%;
+    --sidebar-accent-foreground: 220 14% 90%;
+    --sidebar-border: 220 20% 18%;
+    --sidebar-ring: 220 72% 50%;
+
+    --font-heading: 'Space Grotesk', sans-serif;
+    --font-body: 'DM Sans', sans-serif;
+  }
+
+  .dark {
+    --background: 220 25% 8%;
+    --foreground: 220 14% 92%;
+    --card: 220 25% 12%;
+    --card-foreground: 220 14% 92%;
+    --popover: 220 25% 12%;
+    --popover-foreground: 220 14% 92%;
+    --primary: 220 72% 60%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 220 20% 18%;
+    --secondary-foreground: 220 14% 85%;
+    --muted: 220 20% 15%;
+    --muted-foreground: 220 10% 55%;
+    --accent: 160 60% 45%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 62% 40%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 220 20% 20%;
+    --input: 220 20% 20%;
+    --ring: 220 72% 60%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground font-body antialiased;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+  }
+}
+
+@layer components {
+  .page-container {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6;
+  }
+
+  .stat-card {
+    @apply bg-card rounded-xl border p-0 shadow-sm hover:shadow-md transition-all duration-200;
+  }
+
+  /* Status badge system — 5 estados */
+  .status-badge {
+    @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium border;
+  }
+  .status-pendiente {
+    @apply bg-warning/10 text-warning border-warning/20;
+  }
+  .status-en_proceso {
+    @apply bg-info/10 text-info border-info/20;
+  }
+  .status-aprobado {
+    @apply bg-accent/10 text-accent border-accent/20;
+  }
+  .status-rechazado {
+    @apply bg-destructive/10 text-destructive border-destructive/20;
+  }
+  .status-completado {
+    @apply bg-accent/10 text-accent border-accent/20;
+  }
+
+  .empty-state {
+    @apply flex flex-col items-center justify-center py-16 text-muted-foreground;
+  }
+  .empty-state svg {
+    @apply h-14 w-14 mb-4 opacity-30;
+  }
+  .empty-state p {
+    @apply text-sm;
+  }
+}

@@ -1,0 +1,508 @@
+[2026-04-03T18:14:05.488Z] API GET /supabase/rest/v1/profiles?select=*&user_id=eq.82f5cc1c-7219-4b01-80f3-bf0f9ccd0df4 -> 200 (391ms)
+[2026-04-03T18:14:05.741Z] API GET /supabase/rest/v1/profiles?select=*&user_id=eq.82f5cc1c-7219-4b01-80f3-bf0f9ccd0df4 -> 200 (252ms)
+[2026-04-03T18:14:05.786Z] API GET /supabase/rest/v1/vehicles?select=id&status=eq.active -> 200 (281ms)
+[2026-04-03T18:14:05.787Z] API GET /supabase/rest/v1/profiles?select=id&role=eq.conductor -> 200 (281ms)
+[2026-04-03T18:14:05.792Z] API GET /supabase/rest/v1/requests?select=id&status=eq.en_proceso -> 200 (284ms)
+[2026-04-03T18:14:05.795Z] API GET /supabase/rest/v1/vehicles?select=id -> 200 (291ms)
+[2026-04-03T18:14:05.798Z] API GET /supabase/rest/v1/requests?select=id&status=eq.pendiente -> 200 (291ms)
+[2026-04-03T18:14:05.993Z] API GET /supabase/rest/v1/documents?select=id&expiration_date=lte.2026-05-03&expiration_date=gte.2026-04-03 -> 200 (251ms)
+[2026-04-03T18:14:06.047Z] API GET /supabase/rest/v1/documents?select=id -> 200 (259ms)
+[2026-04-03T18:14:06.049Z] API GET /supabase/rest/v1/documents?select=*%2Cdocument_types%28name%29%2Cprofiles%28full_name%29%2Cvehicles%28license_plate%29&expiration_date=lte.2026-05-03&expiration_date=gte.2026-04-03&order=expiration_date.asc&limit=5 -> 200 (251ms)
+[2026-04-03T18:14:06.052Z] API GET /supabase/rest/v1/profiles?select=*&user_id=eq.82f5cc1c-7219-4b01-80f3-bf0f9ccd0df4 -> 200 (253ms)
+[2026-04-03T18:14:06.054Z] API GET /supabase/rest/v1/requests?select=*%2Crequest_types%28name%29%2Cprofiles%28full_name%29%2Cvehicles%28license_plate%29&status=in.%28pendiente%2Cen_proceso%29&order=created_at.desc&limit=6 -> 200 (260ms)
+[2026-04-03T18:14:06.063Z] API GET /supabase/rest/v1/messages?select=id&status=eq.pendiente -> 200 (274ms)
+[2026-04-03T18:14:25.124Z] UI navigation.menu.click {"from":"/admin","to":"/admin/search","role":"admin"}
+[2026-04-03T18:14:34.386Z] API GET /supabase/rest/v1/vehicles?select=*&license_plate=eq.TEST -> 406 (461ms)
+
+--- Restart 2026-04-03T18:16:53.360Z ---
+[2026-04-03T18:17:00.784Z] API GET /supabase/rest/v1/profiles?select=*&user_id=eq.82f5cc1c-7219-4b01-80f3-bf0f9ccd0df4 -> 200 (488ms)
+[2026-04-03T18:17:00.789Z] API GET /supabase/rest/v1/profiles?select=*&user_id=eq.82f5cc1c-7219-4b01-80f3-bf0f9ccd0df4 -> 200 (495ms)
+[2026-04-03T18:17:00.800Z] API GET /supabase/rest/v1/profiles?select=*&user_id=eq.82f5cc1c-7219-4b01-80f3-bf0f9ccd0df4 -> 200 (505ms)
+[2026-04-03T18:17:26.378Z] UI auth.login.submit {"email":"admin@flota.cl"}
+[2026-04-03T18:17:26.668Z] API POST /supabase/auth/v1/token?grant_type=password -> 400 (285ms)
+[2026-04-03T18:17:26.669Z] UI auth.login.failed {"email":"admin@flota.cl","message":"Invalid login credentials"}
+[2026-04-03T18:17:32.872Z] UI auth.login.submit {"email":"admin@flota.cl"}
+[2026-04-03T18:17:33.107Z] API POST /supabase/auth/v1/token?grant_type=password -> 400 (231ms)
+[2026-04-03T18:17:33.108Z] UI auth.login.failed {"email":"admin@flota.cl","message":"Invalid login credentials"}
+[2026-04-03T18:17:43.890Z] UI auth.login.submit {"email":"admin@flota.cl"}
+[2026-04-03T18:17:44.245Z] API POST /supabase/auth/v1/token?grant_type=password -> 400 (352ms)
+[2026-04-03T18:17:44.248Z] UI auth.login.failed {"email":"admin@flota.cl","message":"Invalid login credentials"}
+[2026-04-03T18:17:47.145Z] UI auth.login.submit {"email":"admin@flota.cl"}
+[2026-04-03T18:17:47.375Z] API POST /supabase/auth/v1/token?grant_type=password -> 400 (226ms)
+[2026-04-03T18:17:47.378Z] UI auth.login.failed {"email":"admin@flota.cl","message":"Invalid login credentials"}
+
+--- Restart 2026-04-03T18:18:44.416Z ---
+
+--- Restart 2026-04-03T18:18:44.421Z ---
+[2026-04-03T18:19:01.405Z] UI auth.login.submit {"email":"admin@flota.cl"}
+[2026-04-03T18:19:01.409Z] UI auth.login.failed {"email":"admin@flota.cl","message":"Credenciales inválidas"}
+
+--- Restart 2026-04-03T18:20:21.106Z ---
+[2026-04-03T18:20:54.721Z] UI auth.login.submit {"email":"admin@flota.cl"}
+[2026-04-03T18:20:54.726Z] UI auth.login.failed {"email":"admin@flota.cl","message":"Usuario no encontrado: [object Object]"}
+[2026-04-03T18:20:59.700Z] UI auth.login.submit {"email":"admin@flota.cl"}
+[2026-04-03T18:20:59.703Z] UI auth.login.failed {"email":"admin@flota.cl","message":"Usuario no encontrado: [object Object]"}
+[2026-04-03T18:21:05.637Z] UI auth.login.submit {"email":"admin@flota.cl"}
+[2026-04-03T18:21:05.639Z] UI auth.login.failed {"email":"admin@flota.cl","message":"Usuario no encontrado: [object Object]"}
+
+--- Restart 2026-04-03T18:22:08.789Z ---
+[2026-04-03T18:22:29.606Z] UI auth.login.submit {"email":"admin@flota.cl"}
+[2026-04-03T18:22:29.611Z] UI auth.login.failed {"email":"admin@flota.cl","message":"Usuario no encontrado: [object object]"}
+
+--- Restart 2026-04-03T18:23:32.112Z ---
+
+--- Restart 2026-04-03T18:23:38.428Z ---
+[2026-04-03T18:24:05.132Z] API GET /supabase/auth/v1/health -> 200 (273ms)
+[2026-04-03T18:24:05.316Z] API POST /supabase/auth/v1/token?grant_type=password -> 200 (449ms)
+[2026-04-03T18:24:05.316Z] API POST /supabase/auth/v1/token?grant_type=password -> 200 (450ms)
+[2026-04-03T18:24:20.816Z] API POST /supabase/auth/v1/token?grant_type=password -> 200 (305ms)
+[2026-04-03T18:26:11.797Z] UI auth.login.submit {"email":"admincorto@santaaurora.cl"}
+[2026-04-03T18:26:11.800Z] UI auth.login.failed {"email":"admincorto@santaaurora.cl","message":"Usuario no encontrado: [object object]"}
+[2026-04-03T18:26:14.231Z] UI auth.login.submit {"email":"admincorto@santaaurora.cl"}
+[2026-04-03T18:26:14.234Z] UI auth.login.failed {"email":"admincorto@santaaurora.cl","message":"Usuario no encontrado: [object object]"}
+[2026-04-03T18:26:14.398Z] UI auth.login.submit {"email":"admincorto@santaaurora.cl"}
+[2026-04-03T18:26:14.400Z] UI auth.login.failed {"email":"admincorto@santaaurora.cl","message":"Usuario no encontrado: [object object]"}
+[2026-04-03T18:27:47.448Z] API GET /supabase/rest/v1/profiles?select=*&user_id=eq.82f5cc1c-7219-4b01-80f3-bf0f9ccd0df4 -> 200 (560ms)
+[2026-04-03T18:27:47.448Z] API GET /supabase/rest/v1/profiles?select=*&user_id=eq.82f5cc1c-7219-4b01-80f3-bf0f9ccd0df4 -> 200 (558ms)
+[2026-04-03T18:27:50.837Z] API GET /supabase/rest/v1/profiles?select=*&user_id=eq.82f5cc1c-7219-4b01-80f3-bf0f9ccd0df4 -> 200 (296ms)
+[2026-04-03T18:27:52.466Z] API GET /supabase/rest/v1/profiles?select=*&user_id=eq.82f5cc1c-7219-4b01-80f3-bf0f9ccd0df4 -> 200 (269ms)
+[2026-04-03T18:27:52.519Z] API GET /supabase/rest/v1/profiles?select=*&user_id=eq.82f5cc1c-7219-4b01-80f3-bf0f9ccd0df4 -> 200 (306ms)
+[2026-04-03T18:27:52.527Z] API GET /supabase/rest/v1/profiles?select=*&user_id=eq.82f5cc1c-7219-4b01-80f3-bf0f9ccd0df4 -> 200 (316ms)
+
+--- Restart 2026-04-03T18:27:58.548Z ---
+[2026-04-03T18:28:00.196Z] API GET /supabase/rest/v1/profiles?select=*&user_id=eq.82f5cc1c-7219-4b01-80f3-bf0f9ccd0df4 -> 200 (230ms)
+[2026-04-03T18:28:00.201Z] API GET /supabase/rest/v1/profiles?select=*&user_id=eq.82f5cc1c-7219-4b01-80f3-bf0f9ccd0df4 -> 200 (235ms)
+[2026-04-03T18:28:00.683Z] API GET /supabase/rest/v1/profiles?select=*&user_id=eq.82f5cc1c-7219-4b01-80f3-bf0f9ccd0df4 -> 200 (718ms)
+
+--- Restart 2026-04-03T18:28:03.618Z ---
+[2026-04-03T18:28:05.234Z] API GET /supabase/rest/v1/profiles?select=*&user_id=eq.82f5cc1c-7219-4b01-80f3-bf0f9ccd0df4 -> 200 (228ms)
+[2026-04-03T18:28:05.236Z] API GET /supabase/rest/v1/profiles?select=*&user_id=eq.82f5cc1c-7219-4b01-80f3-bf0f9ccd0df4 -> 200 (246ms)
+[2026-04-03T18:28:05.242Z] API GET /supabase/rest/v1/profiles?select=*&user_id=eq.82f5cc1c-7219-4b01-80f3-bf0f9ccd0df4 -> 200 (237ms)
+[2026-04-03T18:28:26.222Z] API GET /supabase/auth/v1/health -> 200 (238ms)
+[2026-04-03T18:28:26.327Z] API POST /supabase/auth/v1/token?grant_type=password -> 200 (329ms)
+[2026-04-03T18:28:26.329Z] API POST /supabase/auth/v1/token?grant_type=password -> 200 (330ms)
+
+--- Restart 2026-04-03T18:28:49.224Z ---
+[2026-04-03T18:40:00.018Z] API GET /supabase/rest/v1/profiles?select=*&user_id=eq.82f5cc1c-7219-4b01-80f3-bf0f9ccd0df4 -> 200 (265ms)
+[2026-04-03T18:40:00.268Z] API GET /supabase/rest/v1/profiles?select=*&user_id=eq.82f5cc1c-7219-4b01-80f3-bf0f9ccd0df4 -> 200 (248ms)
+[2026-04-03T18:40:00.502Z] API GET /supabase/rest/v1/profiles?select=*&user_id=eq.82f5cc1c-7219-4b01-80f3-bf0f9ccd0df4 -> 200 (234ms)
+
+--- Restart 2026-04-03T18:42:17.665Z ---
+[2026-04-03T22:24:27.376Z] UI auth.login.submit {"email":"admincorto@santaaurora.cl"}
+[2026-04-03T22:24:28.696Z] API POST /supabase/auth/v1/token?grant_type=password -> 200 (1316ms)
+[2026-04-03T22:24:28.697Z] UI auth.login.success {"email":"admincorto@santaaurora.cl"}
+[2026-04-03T22:24:29.344Z] API GET /supabase/rest/v1/profiles?select=*&user_id=eq.82f5cc1c-7219-4b01-80f3-bf0f9ccd0df4 -> 200 (634ms)
+[2026-04-03T22:24:29.646Z] API GET /supabase/rest/v1/documents?select=id&expiration_date=lte.2026-05-03&expiration_date=gte.2026-04-03 -> 200 (275ms)
+[2026-04-03T22:24:29.886Z] API GET /supabase/rest/v1/profiles?select=id&role=eq.conductor -> 200 (518ms)
+[2026-04-03T22:24:29.921Z] API GET /supabase/rest/v1/vehicles?select=id -> 200 (556ms)
+[2026-04-03T22:24:29.926Z] API GET /supabase/rest/v1/requests?select=id&status=eq.pendiente -> 200 (557ms)
+[2026-04-03T22:24:29.935Z] API GET /supabase/rest/v1/requests?select=id&status=eq.en_proceso -> 200 (565ms)
+[2026-04-03T22:24:29.941Z] API GET /supabase/rest/v1/vehicles?select=id&status=eq.active -> 200 (574ms)
+[2026-04-03T22:24:29.967Z] API GET /supabase/rest/v1/documents?select=id -> 200 (320ms)
+[2026-04-03T22:24:30.155Z] API GET /supabase/rest/v1/messages?select=id&status=eq.pendiente -> 200 (268ms)
+[2026-04-03T22:24:30.186Z] API GET /supabase/rest/v1/documents?select=*%2Cdocument_types%28name%29%2Cprofiles%28full_name%29%2Cvehicles%28license_plate%29&expiration_date=lte.2026-05-03&expiration_date=gte.2026-04-03&order=expiration_date.asc&limit=5 -> 200 (259ms)
+[2026-04-03T22:24:30.189Z] API GET /supabase/rest/v1/requests?select=*%2Crequest_types%28name%29%2Cprofiles%28full_name%29%2Cvehicles%28license_plate%29&status=in.%28pendiente%2Cen_proceso%29&order=created_at.desc&limit=6 -> 200 (267ms)
+[2026-04-03T22:24:38.008Z] API GET /supabase/rest/v1/requests?select=*%2Crequest_types%28name%29%2Cprofiles%28full_name%29%2Cvehicles%28license_plate%29&order=created_at.desc&limit=100&status=eq.pendiente -> 200 (269ms)
+[2026-04-03T22:24:38.431Z] UI navigation.menu.click {"from":"/admin/requests","to":"/admin/search","role":"admin"}
+[2026-04-03T22:24:38.749Z] UI navigation.menu.click {"from":"/admin/search","to":"/admin","role":"admin"}
+[2026-04-03T22:24:39.042Z] API GET /supabase/rest/v1/requests?select=id&status=eq.en_proceso -> 200 (272ms)
+[2026-04-03T22:24:39.046Z] API GET /supabase/rest/v1/vehicles?select=id -> 200 (278ms)
+[2026-04-03T22:24:39.052Z] API GET /supabase/rest/v1/requests?select=id&status=eq.pendiente -> 200 (281ms)
+[2026-04-03T22:24:39.056Z] API GET /supabase/rest/v1/vehicles?select=id&status=eq.active -> 200 (286ms)
+[2026-04-03T22:24:39.057Z] API GET /supabase/rest/v1/documents?select=id&expiration_date=lte.2026-05-03&expiration_date=gte.2026-04-03 -> 200 (286ms)
+[2026-04-03T22:24:39.293Z] API GET /supabase/rest/v1/documents?select=id -> 200 (250ms)
+[2026-04-03T22:24:39.306Z] API GET /supabase/rest/v1/messages?select=id&status=eq.pendiente -> 200 (259ms)
+[2026-04-03T22:24:39.313Z] API GET /supabase/rest/v1/requests?select=*%2Crequest_types%28name%29%2Cprofiles%28full_name%29%2Cvehicles%28license_plate%29&status=in.%28pendiente%2Cen_proceso%29&order=created_at.desc&limit=6 -> 200 (258ms)
+[2026-04-03T22:24:39.335Z] API GET /supabase/rest/v1/profiles?select=id&role=eq.conductor -> 200 (564ms)
+[2026-04-03T22:24:39.564Z] API GET /supabase/rest/v1/documents?select=*%2Cdocument_types%28name%29%2Cprofiles%28full_name%29%2Cvehicles%28license_plate%29&expiration_date=lte.2026-05-03&expiration_date=gte.2026-04-03&order=expiration_date.asc&limit=5 -> 200 (508ms)
+[2026-04-03T22:24:39.639Z] UI navigation.menu.click {"from":"/admin","to":"/admin/search","role":"admin"}
+[2026-04-03T22:25:23.055Z] UI navigation.menu.click {"from":"/admin/search","to":"/admin/vehicles","role":"admin"}
+[2026-04-03T22:25:23.363Z] API GET /supabase/rest/v1/profiles?select=id%2Cfull_name%2Cemail&role=eq.conductor&order=full_name.asc -> 200 (292ms)
+[2026-04-03T22:25:23.368Z] API GET /supabase/rest/v1/vehicles?select=*&order=license_plate.asc -> 200 (298ms)
+[2026-04-03T22:25:23.373Z] API GET /supabase/rest/v1/vehicle_assignments?select=*%2Cprofiles%28full_name%29%2Cvehicles%28license_plate%29&order=assigned_at.desc -> 200 (302ms)
+[2026-04-03T22:25:51.975Z] UI navigation.menu.click {"from":"/admin/vehicles","to":"/admin/requests","role":"admin"}
+[2026-04-03T22:25:52.561Z] API GET /supabase/rest/v1/requests?select=*%2Crequest_types%28name%29%2Cprofiles%28full_name%29%2Cvehicles%28license_plate%29&order=created_at.desc&limit=100&status=eq.pendiente -> 200 (566ms)
+[2026-04-03T22:25:55.129Z] UI navigation.menu.click {"from":"/admin/requests","to":"/admin/messages","role":"admin"}
+[2026-04-03T22:25:55.442Z] API GET /supabase/rest/v1/profiles?select=id%2Cfull_name%2Cemail&role=eq.conductor&order=full_name.asc -> 200 (286ms)
+[2026-04-03T22:25:55.449Z] API GET /supabase/rest/v1/messages?select=*%2Creceiver%3Aprofiles%21messages_receiver_id_fkey%28full_name%29%2Csender%3Aprofiles%21messages_sender_id_fkey%28full_name%29&order=created_at.desc&limit=50 -> 200 (295ms)
+[2026-04-03T22:25:58.261Z] UI navigation.menu.click {"from":"/admin/messages","to":"/admin","role":"admin"}
+[2026-04-03T22:25:58.537Z] API GET /supabase/rest/v1/requests?select=id&status=eq.pendiente -> 200 (252ms)
+[2026-04-03T22:25:58.558Z] API GET /supabase/rest/v1/vehicles?select=id&status=eq.active -> 200 (274ms)
+[2026-04-03T22:25:58.561Z] API GET /supabase/rest/v1/requests?select=id&status=eq.en_proceso -> 200 (274ms)
+[2026-04-03T22:25:58.565Z] API GET /supabase/rest/v1/profiles?select=id&role=eq.conductor -> 200 (281ms)
+[2026-04-03T22:25:58.574Z] API GET /supabase/rest/v1/documents?select=id&expiration_date=lte.2026-05-03&expiration_date=gte.2026-04-03 -> 200 (287ms)
+[2026-04-03T22:25:58.799Z] API GET /supabase/rest/v1/documents?select=id -> 200 (261ms)
+[2026-04-03T22:25:58.807Z] API GET /supabase/rest/v1/messages?select=id&status=eq.pendiente -> 200 (248ms)
+[2026-04-03T22:25:58.823Z] API GET /supabase/rest/v1/documents?select=*%2Cdocument_types%28name%29%2Cprofiles%28full_name%29%2Cvehicles%28license_plate%29&expiration_date=lte.2026-05-03&expiration_date=gte.2026-04-03&order=expiration_date.asc&limit=5 -> 200 (258ms)
+[2026-04-03T22:25:58.829Z] API GET /supabase/rest/v1/vehicles?select=id -> 200 (546ms)
+[2026-04-03T22:25:58.838Z] API GET /supabase/rest/v1/requests?select=*%2Crequest_types%28name%29%2Cprofiles%28full_name%29%2Cvehicles%28license_plate%29&status=in.%28pendiente%2Cen_proceso%29&order=created_at.desc&limit=6 -> 200 (276ms)
+[2026-04-03T22:26:34.347Z] UI navigation.menu.click {"from":"/admin/search","to":"/admin","role":"admin"}
+[2026-04-03T22:26:34.870Z] API GET /supabase/rest/v1/requests?select=id&status=eq.en_proceso -> 200 (509ms)
+[2026-04-03T22:26:34.870Z] API GET /supabase/rest/v1/requests?select=id&status=eq.pendiente -> 200 (509ms)
+[2026-04-03T22:26:34.884Z] API GET /supabase/rest/v1/profiles?select=id&role=eq.conductor -> 200 (524ms)
+[2026-04-03T22:26:34.885Z] API GET /supabase/rest/v1/documents?select=id&expiration_date=lte.2026-05-03&expiration_date=gte.2026-04-03 -> 200 (524ms)
+[2026-04-03T22:26:34.887Z] API GET /supabase/rest/v1/vehicles?select=id -> 200 (528ms)
+[2026-04-03T22:26:34.892Z] API GET /supabase/rest/v1/vehicles?select=id&status=eq.active -> 200 (532ms)
+[2026-04-03T22:26:35.139Z] API GET /supabase/rest/v1/messages?select=id&status=eq.pendiente -> 200 (268ms)
+[2026-04-03T22:26:35.140Z] API GET /supabase/rest/v1/documents?select=*%2Cdocument_types%28name%29%2Cprofiles%28full_name%29%2Cvehicles%28license_plate%29&expiration_date=lte.2026-05-03&expiration_date=gte.2026-04-03&order=expiration_date.asc&limit=5 -> 200 (254ms)
+[2026-04-03T22:26:35.141Z] API GET /supabase/rest/v1/documents?select=id -> 200 (270ms)
+[2026-04-03T22:26:35.145Z] API GET /supabase/rest/v1/requests?select=*%2Crequest_types%28name%29%2Cprofiles%28full_name%29%2Cvehicles%28license_plate%29&status=in.%28pendiente%2Cen_proceso%29&order=created_at.desc&limit=6 -> 200 (260ms)
+[2026-04-03T22:26:46.568Z] UI navigation.menu.click {"from":"/admin","to":"/admin/vehicles","role":"admin"}
+[2026-04-03T22:26:46.840Z] API GET /supabase/rest/v1/profiles?select=id%2Cfull_name%2Cemail&role=eq.conductor&order=full_name.asc -> 200 (258ms)
+[2026-04-03T22:26:46.855Z] API GET /supabase/rest/v1/vehicle_assignments?select=*%2Cprofiles%28full_name%29%2Cvehicles%28license_plate%29&order=assigned_at.desc -> 200 (272ms)
+[2026-04-03T22:26:46.859Z] API GET /supabase/rest/v1/vehicles?select=*&order=license_plate.asc -> 200 (277ms)
+[2026-04-03T22:26:46.978Z] UI navigation.menu.click {"from":"/admin/vehicles","to":"/admin/requests","role":"admin"}
+[2026-04-03T22:26:47.257Z] API GET /supabase/rest/v1/requests?select=*%2Crequest_types%28name%29%2Cprofiles%28full_name%29%2Cvehicles%28license_plate%29&order=created_at.desc&limit=100&status=eq.pendiente -> 200 (258ms)
+[2026-04-03T22:26:48.138Z] UI navigation.menu.click {"from":"/admin/requests","to":"/admin/messages","role":"admin"}
+[2026-04-03T22:26:48.402Z] API GET /supabase/rest/v1/profiles?select=id%2Cfull_name%2Cemail&role=eq.conductor&order=full_name.asc -> 200 (251ms)
+[2026-04-03T22:26:48.408Z] API GET /supabase/rest/v1/messages?select=*%2Creceiver%3Aprofiles%21messages_receiver_id_fkey%28full_name%29%2Csender%3Aprofiles%21messages_sender_id_fkey%28full_name%29&order=created_at.desc&limit=50 -> 200 (257ms)
+[2026-04-03T22:26:49.190Z] UI navigation.menu.click {"from":"/admin/messages","to":"/admin/vehicles","role":"admin"}
+[2026-04-03T22:26:49.475Z] API GET /supabase/rest/v1/profiles?select=id%2Cfull_name%2Cemail&role=eq.conductor&order=full_name.asc -> 200 (254ms)
+[2026-04-03T22:26:49.477Z] API GET /supabase/rest/v1/vehicles?select=*&order=license_plate.asc -> 200 (257ms)
+[2026-04-03T22:26:49.480Z] API GET /supabase/rest/v1/vehicle_assignments?select=*%2Cprofiles%28full_name%29%2Cvehicles%28license_plate%29&order=assigned_at.desc -> 200 (259ms)
+[2026-04-03T22:26:49.841Z] UI navigation.menu.click {"from":"/admin/vehicles","to":"/admin/vehicles","role":"admin"}
+[2026-04-03T22:26:50.235Z] UI navigation.menu.click {"from":"/admin/vehicles","to":"/admin/search","role":"admin"}
+[2026-04-03T22:26:50.661Z] UI navigation.menu.click {"from":"/admin/search","to":"/admin","role":"admin"}
+[2026-04-03T22:26:50.918Z] API GET /supabase/rest/v1/vehicles?select=id&status=eq.active -> 200 (244ms)
+[2026-04-03T22:26:50.938Z] API GET /supabase/rest/v1/requests?select=id&status=eq.en_proceso -> 200 (263ms)
+[2026-04-03T22:26:50.945Z] API GET /supabase/rest/v1/requests?select=id&status=eq.pendiente -> 200 (270ms)
+[2026-04-03T22:26:50.955Z] API GET /supabase/rest/v1/vehicles?select=id -> 200 (283ms)
+[2026-04-03T22:26:50.958Z] API GET /supabase/rest/v1/profiles?select=id&role=eq.conductor -> 200 (283ms)
+[2026-04-03T22:26:50.961Z] API GET /supabase/rest/v1/documents?select=id&expiration_date=lte.2026-05-03&expiration_date=gte.2026-04-03 -> 200 (286ms)
+[2026-04-03T22:26:51.165Z] API GET /supabase/rest/v1/documents?select=id -> 200 (246ms)
+[2026-04-03T22:26:51.190Z] API GET /supabase/rest/v1/messages?select=id&status=eq.pendiente -> 200 (251ms)
+[2026-04-03T22:26:51.196Z] API GET /supabase/rest/v1/documents?select=*%2Cdocument_types%28name%29%2Cprofiles%28full_name%29%2Cvehicles%28license_plate%29&expiration_date=lte.2026-05-03&expiration_date=gte.2026-04-03&order=expiration_date.asc&limit=5 -> 200 (240ms)
+[2026-04-03T22:26:51.206Z] API GET /supabase/rest/v1/requests?select=*%2Crequest_types%28name%29%2Cprofiles%28full_name%29%2Cvehicles%28license_plate%29&status=in.%28pendiente%2Cen_proceso%29&order=created_at.desc&limit=6 -> 200 (260ms)
+[2026-04-03T22:26:51.331Z] UI navigation.menu.click {"from":"/admin","to":"/admin/vehicles","role":"admin"}
+[2026-04-03T22:26:51.601Z] API GET /supabase/rest/v1/vehicles?select=*&order=license_plate.asc -> 200 (257ms)
+[2026-04-03T22:26:51.610Z] API GET /supabase/rest/v1/profiles?select=id%2Cfull_name%2Cemail&role=eq.conductor&order=full_name.asc -> 200 (265ms)
+[2026-04-03T22:26:51.613Z] API GET /supabase/rest/v1/vehicle_assignments?select=*%2Cprofiles%28full_name%29%2Cvehicles%28license_plate%29&order=assigned_at.desc -> 200 (268ms)
+[2026-04-03T22:26:51.683Z] UI navigation.menu.click {"from":"/admin/vehicles","to":"/admin/requests","role":"admin"}
+[2026-04-03T22:26:51.950Z] API GET /supabase/rest/v1/requests?select=*%2Crequest_types%28name%29%2Cprofiles%28full_name%29%2Cvehicles%28license_plate%29&order=created_at.desc&limit=100&status=eq.pendiente -> 200 (254ms)
+[2026-04-03T22:26:57.465Z] UI navigation.menu.click {"from":"/admin/requests","to":"/admin/vehicles","role":"admin"}
+[2026-04-03T22:26:57.715Z] API GET /supabase/rest/v1/profiles?select=id%2Cfull_name%2Cemail&role=eq.conductor&order=full_name.asc -> 200 (237ms)
+[2026-04-03T22:26:57.743Z] API GET /supabase/rest/v1/vehicle_assignments?select=*%2Cprofiles%28full_name%29%2Cvehicles%28license_plate%29&order=assigned_at.desc -> 200 (264ms)
+[2026-04-03T22:26:57.743Z] API GET /supabase/rest/v1/vehicles?select=*&order=license_plate.asc -> 200 (265ms)
+[2026-04-03T22:27:00.035Z] UI navigation.menu.click {"from":"/admin/vehicles","to":"/admin/vehicles","role":"admin"}
+[2026-04-03T22:27:00.299Z] UI navigation.menu.click {"from":"/admin/vehicles","to":"/admin/search","role":"admin"}
+[2026-04-03T22:27:00.971Z] UI navigation.menu.click {"from":"/admin/search","to":"/admin","role":"admin"}
+[2026-04-03T22:27:01.246Z] API GET /supabase/rest/v1/requests?select=id&status=eq.en_proceso -> 200 (260ms)
+[2026-04-03T22:27:01.247Z] API GET /supabase/rest/v1/vehicles?select=id&status=eq.active -> 200 (263ms)
+[2026-04-03T22:27:01.254Z] API GET /supabase/rest/v1/vehicles?select=id -> 200 (271ms)
+[2026-04-03T22:27:01.255Z] API GET /supabase/rest/v1/profiles?select=id&role=eq.conductor -> 200 (270ms)
+[2026-04-03T22:27:01.260Z] API GET /supabase/rest/v1/requests?select=id&status=eq.pendiente -> 200 (274ms)
+[2026-04-03T22:27:01.693Z] API GET /supabase/rest/v1/documents?select=*%2Cdocument_types%28name%29%2Cprofiles%28full_name%29%2Cvehicles%28license_plate%29&expiration_date=lte.2026-05-03&expiration_date=gte.2026-04-03&order=expiration_date.asc&limit=5 -> 200 (437ms)
+[2026-04-03T22:27:01.695Z] API GET /supabase/rest/v1/documents?select=id&expiration_date=lte.2026-05-03&expiration_date=gte.2026-04-03 -> 200 (709ms)
+[2026-04-03T22:27:01.698Z] API GET /supabase/rest/v1/documents?select=id -> 200 (451ms)
+[2026-04-03T22:27:01.699Z] API GET /supabase/rest/v1/messages?select=id&status=eq.pendiente -> 200 (451ms)
+[2026-04-03T22:27:01.703Z] API GET /supabase/rest/v1/requests?select=*%2Crequest_types%28name%29%2Cprofiles%28full_name%29%2Cvehicles%28license_plate%29&status=in.%28pendiente%2Cen_proceso%29&order=created_at.desc&limit=6 -> 200 (448ms)
+[2026-04-03T22:32:59.416Z] API GET /supabase/rest/v1/profiles?select=*&user_id=eq.82f5cc1c-7219-4b01-80f3-bf0f9ccd0df4 -> 200 (826ms)
+[2026-04-03T22:32:59.695Z] API GET /supabase/rest/v1/profiles?select=*&user_id=eq.82f5cc1c-7219-4b01-80f3-bf0f9ccd0df4 -> 200 (279ms)
+[2026-04-03T22:32:59.751Z] API GET /supabase/rest/v1/vehicles?select=id&status=eq.active -> 200 (312ms)
+[2026-04-03T22:32:59.756Z] API GET /supabase/rest/v1/requests?select=id&status=eq.en_proceso -> 200 (314ms)
+[2026-04-03T22:32:59.769Z] API GET /supabase/rest/v1/profiles?select=id&role=eq.conductor -> 200 (329ms)
+[2026-04-03T22:32:59.773Z] API GET /supabase/rest/v1/vehicles?select=id -> 200 (335ms)
+[2026-04-03T22:32:59.780Z] API GET /supabase/rest/v1/requests?select=id&status=eq.pendiente -> 200 (339ms)
+[2026-04-03T22:32:59.979Z] API GET /supabase/rest/v1/documents?select=id&expiration_date=lte.2026-05-03&expiration_date=gte.2026-04-03 -> 200 (282ms)
+[2026-04-03T22:33:00.035Z] API GET /supabase/rest/v1/documents?select=id -> 200 (281ms)
+[2026-04-03T22:33:00.038Z] API GET /supabase/rest/v1/profiles?select=*&user_id=eq.82f5cc1c-7219-4b01-80f3-bf0f9ccd0df4 -> 200 (257ms)
+[2026-04-03T22:33:00.050Z] API GET /supabase/rest/v1/requests?select=*%2Crequest_types%28name%29%2Cprofiles%28full_name%29%2Cvehicles%28license_plate%29&status=in.%28pendiente%2Cen_proceso%29&order=created_at.desc&limit=6 -> 200 (279ms)
+[2026-04-03T22:33:00.054Z] API GET /supabase/rest/v1/documents?select=*%2Cdocument_types%28name%29%2Cprofiles%28full_name%29%2Cvehicles%28license_plate%29&expiration_date=lte.2026-05-03&expiration_date=gte.2026-04-03&order=expiration_date.asc&limit=5 -> 200 (280ms)
+[2026-04-03T22:33:00.058Z] API GET /supabase/rest/v1/messages?select=id&status=eq.pendiente -> 200 (295ms)
+[2026-04-03T22:34:33.729Z] API HEAD /supabase/rest/v1/requests?select=id&status=eq.en_proceso -> 200 (326ms)
+[2026-04-03T22:34:33.730Z] API HEAD /supabase/rest/v1/vehicles?select=id&status=eq.active -> 200 (330ms)
+[2026-04-03T22:34:33.752Z] API HEAD /supabase/rest/v1/profiles?select=id&role=eq.conductor -> 200 (351ms)
+[2026-04-03T22:34:33.753Z] API HEAD /supabase/rest/v1/requests?select=id&status=eq.pendiente -> 200 (351ms)
+[2026-04-03T22:34:33.755Z] API HEAD /supabase/rest/v1/vehicles?select=id -> 200 (356ms)
+[2026-04-03T22:34:33.767Z] API HEAD /supabase/rest/v1/documents?select=id&expiration_date=lte.2026-05-03&expiration_date=gte.2026-04-03 -> 200 (363ms)
+[2026-04-03T22:34:34.006Z] API HEAD /supabase/rest/v1/messages?select=id&status=eq.pendiente -> 200 (273ms)
+[2026-04-03T22:34:34.013Z] API HEAD /supabase/rest/v1/documents?select=id -> 200 (282ms)
+[2026-04-03T22:34:34.020Z] API GET /supabase/rest/v1/requests?select=id%2Cstatus%2Cdetails%2Camount%2Ccreated_at%2Crequest_types%28name%29%2Cprofiles%28full_name%29%2Cvehicles%28license_plate%29&status=in.%28pendiente%2Cen_proceso%29&limit=50 -> 200 (265ms)
+[2026-04-03T22:34:34.023Z] API GET /supabase/rest/v1/documents?select=id%2Cexpiration_date%2Cdocument_types%28name%29%2Cprofiles%28full_name%29%2Cvehicles%28license_plate%29&expiration_date=lte.2026-05-03&expiration_date=gte.2026-04-03&order=expiration_date.asc&limit=5 -> 200 (266ms)
+[2026-04-03T22:37:44.120Z] API GET /supabase/rest/v1/profiles?select=*&user_id=eq.82f5cc1c-7219-4b01-80f3-bf0f9ccd0df4 -> 200 (496ms)
+[2026-04-03T22:37:44.405Z] API GET /supabase/rest/v1/profiles?select=*&user_id=eq.82f5cc1c-7219-4b01-80f3-bf0f9ccd0df4 -> 200 (282ms)
+[2026-04-03T22:37:44.436Z] API HEAD /supabase/rest/v1/vehicles?select=id -> 200 (292ms)
+[2026-04-03T22:37:44.438Z] API HEAD /supabase/rest/v1/vehicles?select=id&status=eq.active -> 200 (293ms)
+[2026-04-03T22:37:44.457Z] API HEAD /supabase/rest/v1/requests?select=id&status=eq.pendiente -> 200 (310ms)
+[2026-04-03T22:37:44.466Z] API HEAD /supabase/rest/v1/profiles?select=id&role=eq.conductor -> 200 (320ms)
+[2026-04-03T22:37:44.467Z] API HEAD /supabase/rest/v1/requests?select=id&status=eq.en_proceso -> 200 (318ms)
+[2026-04-03T22:37:44.673Z] API HEAD /supabase/rest/v1/documents?select=id&expiration_date=lte.2026-05-03&expiration_date=gte.2026-04-03 -> 200 (265ms)
+[2026-04-03T22:37:44.708Z] API HEAD /supabase/rest/v1/documents?select=id -> 200 (269ms)
+[2026-04-03T22:37:44.712Z] API HEAD /supabase/rest/v1/messages?select=id&status=eq.pendiente -> 200 (272ms)
+[2026-04-03T22:37:44.724Z] API GET /supabase/rest/v1/profiles?select=*&user_id=eq.82f5cc1c-7219-4b01-80f3-bf0f9ccd0df4 -> 200 (256ms)
+[2026-04-03T22:37:44.728Z] API GET /supabase/rest/v1/requests?select=id%2Cstatus%2Cdetails%2Camount%2Ccreated_at%2Crequest_types%28name%29%2Cprofiles%28full_name%29%2Cvehicles%28license_plate%29&status=in.%28pendiente%2Cen_proceso%29&limit=50 -> 200 (269ms)
+[2026-04-03T22:37:44.744Z] API GET /supabase/rest/v1/documents?select=id%2Cexpiration_date%2Cdocument_types%28name%29%2Cprofiles%28full_name%29%2Cvehicles%28license_plate%29&expiration_date=lte.2026-05-03&expiration_date=gte.2026-04-03&order=expiration_date.asc&limit=5 -> 200 (277ms)
+[2026-04-03T22:38:24.791Z] API GET /supabase/rest/v1/profiles?select=*&user_id=eq.82f5cc1c-7219-4b01-80f3-bf0f9ccd0df4 -> 200 (252ms)
+[2026-04-03T22:38:25.064Z] API GET /supabase/rest/v1/profiles?select=*&user_id=eq.82f5cc1c-7219-4b01-80f3-bf0f9ccd0df4 -> 200 (272ms)
+[2026-04-03T22:38:25.089Z] API HEAD /supabase/rest/v1/vehicles?select=id&status=eq.active -> 200 (282ms)
+[2026-04-03T22:38:25.101Z] API HEAD /supabase/rest/v1/requests?select=id&status=eq.pendiente -> 200 (292ms)
+[2026-04-03T22:38:25.115Z] API HEAD /supabase/rest/v1/profiles?select=id&role=eq.conductor -> 200 (307ms)
+[2026-04-03T22:38:25.117Z] API HEAD /supabase/rest/v1/vehicles?select=id -> 200 (311ms)
+[2026-04-03T22:38:25.129Z] API HEAD /supabase/rest/v1/requests?select=id&status=eq.en_proceso -> 200 (319ms)
+[2026-04-03T22:38:25.326Z] API HEAD /supabase/rest/v1/documents?select=id&expiration_date=lte.2026-05-03&expiration_date=gte.2026-04-03 -> 200 (259ms)
+[2026-04-03T22:38:25.351Z] API HEAD /supabase/rest/v1/documents?select=id -> 200 (261ms)
+[2026-04-03T22:38:25.370Z] API HEAD /supabase/rest/v1/messages?select=id&status=eq.pendiente -> 200 (269ms)
+[2026-04-03T22:38:25.381Z] API GET /supabase/rest/v1/documents?select=id%2Cexpiration_date%2Cdocument_types%28name%29%2Cprofiles%28full_name%29%2Cvehicles%28license_plate%29&expiration_date=lte.2026-05-03&expiration_date=gte.2026-04-03&order=expiration_date.asc&limit=5 -> 200 (262ms)
+[2026-04-03T22:38:25.392Z] API GET /supabase/rest/v1/requests?select=id%2Cstatus%2Cdetails%2Camount%2Ccreated_at%2Crequest_types%28name%29%2Cprofiles%28full_name%29%2Cvehicles%28license_plate%29&status=in.%28pendiente%2Cen_proceso%29&limit=50 -> 200 (275ms)
+[2026-04-03T22:38:25.406Z] API GET /supabase/rest/v1/profiles?select=*&user_id=eq.82f5cc1c-7219-4b01-80f3-bf0f9ccd0df4 -> 200 (276ms)
+[2026-04-03T22:39:12.710Z] API HEAD /supabase/rest/v1/vehicles?select=id -> 200 (315ms)
+[2026-04-03T22:39:12.743Z] API HEAD /supabase/rest/v1/vehicles?select=id&status=eq.active -> 200 (346ms)
+[2026-04-03T22:39:12.749Z] API HEAD /supabase/rest/v1/requests?select=id&status=eq.en_proceso -> 200 (349ms)
+[2026-04-03T22:39:12.750Z] API HEAD /supabase/rest/v1/profiles?select=id&role=eq.conductor -> 200 (351ms)
+[2026-04-03T22:39:12.758Z] API HEAD /supabase/rest/v1/documents?select=id&expiration_date=lte.2026-05-03&expiration_date=gte.2026-04-03 -> 200 (358ms)
+[2026-04-03T22:39:12.760Z] API HEAD /supabase/rest/v1/requests?select=id&status=eq.pendiente -> 200 (361ms)
+[2026-04-03T22:39:12.964Z] API HEAD /supabase/rest/v1/documents?select=id -> 200 (251ms)
+[2026-04-03T22:39:13.020Z] API HEAD /supabase/rest/v1/messages?select=id&status=eq.pendiente -> 200 (273ms)
+[2026-04-03T22:39:13.024Z] API GET /supabase/rest/v1/documents?select=id%2Cexpiration_date%2Cdocument_types%28name%29%2Cprofiles%28full_name%29%2Cvehicles%28license_plate%29&expiration_date=lte.2026-05-03&expiration_date=gte.2026-04-03&order=expiration_date.asc&limit=5 -> 200 (272ms)
+[2026-04-03T22:39:13.026Z] API GET /supabase/rest/v1/requests?select=id%2Cstatus%2Cdetails%2Camount%2Ccreated_at%2Crequest_types%28name%29%2Cprofiles%28full_name%29%2Cvehicles%28license_plate%29&status=in.%28pendiente%2Cen_proceso%29&limit=50 -> 200 (275ms)
+[2026-04-03T22:46:51.481Z] API GET /supabase/rest/v1/profiles?select=*&user_id=eq.82f5cc1c-7219-4b01-80f3-bf0f9ccd0df4 -> 200 (285ms)
+[2026-04-03T22:46:51.834Z] API HEAD /supabase/rest/v1/requests?select=id&status=eq.en_proceso -> 200 (331ms)
+[2026-04-03T22:46:51.833Z] API GET /supabase/rest/v1/profiles?select=*&user_id=eq.82f5cc1c-7219-4b01-80f3-bf0f9ccd0df4 -> 200 (353ms)
+[2026-04-03T22:46:51.836Z] API HEAD /supabase/rest/v1/vehicles?select=id -> 200 (335ms)
+[2026-04-03T22:46:51.841Z] API HEAD /supabase/rest/v1/vehicles?select=id&status=eq.active -> 200 (339ms)
+[2026-04-03T22:46:51.846Z] API HEAD /supabase/rest/v1/requests?select=id&status=eq.pendiente -> 200 (343ms)
+[2026-04-03T22:46:51.845Z] API HEAD /supabase/rest/v1/profiles?select=id&role=eq.conductor -> 200 (343ms)
+[2026-04-03T22:46:52.119Z] API HEAD /supabase/rest/v1/messages?select=id&status=eq.pendiente -> 200 (282ms)
+[2026-04-03T22:46:52.124Z] API HEAD /supabase/rest/v1/documents?select=id -> 200 (290ms)
+[2026-04-03T22:46:52.127Z] API GET /supabase/rest/v1/profiles?select=*&user_id=eq.82f5cc1c-7219-4b01-80f3-bf0f9ccd0df4 -> 200 (279ms)
+[2026-04-03T22:46:52.139Z] API HEAD /supabase/rest/v1/documents?select=id&expiration_date=lte.2026-05-03&expiration_date=gte.2026-04-03 -> 200 (305ms)
+[2026-04-03T22:46:52.147Z] API GET /supabase/rest/v1/documents?select=id%2Cexpiration_date%2Cdocument_types%28name%29%2Cprofiles%28full_name%29%2Cvehicles%28license_plate%29&expiration_date=lte.2026-05-03&expiration_date=gte.2026-04-03&order=expiration_date.asc&limit=5 -> 200 (300ms)
+[2026-04-03T22:46:52.147Z] API GET /supabase/rest/v1/requests?select=id%2Cstatus%2Cdetails%2Camount%2Ccreated_at%2Crequest_types%28name%29%2Cprofiles%28full_name%29%2Cvehicles%28license_plate%29&status=in.%28pendiente%2Cen_proceso%29&limit=50 -> 200 (305ms)
+[2026-04-03T22:46:59.887Z] API GET /supabase/rest/v1/requests?select=id%2Cstatus%2Cdetails%2Camount%2Ccreated_at%2Crequest_types%28name%29%2Cprofiles%28full_name%29%2Cvehicles%28license_plate%29&limit=200&status=eq.pendiente -> 200 (269ms)
+[2026-04-03T22:47:07.040Z] UI navigation.menu.click {"from":"/admin/requests","to":"/admin/search","role":"admin"}
+[2026-04-03T22:47:07.327Z] API GET /supabase/rest/v1/vehicles?select=id%2Clicense_plate%2Cmake%2Cmodel%2Cstatus&order=license_plate.asc -> 200 (272ms)
+[2026-04-03T22:47:08.933Z] UI navigation.menu.click {"from":"/admin/search","to":"/admin/search","role":"admin"}
+[2026-04-03T22:47:09.466Z] UI navigation.menu.click {"from":"/admin/search","to":"/admin/vehicles","role":"admin"}
+[2026-04-03T22:47:09.757Z] API GET /supabase/rest/v1/profiles?select=id%2Cfull_name%2Cemail&role=eq.conductor&order=full_name.asc -> 200 (276ms)
+[2026-04-03T22:47:09.757Z] API GET /supabase/rest/v1/vehicles?select=id%2Clicense_plate%2Cmake%2Cmodel%2Cyear%2Ccolor%2Cstatus&order=license_plate.asc -> 200 (277ms)
+[2026-04-03T22:47:09.766Z] API GET /supabase/rest/v1/vehicle_assignments?select=id%2Cvehicle_id%2Cprofile_id%2Cassigned_at%2Cprofiles%28full_name%29%2Cvehicles%28license_plate%29&order=assigned_at.desc -> 200 (285ms)
+[2026-04-03T22:47:10.065Z] UI navigation.menu.click {"from":"/admin/vehicles","to":"/admin/requests","role":"admin"}
+[2026-04-03T22:47:10.353Z] API GET /supabase/rest/v1/requests?select=id%2Cstatus%2Cdetails%2Camount%2Ccreated_at%2Crequest_types%28name%29%2Cprofiles%28full_name%29%2Cvehicles%28license_plate%29&limit=200&status=eq.pendiente -> 200 (267ms)
+[2026-04-03T22:47:11.653Z] UI navigation.menu.click {"from":"/admin/requests","to":"/admin/messages","role":"admin"}
+[2026-04-03T22:47:11.933Z] API GET /supabase/rest/v1/profiles?select=id%2Cfull_name%2Cemail&role=eq.conductor&order=full_name.asc -> 200 (265ms)
+[2026-04-03T22:47:11.945Z] API GET /supabase/rest/v1/messages?select=*%2Creceiver%3Aprofiles%21messages_receiver_id_fkey%28full_name%29%2Csender%3Aprofiles%21messages_sender_id_fkey%28full_name%29&order=created_at.desc&limit=50 -> 200 (277ms)
+[2026-04-03T22:47:15.224Z] UI navigation.menu.click {"from":"/admin/messages","to":"/admin/requests","role":"admin"}
+[2026-04-03T22:47:15.518Z] API GET /supabase/rest/v1/requests?select=id%2Cstatus%2Cdetails%2Camount%2Ccreated_at%2Crequest_types%28name%29%2Cprofiles%28full_name%29%2Cvehicles%28license_plate%29&limit=200&status=eq.pendiente -> 200 (274ms)
+[2026-04-03T22:47:16.366Z] UI navigation.menu.click {"from":"/admin/requests","to":"/admin/vehicles","role":"admin"}
+[2026-04-03T22:47:16.659Z] API GET /supabase/rest/v1/vehicles?select=id%2Clicense_plate%2Cmake%2Cmodel%2Cyear%2Ccolor%2Cstatus&order=license_plate.asc -> 200 (278ms)
+[2026-04-03T22:47:16.668Z] API GET /supabase/rest/v1/profiles?select=id%2Cfull_name%2Cemail&role=eq.conductor&order=full_name.asc -> 200 (286ms)
+[2026-04-03T22:47:16.679Z] API GET /supabase/rest/v1/vehicle_assignments?select=id%2Cvehicle_id%2Cprofile_id%2Cassigned_at%2Cprofiles%28full_name%29%2Cvehicles%28license_plate%29&order=assigned_at.desc -> 200 (297ms)
+[2026-04-03T22:47:24.351Z] UI navigation.menu.click {"from":"/admin/vehicles","to":"/admin/vehicles","role":"admin"}
+[2026-04-03T22:47:25.273Z] UI navigation.menu.click {"from":"/admin/vehicles","to":"/admin/vehicles","role":"admin"}
+[2026-04-03T22:47:25.765Z] UI navigation.menu.click {"from":"/admin/vehicles","to":"/admin/search","role":"admin"}
+[2026-04-03T22:47:26.061Z] API GET /supabase/rest/v1/vehicles?select=id%2Clicense_plate%2Cmake%2Cmodel%2Cstatus&order=license_plate.asc -> 200 (281ms)
+[2026-04-03T22:47:29.910Z] API GET /supabase/rest/v1/vehicles?select=id%2Clicense_plate%2Cmake%2Cmodel%2Cyear%2Ccolor%2Cstatus&license_plate=eq.BVRK-20 -> 200 (270ms)
+[2026-04-03T22:47:30.195Z] API GET /supabase/rest/v1/requests?select=id%2Cstatus%2Cdetails%2Camount%2Ccreated_at%2Crequest_types%28name%29%2Cprofiles%28full_name%29&vehicle_id=eq.72509510-752a-4ad3-bec1-6f125c3f4186&order=created_at.desc -> 200 (279ms)
+[2026-04-03T22:47:30.197Z] API GET /supabase/rest/v1/mileage_records?select=id%2Ckilometers%2Crecorded_date%2Cnotes%2Cprofiles%28full_name%29&vehicle_id=eq.72509510-752a-4ad3-bec1-6f125c3f4186&order=recorded_date.desc&limit=20 -> 200 (281ms)
+[2026-04-03T22:47:30.209Z] API GET /supabase/rest/v1/vehicle_assignments?select=profile_id%2Cprofiles%28id%2Cfull_name%2Cemail%2Cphone%29&vehicle_id=eq.72509510-752a-4ad3-bec1-6f125c3f4186&order=assigned_at.desc -> 200 (294ms)
+[2026-04-03T22:47:30.218Z] API GET /supabase/rest/v1/admin_notes?select=id%2Cnote_text%2Ccreated_at&vehicle_id=eq.72509510-752a-4ad3-bec1-6f125c3f4186&order=created_at.desc -> 200 (302ms)
+[2026-04-03T22:47:30.234Z] API GET /supabase/rest/v1/documents?select=id%2Cstatus%2Cdescription%2Cfile_url%2Cexpiration_date%2Ccreated_at%2Cdocument_types%28name%29%2Cprofiles%28full_name%29&vehicle_id=eq.72509510-752a-4ad3-bec1-6f125c3f4186&order=created_at.desc -> 200 (319ms)
+[2026-04-03T22:47:30.519Z] API GET /supabase/rest/v1/messages?select=id%2Cstatus%2Ccontent%2Ccreated_at%2Csender%3Aprofiles%21messages_sender_id_fkey%28full_name%29&receiver_id=in.%28b19a1fa0-cb9a-40c0-b467-b48cf3fdf065%2C802b3077-0fce-45da-9c76-97cfeb03f497%29&order=created_at.desc&limit=10 -> 200 (281ms)
+[2026-04-03T22:48:29.589Z] UI navigation.menu.click {"from":"/admin/search","to":"/admin/vehicles","role":"admin"}
+[2026-04-03T22:48:30.068Z] API GET /supabase/rest/v1/vehicle_assignments?select=id%2Cvehicle_id%2Cprofile_id%2Cassigned_at%2Cprofiles%28full_name%29%2Cvehicles%28license_plate%29&order=assigned_at.desc -> 200 (461ms)
+[2026-04-03T22:48:30.071Z] API GET /supabase/rest/v1/vehicles?select=id%2Clicense_plate%2Cmake%2Cmodel%2Cyear%2Ccolor%2Cstatus&order=license_plate.asc -> 200 (467ms)
+[2026-04-03T22:48:30.071Z] API GET /supabase/rest/v1/profiles?select=id%2Cfull_name%2Cemail&role=eq.conductor&order=full_name.asc -> 200 (465ms)
+[2026-04-03T22:48:31.977Z] UI navigation.menu.click {"from":"/admin/vehicles","to":"/admin/search","role":"admin"}
+[2026-04-03T22:48:32.288Z] API GET /supabase/rest/v1/vehicles?select=id%2Clicense_plate%2Cmake%2Cmodel%2Cstatus&order=license_plate.asc -> 200 (293ms)
+[2026-04-03T22:48:35.846Z] API GET /supabase/rest/v1/vehicles?select=id%2Clicense_plate%2Cmake%2Cmodel%2Cyear%2Ccolor%2Cstatus&license_plate=eq.CVDR-29 -> 200 (272ms)
+[2026-04-03T22:48:36.129Z] API GET /supabase/rest/v1/vehicle_assignments?select=profile_id%2Cprofiles%28id%2Cfull_name%2Cemail%2Cphone%29&vehicle_id=eq.28e22b8b-2e0f-4343-bb42-4e02508882c3&order=assigned_at.desc -> 200 (278ms)
+[2026-04-03T22:48:36.131Z] API GET /supabase/rest/v1/admin_notes?select=id%2Cnote_text%2Ccreated_at&vehicle_id=eq.28e22b8b-2e0f-4343-bb42-4e02508882c3&order=created_at.desc -> 200 (279ms)
+[2026-04-03T22:48:36.132Z] API GET /supabase/rest/v1/mileage_records?select=id%2Ckilometers%2Crecorded_date%2Cnotes%2Cprofiles%28full_name%29&vehicle_id=eq.28e22b8b-2e0f-4343-bb42-4e02508882c3&order=recorded_date.desc&limit=20 -> 200 (280ms)
+[2026-04-03T22:48:36.136Z] API GET /supabase/rest/v1/documents?select=id%2Cstatus%2Cdescription%2Cfile_url%2Cexpiration_date%2Ccreated_at%2Cdocument_types%28name%29%2Cprofiles%28full_name%29&vehicle_id=eq.28e22b8b-2e0f-4343-bb42-4e02508882c3&order=created_at.desc -> 200 (285ms)
+[2026-04-03T22:48:36.137Z] API GET /supabase/rest/v1/requests?select=id%2Cstatus%2Cdetails%2Camount%2Ccreated_at%2Crequest_types%28name%29%2Cprofiles%28full_name%29&vehicle_id=eq.28e22b8b-2e0f-4343-bb42-4e02508882c3&order=created_at.desc -> 200 (285ms)
+[2026-04-03T22:48:36.430Z] API GET /supabase/rest/v1/messages?select=id%2Cstatus%2Ccontent%2Ccreated_at%2Csender%3Aprofiles%21messages_sender_id_fkey%28full_name%29&receiver_id=in.%28b9b22b70-7413-424f-b134-0c9edb333c81%2Cb19a1fa0-cb9a-40c0-b467-b48cf3fdf065%29&order=created_at.desc&limit=10 -> 200 (290ms)
+[2026-04-03T22:48:40.723Z] UI navigation.menu.click {"from":"/admin/search","to":"/admin","role":"admin"}
+[2026-04-03T22:48:41.004Z] API HEAD /supabase/rest/v1/profiles?select=id&role=eq.conductor -> 200 (263ms)
+[2026-04-03T22:48:41.017Z] API HEAD /supabase/rest/v1/vehicles?select=id&status=eq.active -> 200 (277ms)
+[2026-04-03T22:48:41.021Z] API HEAD /supabase/rest/v1/requests?select=id&status=eq.pendiente -> 200 (278ms)
+[2026-04-03T22:48:41.028Z] API HEAD /supabase/rest/v1/vehicles?select=id -> 200 (288ms)
+[2026-04-03T22:48:41.040Z] API HEAD /supabase/rest/v1/requests?select=id&status=eq.en_proceso -> 200 (295ms)
+[2026-04-03T22:48:41.270Z] API HEAD /supabase/rest/v1/documents?select=id -> 200 (265ms)
+[2026-04-03T22:48:41.319Z] API HEAD /supabase/rest/v1/documents?select=id&expiration_date=lte.2026-05-03&expiration_date=gte.2026-04-03 -> 200 (573ms)
+[2026-04-03T22:48:41.322Z] API HEAD /supabase/rest/v1/messages?select=id&status=eq.pendiente -> 200 (304ms)
+[2026-04-03T22:48:41.322Z] API GET /supabase/rest/v1/documents?select=id%2Cexpiration_date%2Cdocument_types%28name%29%2Cprofiles%28full_name%29%2Cvehicles%28license_plate%29&expiration_date=lte.2026-05-03&expiration_date=gte.2026-04-03&order=expiration_date.asc&limit=5 -> 200 (294ms)
+[2026-04-03T22:48:41.322Z] API GET /supabase/rest/v1/requests?select=id%2Cstatus%2Cdetails%2Camount%2Ccreated_at%2Crequest_types%28name%29%2Cprofiles%28full_name%29%2Cvehicles%28license_plate%29&status=in.%28pendiente%2Cen_proceso%29&limit=50 -> 200 (301ms)
+[2026-04-03T22:48:48.902Z] UI navigation.menu.click {"from":"/admin","to":"/admin/search","role":"admin"}
+[2026-04-03T22:48:49.174Z] API GET /supabase/rest/v1/vehicles?select=id%2Clicense_plate%2Cmake%2Cmodel%2Cstatus&order=license_plate.asc -> 200 (257ms)
+[2026-04-03T22:48:49.402Z] UI navigation.menu.click {"from":"/admin/search","to":"/admin/vehicles","role":"admin"}
+[2026-04-03T22:48:49.685Z] API GET /supabase/rest/v1/profiles?select=id%2Cfull_name%2Cemail&role=eq.conductor&order=full_name.asc -> 200 (269ms)
+[2026-04-03T22:48:49.695Z] API GET /supabase/rest/v1/vehicles?select=id%2Clicense_plate%2Cmake%2Cmodel%2Cyear%2Ccolor%2Cstatus&order=license_plate.asc -> 200 (280ms)
+[2026-04-03T22:48:49.702Z] API GET /supabase/rest/v1/vehicle_assignments?select=id%2Cvehicle_id%2Cprofile_id%2Cassigned_at%2Cprofiles%28full_name%29%2Cvehicles%28license_plate%29&order=assigned_at.desc -> 200 (286ms)
+[2026-04-03T22:48:49.869Z] UI navigation.menu.click {"from":"/admin/vehicles","to":"/admin/requests","role":"admin"}
+[2026-04-03T22:48:50.144Z] API GET /supabase/rest/v1/requests?select=id%2Cstatus%2Cdetails%2Camount%2Ccreated_at%2Crequest_types%28name%29%2Cprofiles%28full_name%29%2Cvehicles%28license_plate%29&limit=200&status=eq.pendiente -> 200 (262ms)
+[2026-04-03T22:48:50.481Z] UI navigation.menu.click {"from":"/admin/requests","to":"/admin/messages","role":"admin"}
+[2026-04-03T22:48:50.821Z] API GET /supabase/rest/v1/profiles?select=id%2Cfull_name%2Cemail&role=eq.conductor&order=full_name.asc -> 200 (293ms)
+[2026-04-03T22:48:50.821Z] API GET /supabase/rest/v1/messages?select=*%2Creceiver%3Aprofiles%21messages_receiver_id_fkey%28full_name%29%2Csender%3Aprofiles%21messages_sender_id_fkey%28full_name%29&order=created_at.desc&limit=50 -> 200 (294ms)
+[2026-04-03T22:49:58.957Z] API GET /supabase/rest/v1/profiles?select=*&user_id=eq.82f5cc1c-7219-4b01-80f3-bf0f9ccd0df4 -> 200 (347ms)
+[2026-04-03T22:50:00.093Z] API GET /supabase/rest/v1/profiles?select=*&user_id=eq.82f5cc1c-7219-4b01-80f3-bf0f9ccd0df4 -> 200 (324ms)
+[2026-04-03T22:50:18.816Z] API GET /supabase/rest/v1/profiles?select=*&user_id=eq.82f5cc1c-7219-4b01-80f3-bf0f9ccd0df4 -> 200 (277ms)
+[2026-04-03T22:52:21.513Z] API GET /supabase/rest/v1/profiles?select=*&user_id=eq.82f5cc1c-7219-4b01-80f3-bf0f9ccd0df4 -> 200 (821ms)
+[2026-04-03T22:52:22.720Z] UI navigation.menu.click {"from":"/admin/messages","to":"/admin/vehicles","role":"admin"}
+[2026-04-03T22:52:23.055Z] API GET /supabase/rest/v1/vehicles?select=id%2Clicense_plate%2Cmake%2Cmodel%2Cyear%2Ccolor%2Cstatus&order=license_plate.asc -> 200 (317ms)
+[2026-04-03T22:52:23.072Z] API GET /supabase/rest/v1/profiles?select=id%2Cfull_name%2Cemail&role=eq.conductor&order=full_name.asc -> 200 (333ms)
+[2026-04-03T22:52:23.107Z] API GET /supabase/rest/v1/vehicle_assignments?select=id%2Cvehicle_id%2Cprofile_id%2Cassigned_at%2Cprofiles%28full_name%29%2Cvehicles%28license_plate%29&order=assigned_at.desc -> 200 (367ms)
+[2026-04-03T22:52:24.548Z] UI navigation.menu.click {"from":"/admin/vehicles","to":"/admin/requests","role":"admin"}
+[2026-04-03T22:52:24.909Z] API GET /supabase/rest/v1/requests?select=id%2Cstatus%2Cdetails%2Camount%2Ccreated_at%2Crequest_types%28name%29%2Cprofiles%28full_name%29%2Cvehicles%28license_plate%29&limit=200&status=eq.pendiente -> 200 (341ms)
+[2026-04-03T22:52:26.329Z] UI navigation.menu.click {"from":"/admin/requests","to":"/admin/search","role":"admin"}
+[2026-04-03T22:52:26.624Z] API GET /supabase/rest/v1/vehicles?select=id%2Clicense_plate%2Cmake%2Cmodel%2Cstatus&order=license_plate.asc -> 200 (280ms)
+[2026-04-03T22:52:35.224Z] UI navigation.menu.click {"from":"/admin/search","to":"/admin","role":"admin"}
+[2026-04-03T22:52:35.540Z] API HEAD /supabase/rest/v1/requests?select=id&status=eq.pendiente -> 200 (294ms)
+[2026-04-03T22:52:35.540Z] API HEAD /supabase/rest/v1/vehicles?select=id -> 200 (298ms)
+[2026-04-03T22:52:35.540Z] API HEAD /supabase/rest/v1/vehicles?select=id&status=eq.active -> 200 (296ms)
+[2026-04-03T22:52:35.540Z] API HEAD /supabase/rest/v1/profiles?select=id&role=eq.conductor -> 200 (295ms)
+[2026-04-03T22:52:35.543Z] API HEAD /supabase/rest/v1/documents?select=id&expiration_date=lte.2026-05-03&expiration_date=gte.2026-04-03 -> 200 (294ms)
+[2026-04-03T22:52:35.548Z] API HEAD /supabase/rest/v1/requests?select=id&status=eq.en_proceso -> 200 (300ms)
+[2026-04-03T22:52:35.816Z] API HEAD /supabase/rest/v1/documents?select=id -> 200 (276ms)
+[2026-04-03T22:52:35.829Z] API HEAD /supabase/rest/v1/messages?select=id&status=eq.pendiente -> 200 (288ms)
+[2026-04-03T22:52:35.831Z] API GET /supabase/rest/v1/requests?select=id%2Cstatus%2Cdetails%2Camount%2Ccreated_at%2Crequest_types%28name%29%2Cprofiles%28full_name%29%2Cvehicles%28license_plate%29&status=in.%28pendiente%2Cen_proceso%29&limit=50 -> 200 (290ms)
+[2026-04-03T22:52:35.841Z] API GET /supabase/rest/v1/documents?select=id%2Cexpiration_date%2Cdocument_types%28name%29%2Cprofiles%28full_name%29%2Cvehicles%28license_plate%29&expiration_date=lte.2026-05-03&expiration_date=gte.2026-04-03&order=expiration_date.asc&limit=5 -> 200 (299ms)
+[2026-04-03T22:52:49.806Z] API GET /supabase/rest/v1/profiles?select=*&user_id=eq.82f5cc1c-7219-4b01-80f3-bf0f9ccd0df4 -> 200 (271ms)
+[2026-04-03T22:54:01.203Z] API GET /supabase/rest/v1/profiles?select=*&user_id=eq.82f5cc1c-7219-4b01-80f3-bf0f9ccd0df4 -> 200 (335ms)
+[2026-04-03T22:54:06.802Z] UI navigation.menu.click {"from":"/admin","to":"/admin/search","role":"admin"}
+[2026-04-03T22:54:07.095Z] API GET /supabase/rest/v1/vehicles?select=id%2Clicense_plate%2Cmake%2Cmodel%2Cstatus&order=license_plate.asc -> 200 (280ms)
+[2026-04-03T22:54:16.264Z] UI navigation.menu.click {"from":"/admin/search","to":"/admin/vehicles","role":"admin"}
+[2026-04-03T22:54:16.574Z] API GET /supabase/rest/v1/vehicles?select=id%2Clicense_plate%2Cmake%2Cmodel%2Cyear%2Ccolor%2Cstatus&order=license_plate.asc -> 200 (297ms)
+[2026-04-03T22:54:16.588Z] API GET /supabase/rest/v1/profiles?select=id%2Cfull_name%2Cemail&role=eq.conductor&order=full_name.asc -> 200 (310ms)
+[2026-04-03T22:54:16.588Z] API GET /supabase/rest/v1/vehicle_assignments?select=id%2Cvehicle_id%2Cprofile_id%2Cassigned_at%2Cprofiles%28full_name%29%2Cvehicles%28license_plate%29&order=assigned_at.desc -> 200 (310ms)
+[2026-04-03T22:54:18.782Z] UI navigation.menu.click {"from":"/admin/vehicles","to":"/admin/requests","role":"admin"}
+[2026-04-03T22:54:19.090Z] API GET /supabase/rest/v1/requests?select=id%2Cstatus%2Cdetails%2Camount%2Ccreated_at%2Crequest_types%28name%29%2Cprofiles%28full_name%29%2Cvehicles%28license_plate%29&limit=200&status=eq.pendiente -> 200 (289ms)
+[2026-04-03T22:54:19.620Z] UI navigation.menu.click {"from":"/admin/requests","to":"/admin/messages","role":"admin"}
+[2026-04-03T22:54:19.914Z] API GET /supabase/rest/v1/profiles?select=id%2Cfull_name%2Cemail&role=eq.conductor&order=full_name.asc -> 200 (274ms)
+[2026-04-03T22:54:19.917Z] API GET /supabase/rest/v1/messages?select=*%2Creceiver%3Aprofiles%21messages_receiver_id_fkey%28full_name%29%2Csender%3Aprofiles%21messages_sender_id_fkey%28full_name%29&order=created_at.desc&limit=50 -> 200 (278ms)
+[2026-04-03T22:59:45.250Z] API GET /supabase/rest/v1/profiles?select=*&user_id=eq.82f5cc1c-7219-4b01-80f3-bf0f9ccd0df4 -> 200 (540ms)
+[2026-04-03T22:59:46.560Z] UI auth.logout.click {"role":"admin"}
+[2026-04-03T22:59:46.959Z] UI auth.logout.click {"role":"admin"}
+[2026-04-03T22:59:47.103Z] API POST /supabase/auth/v1/logout?scope=global -> 204 (540ms)
+[2026-04-03T23:00:05.790Z] UI auth.register.submit {"email":"chofer@chofer.cl","nameLength":8}
+[2026-04-03T23:00:06.345Z] API POST /supabase/auth/v1/signup?redirect_to=http%3A%2F%2Flocalhost%3A8080 -> 200 (553ms)
+[2026-04-03T23:00:06.347Z] UI auth.register.success {"email":"chofer@chofer.cl"}
+[2026-04-03T23:00:07.064Z] API GET /supabase/rest/v1/profiles?select=*&user_id=eq.87af488e-f8db-44d2-bbe6-3e0c04186b49 -> 200 (688ms)
+[2026-04-03T23:00:07.393Z] API GET /supabase/rest/v1/vehicle_assignments?select=id&profile_id=eq.675558ca-6afd-4cfd-88ce-ce2a83bd2507 -> 200 (312ms)
+[2026-04-03T23:00:07.418Z] API GET /supabase/rest/v1/documents?select=id&profile_id=eq.675558ca-6afd-4cfd-88ce-ce2a83bd2507&expiration_date=lte.2026-05-03&expiration_date=gte.2026-04-03 -> 200 (333ms)
+[2026-04-03T23:00:07.424Z] API GET /supabase/rest/v1/mileage_records?select=kilometers&profile_id=eq.675558ca-6afd-4cfd-88ce-ce2a83bd2507&order=recorded_date.desc&limit=1 -> 200 (340ms)
+[2026-04-03T23:00:07.442Z] API GET /supabase/rest/v1/documents?select=id&profile_id=eq.675558ca-6afd-4cfd-88ce-ce2a83bd2507 -> 200 (361ms)
+[2026-04-03T23:00:07.444Z] API GET /supabase/rest/v1/requests?select=*%2Crequest_types%28name%29&profile_id=eq.675558ca-6afd-4cfd-88ce-ce2a83bd2507&order=created_at.desc&limit=5 -> 200 (361ms)
+[2026-04-03T23:00:07.444Z] API GET /supabase/rest/v1/messages?select=id&receiver_id=eq.675558ca-6afd-4cfd-88ce-ce2a83bd2507&status=eq.pendiente -> 200 (360ms)
+[2026-04-03T23:00:07.664Z] API GET /supabase/rest/v1/messages?select=*%2Csender%3Aprofiles%21messages_sender_id_fkey%28full_name%29&receiver_id=eq.675558ca-6afd-4cfd-88ce-ce2a83bd2507&order=created_at.desc&limit=3 -> 200 (270ms)
+[2026-04-03T23:00:12.009Z] UI navigation.menu.click {"from":"/conductor","to":"/conductor/vehicles","role":"conductor"}
+[2026-04-03T23:00:12.488Z] API GET /supabase/rest/v1/vehicle_assignments?select=*%2Cvehicles%28*%29&profile_id=eq.675558ca-6afd-4cfd-88ce-ce2a83bd2507 -> 200 (466ms)
+[2026-04-03T23:00:12.641Z] UI navigation.menu.click {"from":"/conductor/vehicles","to":"/conductor","role":"conductor"}
+[2026-04-03T23:00:12.946Z] API GET /supabase/rest/v1/messages?select=id&receiver_id=eq.675558ca-6afd-4cfd-88ce-ce2a83bd2507&status=eq.pendiente -> 200 (287ms)
+[2026-04-03T23:00:12.949Z] API GET /supabase/rest/v1/vehicle_assignments?select=id&profile_id=eq.675558ca-6afd-4cfd-88ce-ce2a83bd2507 -> 200 (293ms)
+[2026-04-03T23:00:12.954Z] API GET /supabase/rest/v1/requests?select=*%2Crequest_types%28name%29&profile_id=eq.675558ca-6afd-4cfd-88ce-ce2a83bd2507&order=created_at.desc&limit=5 -> 200 (296ms)
+[2026-04-03T23:00:12.960Z] API GET /supabase/rest/v1/documents?select=id&profile_id=eq.675558ca-6afd-4cfd-88ce-ce2a83bd2507&expiration_date=lte.2026-05-03&expiration_date=gte.2026-04-03 -> 200 (301ms)
+[2026-04-03T23:00:12.970Z] API GET /supabase/rest/v1/documents?select=id&profile_id=eq.675558ca-6afd-4cfd-88ce-ce2a83bd2507 -> 200 (312ms)
+[2026-04-03T23:00:12.972Z] API GET /supabase/rest/v1/mileage_records?select=kilometers&profile_id=eq.675558ca-6afd-4cfd-88ce-ce2a83bd2507&order=recorded_date.desc&limit=1 -> 200 (313ms)
+[2026-04-03T23:00:13.199Z] API GET /supabase/rest/v1/messages?select=*%2Csender%3Aprofiles%21messages_sender_id_fkey%28full_name%29&receiver_id=eq.675558ca-6afd-4cfd-88ce-ce2a83bd2507&order=created_at.desc&limit=3 -> 200 (252ms)
+[2026-04-03T23:00:13.283Z] UI navigation.menu.click {"from":"/conductor","to":"/conductor","role":"conductor"}
+[2026-04-03T23:00:13.860Z] UI navigation.menu.click {"from":"/conductor","to":"/conductor","role":"conductor"}
+[2026-04-03T23:00:14.400Z] UI navigation.menu.click {"from":"/conductor","to":"/conductor/documents","role":"conductor"}
+[2026-04-03T23:00:14.679Z] API GET /supabase/rest/v1/documents?select=*%2Cdocument_types%28name%29%2Cvehicles%28license_plate%29&profile_id=eq.675558ca-6afd-4cfd-88ce-ce2a83bd2507&order=created_at.desc -> 200 (263ms)
+[2026-04-03T23:00:14.700Z] API GET /supabase/rest/v1/vehicle_assignments?select=vehicle_id%2Cvehicles%28id%2Clicense_plate%29&profile_id=eq.675558ca-6afd-4cfd-88ce-ce2a83bd2507 -> 200 (282ms)
+[2026-04-03T23:00:14.701Z] API GET /supabase/rest/v1/document_types?select=*&order=name.asc -> 200 (284ms)
+[2026-04-03T23:00:14.983Z] UI navigation.menu.click {"from":"/conductor/documents","to":"/conductor/requests","role":"conductor"}
+[2026-04-03T23:00:15.293Z] API GET /supabase/rest/v1/requests?select=*%2Crequest_types%28name%29%2Cvehicles%28license_plate%29&profile_id=eq.675558ca-6afd-4cfd-88ce-ce2a83bd2507&order=created_at.desc -> 200 (296ms)
+[2026-04-03T23:00:15.295Z] API GET /supabase/rest/v1/request_types?select=*&order=name.asc -> 200 (296ms)
+[2026-04-03T23:00:15.297Z] API GET /supabase/rest/v1/vehicle_assignments?select=vehicles%28id%2Clicense_plate%29&profile_id=eq.675558ca-6afd-4cfd-88ce-ce2a83bd2507 -> 200 (298ms)
+[2026-04-03T23:00:15.633Z] UI navigation.menu.click {"from":"/conductor/requests","to":"/conductor/requests","role":"conductor"}
+[2026-04-03T23:00:16.083Z] UI navigation.menu.click {"from":"/conductor/requests","to":"/conductor/mileage","role":"conductor"}
+[2026-04-03T23:00:16.388Z] API GET /supabase/rest/v1/mileage_records?select=*%2Cvehicles%28license_plate%29&profile_id=eq.675558ca-6afd-4cfd-88ce-ce2a83bd2507&order=recorded_date.desc&limit=50 -> 200 (291ms)
+[2026-04-03T23:00:16.393Z] API GET /supabase/rest/v1/vehicle_assignments?select=vehicles%28id%2Clicense_plate%29&profile_id=eq.675558ca-6afd-4cfd-88ce-ce2a83bd2507 -> 200 (295ms)
+[2026-04-03T23:00:16.885Z] UI navigation.menu.click {"from":"/conductor/mileage","to":"/conductor/messages","role":"conductor"}
+[2026-04-03T23:00:17.158Z] API GET /supabase/rest/v1/messages?select=*%2Csender%3Aprofiles%21messages_sender_id_fkey%28full_name%29&receiver_id=eq.675558ca-6afd-4cfd-88ce-ce2a83bd2507&order=created_at.desc -> 200 (254ms)
+[2026-04-03T23:00:18.120Z] UI navigation.menu.click {"from":"/conductor/messages","to":"/conductor/mileage","role":"conductor"}
+[2026-04-03T23:00:18.390Z] API GET /supabase/rest/v1/mileage_records?select=*%2Cvehicles%28license_plate%29&profile_id=eq.675558ca-6afd-4cfd-88ce-ce2a83bd2507&order=recorded_date.desc&limit=50 -> 200 (255ms)
+[2026-04-03T23:00:18.390Z] API GET /supabase/rest/v1/vehicle_assignments?select=vehicles%28id%2Clicense_plate%29&profile_id=eq.675558ca-6afd-4cfd-88ce-ce2a83bd2507 -> 200 (254ms)
+[2026-04-03T23:00:19.287Z] UI navigation.menu.click {"from":"/conductor/mileage","to":"/conductor/requests","role":"conductor"}
+[2026-04-03T23:00:19.582Z] API GET /supabase/rest/v1/request_types?select=*&order=name.asc -> 200 (280ms)
+[2026-04-03T23:00:19.585Z] API GET /supabase/rest/v1/vehicle_assignments?select=vehicles%28id%2Clicense_plate%29&profile_id=eq.675558ca-6afd-4cfd-88ce-ce2a83bd2507 -> 200 (283ms)
+[2026-04-03T23:00:19.592Z] API GET /supabase/rest/v1/requests?select=*%2Crequest_types%28name%29%2Cvehicles%28license_plate%29&profile_id=eq.675558ca-6afd-4cfd-88ce-ce2a83bd2507&order=created_at.desc -> 200 (291ms)
+[2026-04-03T23:00:19.903Z] UI navigation.menu.click {"from":"/conductor/requests","to":"/conductor/documents","role":"conductor"}
+[2026-04-03T23:00:20.196Z] API GET /supabase/rest/v1/document_types?select=*&order=name.asc -> 200 (279ms)
+[2026-04-03T23:00:20.196Z] API GET /supabase/rest/v1/vehicle_assignments?select=vehicle_id%2Cvehicles%28id%2Clicense_plate%29&profile_id=eq.675558ca-6afd-4cfd-88ce-ce2a83bd2507 -> 200 (279ms)
+[2026-04-03T23:00:20.198Z] API GET /supabase/rest/v1/documents?select=*%2Cdocument_types%28name%29%2Cvehicles%28license_plate%29&profile_id=eq.675558ca-6afd-4cfd-88ce-ce2a83bd2507&order=created_at.desc -> 200 (282ms)
+[2026-04-03T23:00:20.704Z] UI navigation.menu.click {"from":"/conductor/documents","to":"/conductor/documents","role":"conductor"}
+[2026-04-03T23:00:35.112Z] API POST /supabase/storage/v1/object/documents/87af488e-f8db-44d2-bbe6-3e0c04186b49/1775257233466_Certificado%20Estatuto%20Actualizado.pdf -> 200 (1632ms)
+[2026-04-03T23:00:35.408Z] API POST /supabase/rest/v1/documents -> 201 (291ms)
+[2026-04-03T23:00:35.714Z] API GET /supabase/rest/v1/documents?select=*%2Cdocument_types%28name%29%2Cvehicles%28license_plate%29&profile_id=eq.675558ca-6afd-4cfd-88ce-ce2a83bd2507&order=created_at.desc -> 200 (288ms)
+[2026-04-03T23:00:35.714Z] API GET /supabase/rest/v1/vehicle_assignments?select=vehicle_id%2Cvehicles%28id%2Clicense_plate%29&profile_id=eq.675558ca-6afd-4cfd-88ce-ce2a83bd2507 -> 200 (287ms)
+[2026-04-03T23:00:35.723Z] API GET /supabase/rest/v1/document_types?select=*&order=name.asc -> 200 (296ms)
+[2026-04-03T23:00:38.448Z] API GET /supabase/storage/v1/object/public/documents/87af488e-f8db-44d2-bbe6-3e0c04186b49/1775257233466_Certificado%20Estatuto%20Actualizado.pdf -> 400 (727ms)
+[2026-04-03T23:00:40.408Z] API GET /supabase/rest/v1/profiles?select=*&user_id=eq.87af488e-f8db-44d2-bbe6-3e0c04186b49 -> 200 (278ms)
+[2026-04-03T23:00:40.675Z] API GET /supabase/rest/v1/document_types?select=*&order=name.asc -> 200 (264ms)
+[2026-04-03T23:00:40.681Z] API GET /supabase/rest/v1/documents?select=*%2Cdocument_types%28name%29%2Cvehicles%28license_plate%29&profile_id=eq.675558ca-6afd-4cfd-88ce-ce2a83bd2507&order=created_at.desc -> 200 (271ms)
+[2026-04-03T23:00:40.681Z] API GET /supabase/rest/v1/vehicle_assignments?select=vehicle_id%2Cvehicles%28id%2Clicense_plate%29&profile_id=eq.675558ca-6afd-4cfd-88ce-ce2a83bd2507 -> 200 (270ms)
+[2026-04-03T23:00:42.667Z] API DELETE /supabase/storage/v1/object/documents -> 200 (414ms)
+[2026-04-03T23:00:42.933Z] API DELETE /supabase/rest/v1/documents?id=eq.125312b5-0fef-40e0-925d-9b8df654fa88 -> 204 (262ms)
+[2026-04-03T23:00:43.220Z] API GET /supabase/rest/v1/vehicle_assignments?select=vehicle_id%2Cvehicles%28id%2Clicense_plate%29&profile_id=eq.675558ca-6afd-4cfd-88ce-ce2a83bd2507 -> 200 (275ms)
+[2026-04-03T23:00:43.229Z] API GET /supabase/rest/v1/documents?select=*%2Cdocument_types%28name%29%2Cvehicles%28license_plate%29&profile_id=eq.675558ca-6afd-4cfd-88ce-ce2a83bd2507&order=created_at.desc -> 200 (285ms)
+[2026-04-03T23:00:43.229Z] API GET /supabase/rest/v1/document_types?select=*&order=name.asc -> 200 (284ms)
+[2026-04-03T23:01:48.955Z] API GET /supabase/rest/v1/profiles?select=*&user_id=eq.87af488e-f8db-44d2-bbe6-3e0c04186b49 -> 200 (735ms)
+[2026-04-03T23:01:49.263Z] API GET /supabase/rest/v1/documents?select=*%2Cdocument_types%28name%29%2Cvehicles%28license_plate%29&profile_id=eq.675558ca-6afd-4cfd-88ce-ce2a83bd2507&order=created_at.desc -> 200 (299ms)
+[2026-04-03T23:01:49.265Z] API GET /supabase/rest/v1/document_types?select=*&order=name.asc -> 200 (300ms)
+[2026-04-03T23:01:49.265Z] API GET /supabase/rest/v1/vehicle_assignments?select=vehicle_id%2Cvehicles%28id%2Clicense_plate%29&profile_id=eq.675558ca-6afd-4cfd-88ce-ce2a83bd2507 -> 200 (300ms)
+[2026-04-03T23:01:56.917Z] API GET /supabase/rest/v1/profiles?select=*&user_id=eq.87af488e-f8db-44d2-bbe6-3e0c04186b49 -> 200 (279ms)
+[2026-04-03T23:01:57.201Z] API GET /supabase/rest/v1/documents?select=*%2Cdocument_types%28name%29%2Cvehicles%28license_plate%29&profile_id=eq.675558ca-6afd-4cfd-88ce-ce2a83bd2507&order=created_at.desc -> 200 (275ms)
+[2026-04-03T23:01:57.201Z] API GET /supabase/rest/v1/vehicle_assignments?select=vehicle_id%2Cvehicles%28id%2Clicense_plate%29&profile_id=eq.675558ca-6afd-4cfd-88ce-ce2a83bd2507 -> 200 (274ms)
+[2026-04-03T23:01:57.210Z] API GET /supabase/rest/v1/document_types?select=*&order=name.asc -> 200 (283ms)
+[2026-04-03T23:03:22.637Z] API GET /supabase/rest/v1/document_types?select=*&order=name.asc -> 200 (333ms)
+[2026-04-03T23:03:22.654Z] API GET /supabase/rest/v1/vehicle_assignments?select=vehicle_id%2Cvehicles%28id%2Clicense_plate%29&profile_id=eq.675558ca-6afd-4cfd-88ce-ce2a83bd2507 -> 200 (349ms)
+[2026-04-03T23:03:22.659Z] API GET /supabase/rest/v1/documents?select=*%2Cdocument_types%28name%29%2Cvehicles%28license_plate%29&profile_id=eq.675558ca-6afd-4cfd-88ce-ce2a83bd2507&order=created_at.desc -> 200 (356ms)
+[2026-04-03T23:04:10.039Z] API GET /supabase/rest/v1/profiles?select=*&user_id=eq.87af488e-f8db-44d2-bbe6-3e0c04186b49 -> 200 (541ms)
+[2026-04-03T23:04:10.328Z] API GET /supabase/rest/v1/profiles?select=*&user_id=eq.87af488e-f8db-44d2-bbe6-3e0c04186b49 -> 200 (288ms)
+[2026-04-03T23:04:10.374Z] API GET /supabase/rest/v1/vehicle_assignments?select=vehicle_id%2Cvehicles%28id%2Clicense_plate%29&profile_id=eq.675558ca-6afd-4cfd-88ce-ce2a83bd2507 -> 200 (311ms)
+[2026-04-03T23:04:10.375Z] API GET /supabase/rest/v1/documents?select=*%2Cdocument_types%28name%29%2Cvehicles%28license_plate%29&profile_id=eq.675558ca-6afd-4cfd-88ce-ce2a83bd2507&order=created_at.desc -> 200 (313ms)
+[2026-04-03T23:04:10.382Z] API GET /supabase/rest/v1/document_types?select=*&order=name.asc -> 200 (319ms)
+[2026-04-03T23:04:10.615Z] API GET /supabase/rest/v1/profiles?select=*&user_id=eq.87af488e-f8db-44d2-bbe6-3e0c04186b49 -> 200 (286ms)
+[2026-04-03T23:04:10.667Z] API GET /supabase/rest/v1/documents?select=*%2Cdocument_types%28name%29%2Cvehicles%28license_plate%29&profile_id=eq.675558ca-6afd-4cfd-88ce-ce2a83bd2507&order=created_at.desc -> 200 (291ms)
+[2026-04-03T23:04:10.668Z] API GET /supabase/rest/v1/document_types?select=*&order=name.asc -> 200 (286ms)
+[2026-04-03T23:04:10.668Z] API GET /supabase/rest/v1/vehicle_assignments?select=vehicle_id%2Cvehicles%28id%2Clicense_plate%29&profile_id=eq.675558ca-6afd-4cfd-88ce-ce2a83bd2507 -> 200 (294ms)
+[2026-04-03T23:04:10.934Z] API GET /supabase/rest/v1/documents?select=*%2Cdocument_types%28name%29%2Cvehicles%28license_plate%29&profile_id=eq.675558ca-6afd-4cfd-88ce-ce2a83bd2507&order=created_at.desc -> 200 (266ms)
+[2026-04-03T23:04:10.934Z] API GET /supabase/rest/v1/vehicle_assignments?select=vehicle_id%2Cvehicles%28id%2Clicense_plate%29&profile_id=eq.675558ca-6afd-4cfd-88ce-ce2a83bd2507 -> 200 (265ms)
+[2026-04-03T23:04:10.936Z] API GET /supabase/rest/v1/document_types?select=*&order=name.asc -> 200 (267ms)
+[2026-04-03T23:06:49.100Z] API GET /supabase/rest/v1/profiles?select=*&user_id=eq.87af488e-f8db-44d2-bbe6-3e0c04186b49 -> 200 (612ms)
+[2026-04-03T23:06:49.382Z] API GET /supabase/rest/v1/profiles?select=*&user_id=eq.87af488e-f8db-44d2-bbe6-3e0c04186b49 -> 200 (282ms)
+[2026-04-03T23:06:49.427Z] API GET /supabase/rest/v1/document_types?select=*&order=name.asc -> 200 (305ms)
+[2026-04-03T23:06:49.438Z] API GET /supabase/rest/v1/documents?select=*%2Cdocument_types%28name%29%2Cvehicles%28license_plate%29&profile_id=eq.675558ca-6afd-4cfd-88ce-ce2a83bd2507&order=created_at.desc -> 200 (317ms)
+[2026-04-03T23:06:49.441Z] API GET /supabase/rest/v1/vehicle_assignments?select=vehicle_id%2Cvehicles%28id%2Clicense_plate%29&profile_id=eq.675558ca-6afd-4cfd-88ce-ce2a83bd2507 -> 200 (319ms)
+[2026-04-03T23:06:49.677Z] API GET /supabase/rest/v1/profiles?select=*&user_id=eq.87af488e-f8db-44d2-bbe6-3e0c04186b49 -> 200 (294ms)
+[2026-04-03T23:06:49.735Z] API GET /supabase/rest/v1/document_types?select=*&order=name.asc -> 200 (298ms)
+[2026-04-03T23:06:49.740Z] API GET /supabase/rest/v1/documents?select=*%2Cdocument_types%28name%29%2Cvehicles%28license_plate%29&profile_id=eq.675558ca-6afd-4cfd-88ce-ce2a83bd2507&order=created_at.desc -> 200 (299ms)
+[2026-04-03T23:06:49.766Z] API GET /supabase/rest/v1/vehicle_assignments?select=vehicle_id%2Cvehicles%28id%2Clicense_plate%29&profile_id=eq.675558ca-6afd-4cfd-88ce-ce2a83bd2507 -> 200 (322ms)
+[2026-04-03T23:06:50.020Z] API GET /supabase/rest/v1/documents?select=*%2Cdocument_types%28name%29%2Cvehicles%28license_plate%29&profile_id=eq.675558ca-6afd-4cfd-88ce-ce2a83bd2507&order=created_at.desc -> 200 (279ms)
+[2026-04-03T23:06:50.026Z] API GET /supabase/rest/v1/document_types?select=*&order=name.asc -> 200 (290ms)
+[2026-04-03T23:06:50.035Z] API GET /supabase/rest/v1/vehicle_assignments?select=vehicle_id%2Cvehicles%28id%2Clicense_plate%29&profile_id=eq.675558ca-6afd-4cfd-88ce-ce2a83bd2507 -> 200 (268ms)
+[2026-04-03T23:07:32.641Z] API GET /supabase/rest/v1/profiles?select=*&user_id=eq.87af488e-f8db-44d2-bbe6-3e0c04186b49 -> 200 (321ms)
+[2026-04-03T23:07:32.960Z] API GET /supabase/rest/v1/vehicle_assignments?select=vehicle_id%2Cvehicles%28id%2Clicense_plate%29&profile_id=eq.675558ca-6afd-4cfd-88ce-ce2a83bd2507 -> 200 (314ms)
+[2026-04-03T23:07:32.974Z] API GET /supabase/rest/v1/documents?select=*%2Cdocument_types%28name%29%2Cvehicles%28license_plate%29&profile_id=eq.675558ca-6afd-4cfd-88ce-ce2a83bd2507&order=created_at.desc -> 200 (328ms)
+[2026-04-03T23:07:32.980Z] API GET /supabase/rest/v1/document_types?select=*&order=name.asc -> 200 (334ms)
+[2026-04-03T23:13:12.690Z] API GET /supabase/rest/v1/profiles?select=*&user_id=eq.87af488e-f8db-44d2-bbe6-3e0c04186b49 -> 200 (753ms)
+[2026-04-03T23:13:13.039Z] API GET /supabase/rest/v1/documents?select=*%2Cdocument_types%28name%29%2Cvehicles%28license_plate%29&profile_id=eq.675558ca-6afd-4cfd-88ce-ce2a83bd2507&order=created_at.desc -> 200 (340ms)
+[2026-04-03T23:13:13.039Z] API GET /supabase/rest/v1/vehicle_assignments?select=vehicle_id%2Cvehicles%28id%2Clicense_plate%29&profile_id=eq.675558ca-6afd-4cfd-88ce-ce2a83bd2507 -> 200 (340ms)
+[2026-04-03T23:13:13.041Z] API GET /supabase/rest/v1/document_types?select=*&order=name.asc -> 200 (342ms)
+[2026-04-03T23:13:14.266Z] UI auth.logout.click {"role":"conductor"}
+[2026-04-03T23:13:14.715Z] API POST /supabase/auth/v1/logout?scope=global -> 204 (447ms)
+[2026-04-03T23:13:17.843Z] UI auth.login.submit {"email":"antonia.gajardo@demo-flota.cl"}
+[2026-04-03T23:13:18.400Z] API POST /supabase/auth/v1/token?grant_type=password -> 400 (555ms)
+[2026-04-03T23:13:18.403Z] UI auth.login.failed {"email":"antonia.gajardo@demo-flota.cl","message":"Invalid login credentials"}
+
+--- Restart 2026-04-04T17:17:35.063Z ---
+[2026-04-04T17:18:43.931Z] UI auth.login.submit {"email":"antonia.gajardo@demo-flota.cl"}
+[2026-04-04T17:18:43.934Z] UI auth.login.success {"email":"antonia.gajardo@demo-flota.cl"}
+[2026-04-04T17:18:48.187Z] UI navigation.menu.click {"from":"/conductor","to":"/conductor/vehicles","role":"conductor"}
+[2026-04-04T17:18:48.897Z] UI navigation.menu.click {"from":"/conductor/vehicles","to":"/conductor/documents","role":"conductor"}
+[2026-04-04T17:18:49.573Z] UI navigation.menu.click {"from":"/conductor/documents","to":"/conductor/requests","role":"conductor"}
+[2026-04-04T17:18:50.603Z] UI navigation.menu.click {"from":"/conductor/requests","to":"/conductor/mileage","role":"conductor"}
+[2026-04-04T17:18:51.318Z] UI navigation.menu.click {"from":"/conductor/mileage","to":"/conductor/messages","role":"conductor"}
+[2026-04-04T17:18:54.411Z] UI navigation.menu.click {"from":"/conductor/messages","to":"/conductor/documents","role":"conductor"}
+[2026-04-04T17:18:54.835Z] UI navigation.menu.click {"from":"/conductor/documents","to":"/conductor/vehicles","role":"conductor"}
+[2026-04-04T17:18:55.298Z] UI navigation.menu.click {"from":"/conductor/vehicles","to":"/conductor","role":"conductor"}
+[2026-04-04T17:18:59.569Z] UI navigation.menu.click {"from":"/conductor","to":"/conductor/vehicles","role":"conductor"}
+[2026-04-04T17:19:00.002Z] UI navigation.menu.click {"from":"/conductor/vehicles","to":"/conductor/documents","role":"conductor"}
+[2026-04-04T17:19:01.761Z] UI navigation.menu.click {"from":"/conductor/documents","to":"/conductor/requests","role":"conductor"}
+[2026-04-04T17:19:03.169Z] UI navigation.menu.click {"from":"/conductor/requests","to":"/conductor/documents","role":"conductor"}
+[2026-04-04T17:19:10.241Z] UI navigation.menu.click {"from":"/conductor/documents","to":"/conductor/requests","role":"conductor"}
+[2026-04-04T17:19:13.132Z] UI navigation.menu.click {"from":"/conductor/requests","to":"/conductor/mileage","role":"conductor"}
+[2026-04-04T17:19:14.890Z] UI navigation.menu.click {"from":"/conductor/mileage","to":"/conductor/messages","role":"conductor"}
+[2026-04-04T17:19:20.212Z] UI navigation.menu.click {"from":"/conductor/messages","to":"/conductor/requests","role":"conductor"}
+[2026-04-04T17:19:20.611Z] UI navigation.menu.click {"from":"/conductor/requests","to":"/conductor/documents","role":"conductor"}
