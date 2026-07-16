@@ -103,7 +103,7 @@ export default function AdminUsers() {
 
       <Card className="mb-4">
         <CardContent className="p-4 text-sm text-muted-foreground">
-          Para crear un nuevo administrador: primero registra la cuenta en <span className="font-medium text-foreground">/auth</span> y luego cámbiale el rol aquí.
+          Para crear nuevos conductores usa la sección <span className="font-medium text-foreground">Conductores</span> en el menú lateral. Para nuevos administradores, solo super admin puede cambiar roles aquí.
         </CardContent>
       </Card>
 
