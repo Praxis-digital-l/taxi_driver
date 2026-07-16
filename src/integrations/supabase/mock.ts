@@ -101,14 +101,26 @@ const initialUsers: MockUserRecord[] = [
   },
 ];
 
+const splitName = (fullName: string) => {
+  const parts = fullName.split(" ");
+  return {
+    nombres: parts[0] || "",
+    apellido_paterno: parts[1] || "",
+    apellido_materno: parts.slice(2).join(" ") || "",
+  };
+};
+
 const initialProfiles = [
   {
     id: "profile-admin-1",
     user_id: "user-admin-1",
     full_name: "Admin Principal",
+    ...splitName("Admin Principal"),
     email: "admincorto@santaaurora.cl",
     phone: "+56 9 7777 0001",
     role: "super_admin",
+    rut: "",
+    estado_conductor: "nuevo",
     created_at: nowIso(),
     updated_at: nowIso(),
   },
@@ -116,9 +128,12 @@ const initialProfiles = [
     id: "profile-admin-2",
     user_id: "user-admin-2",
     full_name: "Admin Operaciones",
+    ...splitName("Admin Operaciones"),
     email: "admin.flota@santaaurora.cl",
     phone: "+56 9 7777 0002",
     role: "admin",
+    rut: "",
+    estado_conductor: "nuevo",
     created_at: nowIso(),
     updated_at: nowIso(),
   },
@@ -126,9 +141,12 @@ const initialProfiles = [
     id: "profile-cond-1",
     user_id: "user-cond-1",
     full_name: "Antonia Gajardo",
+    ...splitName("Antonia Gajardo"),
     email: "antonia.gajardo@demo-flota.cl",
     phone: "+56 9 1111 1001",
     role: "conductor",
+    rut: "12.345.678-5",
+    estado_conductor: "antiguo",
     created_at: nowIso(),
     updated_at: nowIso(),
   },
@@ -136,9 +154,12 @@ const initialProfiles = [
     id: "profile-cond-2",
     user_id: "user-cond-2",
     full_name: "Camila Soto Paredes",
+    ...splitName("Camila Soto Paredes"),
     email: "camila.soto@demo-flota.cl",
     phone: "+56 9 1723 2101",
     role: "conductor",
+    rut: "23.456.789-0",
+    estado_conductor: "antiguo",
     created_at: nowIso(),
     updated_at: nowIso(),
   },
@@ -146,9 +167,12 @@ const initialProfiles = [
     id: "profile-cond-3",
     user_id: "user-cond-3",
     full_name: "Francisca Henríquez Tapia",
+    ...splitName("Francisca Henríquez Tapia"),
     email: "francisca.henriquez@demo-flota.cl",
     phone: "+56 9 2222 2003",
     role: "conductor",
+    rut: "34.567.890-1",
+    estado_conductor: "nuevo",
     created_at: nowIso(),
     updated_at: nowIso(),
   },
@@ -156,9 +180,12 @@ const initialProfiles = [
     id: "profile-cond-4",
     user_id: "user-cond-4",
     full_name: "Diego Vargas",
+    ...splitName("Diego Vargas"),
     email: "diego.vargas@demo-flota.cl",
     phone: "+56 9 3333 3004",
     role: "conductor",
+    rut: "45.678.901-2",
+    estado_conductor: "nuevo",
     created_at: nowIso(),
     updated_at: nowIso(),
   },
@@ -166,9 +193,12 @@ const initialProfiles = [
     id: "profile-cond-5",
     user_id: "user-cond-5",
     full_name: "Bruno San Martín",
+    ...splitName("Bruno San Martín"),
     email: "bruno.sanmartin@demo-flota.cl",
     phone: "+56 9 4444 4005",
     role: "conductor",
+    rut: "56.789.012-3",
+    estado_conductor: "desactivado",
     created_at: nowIso(),
     updated_at: nowIso(),
   },
@@ -176,9 +206,12 @@ const initialProfiles = [
     id: "profile-cond-6",
     user_id: "user-cond-6",
     full_name: "Matías Rojas",
+    ...splitName("Matías Rojas"),
     email: "matias.rojas@demo-flota.cl",
     phone: "+56 9 5555 5006",
     role: "conductor",
+    rut: "67.890.123-4",
+    estado_conductor: "antiguo",
     created_at: nowIso(),
     updated_at: nowIso(),
   },
@@ -697,6 +730,17 @@ class MockQueryBuilder {
         baseRow.assigned_at = payload.assigned_at ?? timestamp;
       }
 
+      if (this.table === "profiles") {
+        baseRow.estado_conductor = payload.estado_conductor ?? "nuevo";
+        baseRow.nombres = payload.nombres ?? "";
+        baseRow.apellido_paterno = payload.apellido_paterno ?? "";
+        baseRow.apellido_materno = payload.apellido_materno ?? "";
+        baseRow.rut = payload.rut ?? "";
+        baseRow.full_name = (baseRow.full_name || [baseRow.nombres, baseRow.apellido_paterno, baseRow.apellido_materno].filter(Boolean).join(" ")).trim();
+        baseRow.created_at = payload.created_at ?? timestamp;
+        baseRow.updated_at = timestamp;
+      }
+
       tableRows.push(baseRow);
       createdRows.push(clone(baseRow));
     }
@@ -919,13 +963,19 @@ class MockSupabaseAuth {
 
     this.usersByEmail.set(email, user);
 
+    const nameParts = fullName.split(" ");
     getTableRows("profiles").push({
       id: profileId,
       user_id: userId,
       full_name: fullName,
+      nombres: nameParts[0] || "",
+      apellido_paterno: nameParts[1] || "",
+      apellido_materno: nameParts.slice(2).join(" ") || "",
       email,
       phone: null,
       role: "conductor",
+      rut: "",
+      estado_conductor: "nuevo",
       created_at: nowIso(),
       updated_at: nowIso(),
     });

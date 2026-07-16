@@ -19,6 +19,7 @@ import AdminVehicles from "@/features/admin/pages/AdminVehicles";
 import AdminRequests from "@/features/admin/pages/AdminRequests";
 import AdminMessages from "@/features/admin/pages/AdminMessages";
 import AdminUsers from "@/features/admin/pages/AdminUsers";
+import AdminConductores from "@/features/admin/pages/AdminConductores";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -81,6 +82,7 @@ const App = () => (
             <Route path="/admin/vehicles" element={<ProtectedRoute requiredRole="admin"><AppLayout><AdminVehicles /></AppLayout></ProtectedRoute>} />
             <Route path="/admin/requests" element={<ProtectedRoute requiredRole="admin"><AppLayout><AdminRequests /></AppLayout></ProtectedRoute>} />
             <Route path="/admin/messages" element={<ProtectedRoute requiredRole="admin"><AppLayout><AdminMessages /></AppLayout></ProtectedRoute>} />
+            <Route path="/admin/conductores" element={<ProtectedRoute requiredRole="admin"><AppLayout><AdminConductores /></AppLayout></ProtectedRoute>} />
             <Route path="/admin/users" element={<ProtectedRoute requiredRole="super_admin"><AppLayout><AdminUsers /></AppLayout></ProtectedRoute>} />
 
             <Route path="*" element={<NotFound />} />
