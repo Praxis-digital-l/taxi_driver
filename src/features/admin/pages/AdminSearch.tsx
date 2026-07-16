@@ -22,6 +22,7 @@ import {
   Plus,
   AlertCircle,
   Download,
+  Eye,
 } from "lucide-react";
 import {
   createAdminNote,
@@ -40,6 +41,7 @@ import {
   type VehicleSearchOption,
 } from "@/features/admin/services/adminSearchService";
 import { downloadDocumentFile } from "@/shared/utils/storageFiles";
+import DocumentPreviewDialog from "@/features/admin/components/DocumentPreviewDialog";
 
 export default function AdminSearch() {
   const { profile } = useAuth();
@@ -60,6 +62,10 @@ export default function AdminSearch() {
   const [sendingMessage, setSendingMessage] = useState(false);
   const [searching, setSearching] = useState(false);
   const [found, setFound] = useState(false);
+
+  const [previewKey, setPreviewKey] = useState<string | null>(null);
+  const [previewFileName, setPreviewFileName] = useState("");
+  const [previewDocumentType, setPreviewDocumentType] = useState("");
 
   useEffect(() => {
     const loadPlateSuggestions = async () => {
@@ -228,6 +234,17 @@ export default function AdminSearch() {
         variant: "destructive",
       });
     }
+  };
+
+  const getDefaultFileName = (fileKey: string) => {
+    const segments = fileKey.split("/");
+    return segments[segments.length - 1] || "archivo";
+  };
+
+  const openPreview = (fileKey: string, documentType: string) => {
+    setPreviewKey(fileKey);
+    setPreviewFileName(getDefaultFileName(fileKey));
+    setPreviewDocumentType(documentType);
   };
 
   const handleSendMessage = async () => {
@@ -492,15 +509,26 @@ export default function AdminSearch() {
                       )}
                     </div>
                     <StatusBadge status={document.status} />
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 shrink-0"
-                      onClick={() => handleDownloadDocument(document.file_key)}
-                      title="Descargar documento"
-                    >
-                      <Download className="h-4 w-4" />
-                    </Button>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 shrink-0"
+                        onClick={() => openPreview(document.file_key, document.document_types?.name || "Documento")}
+                        title="Vista previa"
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 shrink-0"
+                        onClick={() => handleDownloadDocument(document.file_key)}
+                        title="Descargar documento"
+                      >
+                        <Download className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </CardContent>
                 </Card>
               ))
@@ -591,6 +619,14 @@ export default function AdminSearch() {
           </TabsContent>
         </Tabs>
       )}
+
+      <DocumentPreviewDialog
+        open={previewKey !== null}
+        onOpenChange={(open) => { if (!open) setPreviewKey(null); }}
+        fileKey={previewKey ?? ""}
+        fileName={previewFileName}
+        documentType={previewDocumentType}
+      />
     </div>
   );
 }

@@ -53,7 +53,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             <Truck className="h-5 w-5 text-sidebar-primary-foreground" />
           </div>
           <div className="flex-1 min-w-0">
-            <span className="font-heading text-sm font-bold text-sidebar-primary-foreground leading-tight block">FlotaControl</span>
+            <span className="font-heading text-sm font-bold text-sidebar-primary-foreground leading-tight block">Taxi_Driver</span>
             <span className="text-[10px] text-sidebar-foreground/50 leading-tight block">Transportes Santa Aurora</span>
           </div>
           <button className="lg:hidden text-sidebar-foreground/60 hover:text-sidebar-foreground" onClick={() => setSidebarOpen(false)}>
@@ -132,7 +132,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             <Menu className="h-5 w-5 text-muted-foreground" />
           </button>
           <h1 className="font-heading text-base font-semibold">
-            {links.find((l) => l.to === location.pathname)?.label || "FlotaControl"}
+            {links.find((l) => l.to === location.pathname)?.label || "Taxi_Driver"}
           </h1>
         </header>
         <div className="page-container animate-fade-in">{children}</div>
