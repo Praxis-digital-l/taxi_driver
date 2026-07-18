@@ -87,17 +87,6 @@ export default function AdminMessages() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Estado inicial</Label>
-                <Select name="status" defaultValue="pendiente">
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {MESSAGE_STATUSES.map((s) => (
-                      <SelectItem key={s} value={s} className="capitalize">{s.replace("_", " ")}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
                 <Label>Mensaje *</Label>
                 <Textarea name="content" required placeholder="Escribe tu mensaje al conductor..." maxLength={1000} rows={4} />
               </div>
