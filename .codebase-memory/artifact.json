@@ -1,11 +1,11 @@
 {
     "schema_version": 2,
-    "commit": "251f4c3779d42b95f7362430aebd5305785c93d2",
-    "indexed_at": "2026-07-17T00:52:15Z",
-    "project": "C-Users-benja-Documents-GitHub-taxi_driver",
-    "nodes": 1115,
-    "edges": 2583,
-    "original_size": 4849664,
-    "compressed_size": 674979,
+    "commit": "a3b28eb5926565ebe5e72fe844a3e1a959632896",
+    "indexed_at": "2026-07-18T01:29:18Z",
+    "project": "C-Taxi-driver-taxi_driver",
+    "nodes": 1153,
+    "edges": 2733,
+    "original_size": 4390912,
+    "compressed_size": 710805,
     "compression_level": 3
 }
