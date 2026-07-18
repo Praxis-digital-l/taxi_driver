@@ -1,11 +1,11 @@
 {
     "schema_version": 2,
-    "commit": "89aa4c845041a9c7f6648308f7730d175e242b4c",
-    "indexed_at": "2026-07-18T01:29:00Z",
+    "commit": "a3b28eb5926565ebe5e72fe844a3e1a959632896",
+    "indexed_at": "2026-07-18T01:29:18Z",
     "project": "C-Taxi-driver-taxi_driver",
     "nodes": 1153,
     "edges": 2733,
     "original_size": 4390912,
-    "compressed_size": 710813,
+    "compressed_size": 710805,
     "compression_level": 3
 }
