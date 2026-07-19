@@ -76,7 +76,8 @@ export default function AdminConductores() {
     event.preventDefault();
     setLoading(true);
 
-    const form = new FormData(event.currentTarget);
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
     const errors = validateConductorForm(form);
     setFormErrors(errors);
 
@@ -99,7 +100,7 @@ export default function AdminConductores() {
       toast({ title: "Conductor creado exitosamente" });
       setOpenCreate(false);
       setFormErrors({});
-      event.currentTarget.reset();
+      formElement.reset();
       await load();
     } catch (error) {
       toast({

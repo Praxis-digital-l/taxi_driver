@@ -133,7 +133,7 @@ export default function AdminDashboard() {
       color: "bg-primary/10 text-primary",
     },
     {
-      to: "/admin/vehicles",
+      to: "/admin/conductores",
       icon: Users,
       label: "Conductores",
       value: stats.conductors,
