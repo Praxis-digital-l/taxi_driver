@@ -30,13 +30,26 @@ export function validatePhone(phone: string): string | null {
 export function validateRut(rut: string): string | null {
   const cleaned = rut.trim().replace(/\./g, "").replace(/\s+/g, "");
   if (!cleaned) return "El RUT es obligatorio";
-  if (cleaned.length > 12) return "El RUT es demasiado largo";
 
-  const match = cleaned.match(/^(\d{1,8})-([\dkK])$/);
-  if (!match) return "Formato de RUT inválido (ej: 12.345.678-5)";
+  const dashIndex = cleaned.lastIndexOf("-");
+  let body: string;
+  let dv: string;
 
-  const body = match[1];
-  const dv = match[2].toLowerCase();
+  if (dashIndex >= 0) {
+    body = cleaned.slice(0, dashIndex);
+    dv = cleaned.slice(dashIndex + 1);
+  } else if (cleaned.length >= 2) {
+    dv = cleaned.slice(-1);
+    body = cleaned.slice(0, -1);
+  } else {
+    return "Formato de RUT inválido (ej: 12.345.678-5)";
+  }
+
+  dv = dv.toLowerCase();
+  if (!/^\d+$/.test(body) || !/^[\dk]$/.test(dv)) {
+    return "Formato de RUT inválido (ej: 12.345.678-5)";
+  }
+  if (body.length > 8) return "El RUT es demasiado largo";
 
   let sum = 0;
   let multiplier = 2;
@@ -51,6 +64,24 @@ export function validateRut(rut: string): string | null {
 
   if (dv !== computedDv) return "RUT inválido: dígito verificador incorrecto";
   return null;
+}
+
+export function normalizeRut(rut: string): string {
+  const cleaned = rut.trim().replace(/\./g, "").replace(/\s+/g, "");
+  if (!cleaned) return "";
+  const dashIndex = cleaned.lastIndexOf("-");
+  let body: string;
+  let dv: string;
+  if (dashIndex >= 0) {
+    body = cleaned.slice(0, dashIndex);
+    dv = cleaned.slice(dashIndex + 1);
+  } else if (cleaned.length >= 2) {
+    dv = cleaned.slice(-1);
+    body = cleaned.slice(0, -1);
+  } else {
+    return cleaned.toUpperCase();
+  }
+  return `${body}-${dv.toUpperCase()}`;
 }
 
 export function validateRequired(value: string, fieldName: string): string | null {
