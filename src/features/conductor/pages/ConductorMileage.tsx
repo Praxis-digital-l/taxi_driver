@@ -16,17 +16,21 @@ export default function ConductorMileage() {
   const { toast } = useToast();
   const [records, setRecords] = useState<any[]>([]);
   const [vehicles, setVehicles] = useState<any[]>([]);
+  const [lastVehicleId, setLastVehicleId] = useState<string | undefined>(undefined);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [kmError, setKmError] = useState("");
 
   const load = async () => {
     if (!profile) return;
     const [rRes, vRes] = await Promise.all([
       supabase.from("mileage_records").select("*, vehicles(license_plate)").eq("profile_id", profile.id).order("recorded_date", { ascending: false }).limit(50),
-      supabase.from("vehicle_assignments").select("vehicles(id, license_plate)").eq("profile_id", profile.id),
+      supabase.from("vehicle_assignments").select("vehicles(id, license_plate)").eq("profile_id", profile.id).order("assigned_at", { ascending: false }),
     ]);
     setRecords(rRes.data || []);
-    setVehicles((vRes.data || []).map((va: any) => va.vehicles));
+    const vehicleList = (vRes.data || []).map((va: any) => va.vehicles);
+    setVehicles(vehicleList);
+    setLastVehicleId(vehicleList[0]?.id);
   };
 
   useEffect(() => { load(); }, [profile]);
@@ -42,12 +46,26 @@ export default function ConductorMileage() {
       setLoading(false);
       return;
     }
+    const vehicleId = form.get("vehicle_id") as string;
+    const lastRecordRes = await supabase
+      .from("mileage_records")
+      .select("kilometers")
+      .eq("vehicle_id", vehicleId)
+      .order("recorded_date", { ascending: false })
+      .limit(1);
+    const lastKm = lastRecordRes.data?.[0]?.kilometers;
+    if (lastKm != null && km <= lastKm) {
+      setKmError(`El kilometraje debe ser mayor al último registro (${lastKm} km).`);
+      setLoading(false);
+      return;
+    }
+    const chileDate = new Date().toLocaleDateString("en-CA", { timeZone: "America/Santiago" });
     const { error } = await supabase.from("mileage_records").insert({
       profile_id: profile.id,
-      vehicle_id: form.get("vehicle_id") as string,
+      vehicle_id: vehicleId,
       kilometers: km,
-      recorded_date: form.get("recorded_date") as string,
-      notes: (form.get("notes") as string) || "",
+      recorded_date: chileDate,
+      notes: (form.get("tipo_jornada") as string) || "",
     });
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -62,7 +80,7 @@ export default function ConductorMileage() {
   return (
     <div>
       <PageHeader title="Registro de Kilometraje" description={`${records.length} registro(s)`}>
-        <Dialog open={open} onOpenChange={setOpen}>
+          <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (v) setKmError(""); }}>
           <DialogTrigger asChild>
             <Button size="sm"><Plus className="mr-1.5 h-4 w-4" />Registrar Km</Button>
           </DialogTrigger>
@@ -71,7 +89,7 @@ export default function ConductorMileage() {
             <form onSubmit={handleCreate} className="space-y-4">
               <div className="space-y-2">
                 <Label>Vehículo *</Label>
-                <Select name="vehicle_id" required>
+                <Select name="vehicle_id" required defaultValue={lastVehicleId}>
                   <SelectTrigger><SelectValue placeholder="Seleccionar vehículo" /></SelectTrigger>
                   <SelectContent>
                     {vehicles.map((v: any) => <SelectItem key={v.id} value={v.id}>{v.license_plate}</SelectItem>)}
@@ -80,15 +98,18 @@ export default function ConductorMileage() {
               </div>
               <div className="space-y-2">
                 <Label>Kilómetros actuales *</Label>
-                <Input name="kilometers" type="number" required min={1} placeholder="Ej: 85420" />
+                <Input name="kilometers" type="number" required min={1} placeholder="Ej: 85420" onChange={() => setKmError("")} />
+                {kmError && <p className="text-sm text-red-500">{kmError}</p>}
               </div>
               <div className="space-y-2">
-                <Label>Fecha *</Label>
-                <Input name="recorded_date" type="date" required defaultValue={new Date().toISOString().slice(0, 10)} />
-              </div>
-              <div className="space-y-2">
-                <Label>Notas</Label>
-                <Input name="notes" placeholder="Ej: Lectura en revisión técnica" maxLength={200} />
+                <Label>Tipo de jornada *</Label>
+                <Select name="tipo_jornada" required>
+                  <SelectTrigger><SelectValue placeholder="Seleccionar tipo" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Inicio jornada">Inicio jornada</SelectItem>
+                    <SelectItem value="Fin jornada">Fin jornada</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? "Guardando..." : "Registrar"}

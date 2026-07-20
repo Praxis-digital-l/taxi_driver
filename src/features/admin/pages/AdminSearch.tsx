@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -46,6 +47,7 @@ import DocumentPreviewDialog from "@/features/admin/components/DocumentPreviewDi
 export default function AdminSearch() {
   const { profile } = useAuth();
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
 
   const [plate, setPlate] = useState("");
   const [vehicle, setVehicle] = useState<AdminSearchVehicle | null>(null);
@@ -83,6 +85,15 @@ export default function AdminSearch() {
 
     loadPlateSuggestions();
   }, [toast]);
+
+  useEffect(() => {
+    const plateParam = searchParams.get("plate");
+    if (plateParam) {
+      setPlate(plateParam);
+      handleSearch(plateParam);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const normalizeText = (value: string | null | undefined) =>
     (value ?? "")
