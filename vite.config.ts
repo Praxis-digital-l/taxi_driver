@@ -95,8 +95,9 @@ export default defineConfig(({ mode }) => {
   return {
     base: mode === "production" ? githubPagesBase : "/",
     server: {
-      host: "::",
-      port: 8080,
+      host: "0.0.0.0",
+      allowedHosts: true,
+      port: 3000,
       headers: {
         "Cache-Control": "no-store",
       },

@@ -20,6 +20,13 @@ export type AdminExpiringDocument = {
   vehicles?: { license_plate: string | null } | null;
 };
 
+export type AdminDashboardUnreadMessage = {
+  id: string;
+  content: string;
+  created_at: string;
+  sender?: { full_name: string | null } | null;
+};
+
 function assertNoError(error: { message: string } | null) {
   if (error) {
     throw new Error(error.message);
@@ -42,6 +49,7 @@ export async function fetchAdminDashboardData() {
     unreadMessagesRes,
     activeRequestsRes,
     expiringDocumentsListRes,
+    unreadMessagesListRes,
   ] = await Promise.all([
     supabase.from("vehicles").select("id", { count: "exact", head: true }),
     supabase.from("vehicles").select("id", { count: "exact", head: true }).eq("status", "active"),
@@ -63,6 +71,12 @@ export async function fetchAdminDashboardData() {
       .gte("expiration_date", today)
       .order("expiration_date", { ascending: true })
       .limit(5),
+    supabase
+      .from("messages")
+      .select("id, content, created_at, sender:profiles!messages_sender_id_fkey(full_name)")
+      .eq("status", "pendiente")
+      .order("created_at", { ascending: false })
+      .limit(5),
   ]);
 
   assertNoError(vehiclesRes.error);
@@ -75,6 +89,7 @@ export async function fetchAdminDashboardData() {
   assertNoError(unreadMessagesRes.error);
   assertNoError(activeRequestsRes.error);
   assertNoError(expiringDocumentsListRes.error);
+  assertNoError(unreadMessagesListRes.error);
 
   const stats: AdminDashboardStats = {
     vehicles: vehiclesRes.count || 0,
@@ -89,10 +104,12 @@ export async function fetchAdminDashboardData() {
 
   const activeRequests = sortActiveRequestsByPriority((activeRequestsRes.data ?? []) as AdminRequest[]).slice(0, 6);
   const expiringDocuments = (expiringDocumentsListRes.data ?? []) as AdminExpiringDocument[];
+  const unreadMessages = (unreadMessagesListRes.data ?? []) as AdminDashboardUnreadMessage[];
 
   return {
     stats,
     activeRequests,
     expiringDocuments,
+    unreadMessages,
   };
 }
