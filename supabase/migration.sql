@@ -14,6 +14,7 @@ BEGIN
     email,
     phone,
     rut,
+    worker_id,
     role
   )
   VALUES (
@@ -25,6 +26,7 @@ BEGIN
     COALESCE(NEW.email, ''),
     COALESCE(NEW.raw_user_meta_data ->> 'phone', ''),
     COALESCE(NEW.raw_user_meta_data ->> 'rut', ''),
+    COALESCE(NEW.raw_user_meta_data ->> 'worker_id', ''),
     'conductor'::app_role
   );
   RETURN NEW;

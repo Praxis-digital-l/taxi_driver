@@ -240,6 +240,7 @@ export type Database = {
           rut: string
           updated_at: string
           user_id: string
+          worker_id: string
         }
         Insert: {
           apellido_materno?: string
@@ -255,6 +256,7 @@ export type Database = {
           rut?: string
           updated_at?: string
           user_id: string
+          worker_id?: string
         }
         Update: {
           apellido_materno?: string
@@ -270,6 +272,7 @@ export type Database = {
           rut?: string
           updated_at?: string
           user_id?: string
+          worker_id?: string
         }
         Relationships: []
       }

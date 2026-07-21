@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/features/auth/context/AuthContext";
+import { useLocation } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,10 +9,11 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import StatusBadge, { REQUEST_STATUSES } from "@/components/StatusBadge";
 import PageHeader from "@/components/PageHeader";
-import { Plus, ClipboardList } from "lucide-react";
+import { Plus, ClipboardList, Pencil, Trash2 } from "lucide-react";
 
 export default function ConductorRequests() {
   const { profile } = useAuth();
@@ -24,6 +26,18 @@ export default function ConductorRequests() {
   const [filterStatus, setFilterStatus] = useState("all");
   const [newDetails, setNewDetails] = useState("");
 
+  const [detailReq, setDetailReq] = useState<any>(null);
+  const [detailOpen, setDetailOpen] = useState(false);
+
+  const [editReq, setEditReq] = useState<any>(null);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editLoading, setEditLoading] = useState(false);
+
+  const [deleteReq, setDeleteReq] = useState<any>(null);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const location = useLocation();
+
   const load = async () => {
     if (!profile) return;
     const [rRes, tRes, vRes] = await Promise.all([
@@ -34,9 +48,23 @@ export default function ConductorRequests() {
     setRequests(rRes.data || []);
     setReqTypes(tRes.data || []);
     setVehicles((vRes.data || []).map((va: any) => va.vehicles));
+    return rRes.data || [];
   };
 
   useEffect(() => { load(); }, [profile]);
+
+  useEffect(() => {
+    if (!location.state || !requests.length) return;
+    const state = location.state as any;
+    if (state.openRequestId) {
+      const found = requests.find((r: any) => r.id === state.openRequestId);
+      if (found) {
+        setDetailReq(found);
+        setDetailOpen(true);
+      }
+      window.history.replaceState({}, "");
+    }
+  }, [location.state, requests]);
 
   const handleCreate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -62,6 +90,46 @@ export default function ConductorRequests() {
       load();
     }
     setLoading(false);
+  };
+
+  const handleEdit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!editReq) return;
+    setEditLoading(true);
+    const form = new FormData(e.currentTarget);
+    const amount = parseFloat(form.get("amount") as string);
+    const vehicleId = form.get("vehicle_id") as string;
+
+    const { error } = await supabase.from("requests").update({
+      request_type_id: form.get("request_type_id") as string,
+      vehicle_id: vehicleId === "none" ? null : vehicleId,
+      amount: isNaN(amount) ? null : amount,
+      details: (form.get("details") as string).trim(),
+    }).eq("id", editReq.id);
+
+    if (error) {
+      toast({ title: "Error al actualizar", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Solicitud actualizada exitosamente" });
+      setEditOpen(false);
+      load();
+    }
+    setEditLoading(false);
+  };
+
+  const handleDelete = async () => {
+    if (!deleteReq) return;
+    setDeleteLoading(true);
+    const { error } = await supabase.from("requests").delete().eq("id", deleteReq.id);
+    if (error) {
+      toast({ title: "Error al eliminar", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Solicitud eliminada" });
+      setDeleteOpen(false);
+      if (detailReq?.id === deleteReq.id) setDetailOpen(false);
+      load();
+    }
+    setDeleteLoading(false);
   };
 
   const filtered = filterStatus === "all" ? requests : requests.filter((r: any) => r.status === filterStatus);
@@ -108,7 +176,7 @@ export default function ConductorRequests() {
               </div>
               <div className="space-y-2">
                 <Label>Detalles *</Label>
-                <Textarea name="details" required placeholder="Describe tu solicitud con el mayor detalle posible..." maxLength={500} value={newDetails} onChange={(e) => setNewDetails(e.target.value)} />
+                <Textarea name="details" required placeholder="Describe tu solicitud ..." maxLength={500} value={newDetails} onChange={(e) => setNewDetails(e.target.value)} />
                 <p className="text-xs text-muted-foreground text-right">{newDetails.length}/500</p>
               </div>
               <Button type="submit" className="w-full" disabled={loading}>
@@ -135,12 +203,108 @@ export default function ConductorRequests() {
                     <span>{new Date(req.created_at).toLocaleDateString("es-CL")}</span>
                   </div>
                 </div>
-                <StatusBadge status={req.status} />
               </CardContent>
             </Card>
           ))}
         </div>
       )}
+
+      {/* Detail Dialog */}
+      <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
+        <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader className="flex flex-row items-center justify-between">
+            <DialogTitle className="font-heading">Detalle de Solicitud</DialogTitle>
+            <div className="flex items-center gap-1">
+              {detailReq && (
+                <>
+                  <button onClick={() => { setDetailOpen(false); setEditReq(detailReq); setEditOpen(true); }} className="p-1.5 rounded-md hover:bg-muted transition-colors"><Pencil className="h-4 w-4" /></button>
+                  <button onClick={() => { setDetailOpen(false); setDeleteReq(detailReq); setDeleteOpen(true); }} className="p-1.5 rounded-md hover:bg-destructive/10 transition-colors"><Trash2 className="h-4 w-4 text-destructive" /></button>
+                </>
+              )}
+            </div>
+          </DialogHeader>
+          {detailReq && (
+            <div className="space-y-3 text-sm min-w-0">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="min-w-0"><span className="text-muted-foreground">Conductor:</span><p className="font-medium truncate">{profile?.full_name ?? "—"}</p></div>
+                <div className="min-w-0"><span className="text-muted-foreground">Tipo:</span><p className="font-medium truncate">{detailReq.request_types?.name ?? "—"}</p></div>
+                <div className="min-w-0"><span className="text-muted-foreground">RUT:</span><p className="font-medium truncate">{profile?.rut ?? "—"}</p></div>
+                <div className="min-w-0"><span className="text-muted-foreground">Teléfono:</span><p className="font-medium truncate">{profile?.phone ?? "—"}</p></div>
+                <div className="min-w-0"><span className="text-muted-foreground">Patente:</span><p className="font-medium truncate">{detailReq.vehicles?.license_plate ?? "Sin vehículo"}</p></div>
+                <div className="min-w-0"><span className="text-muted-foreground">Monto:</span><p className="font-medium truncate">{detailReq.amount ? `$${Number(detailReq.amount).toLocaleString("es-CL")}` : "—"}</p></div>
+                <div className="min-w-0"><span className="text-muted-foreground">Estado:</span><p><StatusBadge status={detailReq.status} /></p></div>
+                <div className="min-w-0"><span className="text-muted-foreground">Creado:</span><p className="font-medium truncate">{new Date(detailReq.created_at).toLocaleString("es-CL")}</p></div>
+              </div>
+              <div className="min-w-0">
+                <span className="text-muted-foreground block mb-1">Detalles:</span>
+                <div className="rounded-lg border bg-muted/30 p-3 text-sm max-h-96 overflow-y-auto whitespace-pre-wrap break-words">
+                  {detailReq.details || "Sin detalles"}
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Dialog */}
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader><DialogTitle className="font-heading">Editar Solicitud</DialogTitle></DialogHeader>
+          {editReq && (
+            <form onSubmit={handleEdit} className="space-y-4">
+              <div className="space-y-2">
+                <Label>Tipo de solicitud</Label>
+                <Select name="request_type_id" defaultValue={editReq.request_type_id}>
+                  <SelectTrigger><SelectValue placeholder="Seleccionar tipo" /></SelectTrigger>
+                  <SelectContent>
+                    {reqTypes.map((t) => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Vehículo asociado</Label>
+                <Select name="vehicle_id" defaultValue={editReq.vehicle_id ?? "none"}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Sin vehículo</SelectItem>
+                    {vehicles.map((v: any) => <SelectItem key={v.id} value={v.id}>{v.license_plate}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Monto estimado (CLP)</Label>
+                <Input name="amount" type="number" step="1" min="0" placeholder="Ej: 150000" defaultValue={editReq.amount ?? ""} />
+              </div>
+              <div className="space-y-2">
+                <Label>Detalles</Label>
+                <Textarea name="details" required placeholder="Describe tu solicitud..." maxLength={500} defaultValue={editReq.details ?? ""} className="resize-none" />
+              </div>
+              <div className="flex gap-2 justify-end">
+                <Button type="button" variant="outline" onClick={() => setEditOpen(false)}>Cancelar</Button>
+                <Button type="submit" disabled={editLoading}>{editLoading ? "Guardando..." : "Guardar Cambios"}</Button>
+              </div>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar solicitud?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción no se puede deshacer. Se eliminará esta solicitud de {deleteReq?.request_types?.name ?? "tipo"}.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} disabled={deleteLoading} className="bg-destructive hover:bg-destructive/90">
+              {deleteLoading ? "Eliminando..." : "Eliminar"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -93,7 +93,7 @@ export default defineConfig(({ mode }) => {
   const isDevelopment = mode === "development";
 
   return {
-    base: mode === "production" ? githubPagesBase : "/",
+    base: "/",
     server: {
       host: "0.0.0.0",
       allowedHosts: true,
