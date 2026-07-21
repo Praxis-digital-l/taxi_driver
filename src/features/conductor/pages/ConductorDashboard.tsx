@@ -4,10 +4,11 @@ import { useAuth } from "@/features/auth/context/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import StatusBadge from "@/components/StatusBadge";
 import { Truck, FileText, ClipboardList, AlertTriangle, Gauge, MessageSquare, ArrowRight } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 export default function ConductorDashboard() {
   const { profile } = useAuth();
+  const navigate = useNavigate();
   const [stats, setStats] = useState({
     vehicles: 0, documents: 0, pendingRequests: 0,
     totalRequests: 0, pendingMessages: 0, lastMileage: 0,
@@ -106,7 +107,7 @@ export default function ConductorDashboard() {
             ) : (
               <div className="space-y-2">
                 {recentRequests.map((req: any) => (
-                  <div key={req.id} className="flex items-center justify-between rounded-lg border p-3 hover:bg-muted/50 transition-colors">
+                  <div key={req.id} onClick={() => navigate("/conductor/requests", { state: { openRequestId: req.id } })} className="flex items-center justify-between rounded-lg border p-3 hover:bg-muted/50 transition-colors cursor-pointer">
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium">{req.request_types?.name}</p>
                       <p className="text-xs text-muted-foreground">{new Date(req.created_at).toLocaleDateString("es-CL")}</p>
@@ -133,12 +134,12 @@ export default function ConductorDashboard() {
             ) : (
               <div className="space-y-2">
                 {recentMessages.map((msg: any) => (
-                  <div key={msg.id} className="flex items-start justify-between gap-3 rounded-lg border p-3">
+                  <div key={msg.id} onClick={() => navigate("/conductor/messages", { state: { openMessageId: msg.id } })} className="flex items-start justify-between gap-3 rounded-lg border p-3 hover:bg-muted/50 transition-colors cursor-pointer">
                     <div className="min-w-0 flex-1">
                       <p className="text-xs text-muted-foreground">De: {msg.sender?.full_name || "Admin"}</p>
                       <p className="text-sm mt-0.5 line-clamp-2">{msg.content}</p>
                     </div>
-                    <StatusBadge status={msg.status} />
+                    <StatusBadge status={msg.status === "enviado" ? "pendiente" : "visto"} />
                   </div>
                 ))}
               </div>
