@@ -145,7 +145,7 @@ export default function AdminDashboard() {
       value: stats.conductors,
       sub: "registrados",
       color: "bg-accent/10 text-accent",
-      to: isSuperAdmin ? "/admin/users" : "/admin/vehicles",
+      to: "/admin/conductores",
     },
     {
       icon: ClipboardList,

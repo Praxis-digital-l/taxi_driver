@@ -83,7 +83,8 @@ export default function AdminVehicles() {
     event.preventDefault();
     setLoading(true);
 
-    const form = new FormData(event.currentTarget);
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
     const yearValue = Number.parseInt(String(form.get("year") || ""), 10);
 
     try {
@@ -96,7 +97,7 @@ export default function AdminVehicles() {
       });
       toast({ title: "Vehículo creado exitosamente" });
       setOpenCreate(false);
-      event.currentTarget.reset();
+      formElement.reset();
       await load();
     } catch (error) {
       toast({
@@ -115,7 +116,8 @@ export default function AdminVehicles() {
       return;
     }
 
-    const form = new FormData(event.currentTarget);
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
     const profileId = String(form.get("profile_id") || "");
     if (!profileId) {
       return;
@@ -126,7 +128,7 @@ export default function AdminVehicles() {
       await assignConductorToVehicle(selectedVehicle.id, profileId);
       toast({ title: "Conductor asignado exitosamente" });
       setOpenAssign(false);
-      event.currentTarget.reset();
+      formElement.reset();
       await load();
     } catch (error) {
       toast({

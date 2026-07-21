@@ -952,6 +952,8 @@ class MockSupabaseAuth {
     const userId = generateId("user");
     const profileId = generateId("profile");
     const fullName = String(params.options?.data?.full_name ?? "Nuevo Conductor").trim() || "Nuevo Conductor";
+    const phone = String(params.options?.data?.phone ?? "").trim() || null;
+    const rut = String(params.options?.data?.rut ?? "").trim() || "";
 
     const user: MockUserRecord = {
       id: userId,
@@ -972,9 +974,9 @@ class MockSupabaseAuth {
       apellido_paterno: nameParts[1] || "",
       apellido_materno: nameParts.slice(2).join(" ") || "",
       email,
-      phone: null,
+      phone,
       role: "conductor",
-      rut: "",
+      rut,
       estado_conductor: "nuevo",
       created_at: nowIso(),
       updated_at: nowIso(),

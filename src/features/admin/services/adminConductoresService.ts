@@ -89,19 +89,32 @@ export async function fetchConductorDetail(id: string) {
 }
 
 export async function createConductor(payload: CreateConductorPayload) {
+  const { data: existing } = await supabase
+    .from("profiles")
+    .select("rut, phone")
+    .or(`rut.eq.${payload.rut.trim()},phone.eq.${payload.phone.trim()}`)
+    .maybeSingle();
+
+  if (existing) {
+    if (existing.rut === payload.rut.trim()) throw new Error("Ya existe un conductor con este RUT");
+    if (existing.phone === payload.phone.trim()) throw new Error("Ya existe un conductor con este teléfono");
+  }
+
   const fullName = `${payload.nombres.trim()} ${payload.apellidoPaterno.trim()} ${payload.apellidoMaterno.trim()}`.trim();
 
   const { data: authData, error: signUpError } = await supabase.auth.signUp({
     email: payload.email.trim().toLowerCase(),
     password: payload.password,
-    options: {
-      data: {
-        full_name: fullName,
-        nombres: payload.nombres.trim(),
-        apellido_paterno: payload.apellidoPaterno.trim(),
-        apellido_materno: payload.apellidoMaterno.trim(),
+      options: {
+        data: {
+          full_name: fullName,
+          nombres: payload.nombres.trim(),
+          apellido_paterno: payload.apellidoPaterno.trim(),
+          apellido_materno: payload.apellidoMaterno.trim(),
+          phone: payload.phone.trim(),
+          rut: payload.rut.trim(),
+        },
       },
-    },
   });
 
   if (signUpError) {
@@ -141,6 +154,40 @@ export async function updateConductor(id: string, payload: UpdateConductorPayloa
 
   const { error } = await supabase.from("profiles").update(updateData).eq("id", id);
   assertNoError(error);
+}
+
+export async function deleteConductor(profileId: string, userId: string) {
+  await Promise.allSettled([
+    supabase.from("vehicle_assignments").delete().eq("profile_id", profileId),
+    supabase.from("documents").delete().eq("profile_id", profileId),
+    supabase.from("requests").delete().eq("profile_id", profileId),
+    supabase.from("mileage_records").delete().eq("profile_id", profileId),
+    supabase.from("messages").delete().or(`sender_id.eq.${profileId},receiver_id.eq.${profileId}`),
+    supabase.from("admin_notes").delete().eq("admin_id", profileId),
+  ]);
+
+  let deleted = false;
+
+  if (typeof supabase.functions?.invoke === "function") {
+    try {
+      const { error } = await supabase.functions.invoke("delete-conductor", {
+        body: { user_id: userId },
+      });
+      if (!error) deleted = true;
+    } catch {
+      // Edge Function no disponible
+    }
+  }
+
+  if (!deleted) {
+    const { error, count } = await supabase
+      .from("profiles")
+      .delete({ count: "exact" })
+      .eq("id", profileId);
+
+    if (error) throw new Error(error.message);
+    if (count === 0) throw new Error("No tienes permisos para eliminar conductores. El admin necesita una política RLS de DELETE en la tabla profiles.");
+  }
 }
 
 export const ESTADO_CONDUCTOR_OPTIONS = [

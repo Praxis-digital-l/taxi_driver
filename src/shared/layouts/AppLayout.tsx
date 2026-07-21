@@ -4,7 +4,7 @@ import { useAuth } from "@/features/auth/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import {
   Truck, LayoutDashboard, FileText, ClipboardList, Gauge, MessageSquare,
-  Search, LogOut, Menu, X, ChevronRight, User, Users
+  Search, LogOut, Menu, X, ChevronRight, User, Users, Calculator
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { logDevInteraction } from "@/shared/monitoring/devLogger";
@@ -13,6 +13,7 @@ const baseAdminLinks = [
   { to: "/admin", icon: LayoutDashboard, label: "Dashboard" },
   { to: "/admin/search", icon: Search, label: "Buscar Patente" },
   { to: "/admin/conductores", icon: Users, label: "Conductores" },
+  { to: "/admin/nomina", icon: Calculator, label: "Nómina" },
   { to: "/admin/vehicles", icon: Truck, label: "Vehículos" },
   { to: "/admin/requests", icon: ClipboardList, label: "Solicitudes" },
   { to: "/admin/messages", icon: MessageSquare, label: "Mensajes" },

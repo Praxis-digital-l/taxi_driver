@@ -8,11 +8,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { useToast } from "@/hooks/use-toast";
 import PageHeader from "@/components/PageHeader";
 import { Badge } from "@/components/ui/badge";
-import { Plus, UserRound, Search, Eye, Pencil, Truck, Phone, Mail, Fingerprint } from "lucide-react";
+import { Plus, UserRound, Search, Eye, Pencil, Truck, Phone, Mail, Fingerprint, Trash2 } from "lucide-react";
 import {
   fetchAdminConductores,
   createConductor,
   updateConductor,
+  deleteConductor,
   fetchConductorDetail,
   type ConductorRecord,
   type ConductorDetailRecord,
@@ -20,7 +21,7 @@ import {
   ESTADO_CONDUCTOR_STYLES,
   ESTADO_CONDUCTOR_LABELS,
 } from "@/features/admin/services/adminConductoresService";
-import { validateConductorForm, sanitizeInput } from "@/lib/validations";
+import { validateConductorForm, sanitizeInput, normalizeRut } from "@/lib/validations";
 
 export default function AdminConductores() {
   const { toast } = useToast();
@@ -34,6 +35,12 @@ export default function AdminConductores() {
   const [filter, setFilter] = useState("all");
   const [search, setSearch] = useState("");
   const [formErrors, setFormErrors] = useState<Record<string, string | null>>({});
+  const [phoneDigits, setPhoneDigits] = useState("");
+  const [rutInput, setRutInput] = useState("");
+  const [editPhoneDigits, setEditPhoneDigits] = useState("");
+  const [editRutInput, setEditRutInput] = useState("");
+  const [openDelete, setOpenDelete] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<ConductorRecord | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -51,6 +58,13 @@ export default function AdminConductores() {
   useEffect(() => {
     load();
   }, [load]);
+
+  useEffect(() => {
+    if (editConductor) {
+      setEditPhoneDigits(editConductor.phone?.replace("+569", "") || "");
+      setEditRutInput(editConductor.rut || "");
+    }
+  }, [editConductor]);
 
   const filteredConductores = useMemo(() => {
     let result = conductores;
@@ -76,8 +90,16 @@ export default function AdminConductores() {
     event.preventDefault();
     setLoading(true);
 
-    const form = new FormData(event.currentTarget);
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
+    form.set("phone", `+569${String(form.get("phone") || "").trim()}`);
     const errors = validateConductorForm(form);
+    const phoneValue = String(form.get("phone") || "").trim();
+    const rutValue = normalizeRut(String(form.get("rut") || ""));
+    const duplicateRut = conductores.find((c) => c.rut === rutValue);
+    const duplicatePhone = conductores.find((c) => c.phone === phoneValue);
+    if (duplicateRut) errors.rut = "Ya existe un conductor con este RUT";
+    if (duplicatePhone) errors.phone = "Ya existe un conductor con este teléfono";
     setFormErrors(errors);
 
     const hasErrors = Object.values(errors).some((e) => e !== null);
@@ -92,14 +114,16 @@ export default function AdminConductores() {
         apellidoPaterno: sanitizeInput(String(form.get("apellido_paterno") || "")),
         apellidoMaterno: sanitizeInput(String(form.get("apellido_materno") || "")),
         email: String(form.get("email") || "").trim(),
-        phone: String(form.get("phone") || "").trim(),
-        rut: String(form.get("rut") || "").trim(),
+        phone: phoneValue,
+        rut: rutValue,
         password: String(form.get("password") || ""),
       });
       toast({ title: "Conductor creado exitosamente" });
       setOpenCreate(false);
       setFormErrors({});
-      event.currentTarget.reset();
+      setPhoneDigits("");
+      setRutInput("");
+      formElement.reset();
       await load();
     } catch (error) {
       toast({
@@ -118,6 +142,7 @@ export default function AdminConductores() {
     setLoading(true);
 
     const form = new FormData(event.currentTarget);
+    form.set("phone", `+569${String(form.get("phone") || "").trim()}`);
     const estadoConductor = String(form.get("estado_conductor") || "");
 
     try {
@@ -125,8 +150,9 @@ export default function AdminConductores() {
         nombres: sanitizeInput(String(form.get("nombres") || "")),
         apellidoPaterno: sanitizeInput(String(form.get("apellido_paterno") || "")),
         apellidoMaterno: sanitizeInput(String(form.get("apellido_materno") || "")),
+        email: String(form.get("email") || "").trim().toLowerCase(),
         phone: String(form.get("phone") || "").trim(),
-        rut: String(form.get("rut") || "").trim(),
+        rut: normalizeRut(String(form.get("rut") || "")),
         estado_conductor: estadoConductor,
       });
       toast({ title: "Conductor actualizado exitosamente" });
@@ -137,6 +163,26 @@ export default function AdminConductores() {
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "No se pudo actualizar el conductor",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setLoading(true);
+    try {
+      await deleteConductor(deleteTarget.id, deleteTarget.user_id);
+      toast({ title: "Conductor eliminado exitosamente" });
+      setOpenDelete(false);
+      setDeleteTarget(null);
+      await load();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "No se pudo eliminar el conductor",
         variant: "destructive",
       });
     } finally {
@@ -184,7 +230,7 @@ export default function AdminConductores() {
           </SelectContent>
         </Select>
 
-        <Dialog open={openCreate} onOpenChange={setOpenCreate}>
+        <Dialog open={openCreate} onOpenChange={(open) => { if (!open) { setPhoneDigits(""); setRutInput(""); setFormErrors({}); } setOpenCreate(open); }}>
           <DialogContent className="sm:max-w-md" onInteractOutside={(e) => e.preventDefault()}>
             <DialogHeader><DialogTitle className="font-heading">Agregar Conductor</DialogTitle></DialogHeader>
             <form onSubmit={handleCreate} className="space-y-4">
@@ -213,7 +259,19 @@ export default function AdminConductores() {
                 </div>
                 <div className="space-y-2">
                   <Label>Teléfono *</Label>
-                  <Input name="phone" required placeholder="+56 9 XXXX XXXX" maxLength={20} />
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none select-none z-10">
+                      +569
+                    </span>
+                    <Input
+                      name="phone"
+                      value={phoneDigits}
+                      onChange={(e) => setPhoneDigits(e.target.value.replace(/\D/g, "").slice(0, 8))}
+                      required
+                      placeholder="XXXX XXXX"
+                      className="pl-12"
+                    />
+                  </div>
                   {formErrors.phone && <p className="text-[11px] text-destructive">{formErrors.phone}</p>}
                 </div>
               </div>
@@ -221,7 +279,27 @@ export default function AdminConductores() {
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
                   <Label>RUT *</Label>
-                  <Input name="rut" required placeholder="12.345.678-5" maxLength={12} />
+                  <Input
+                    name="rut"
+                    value={rutInput}
+                    onChange={(e) => {
+                      const raw = e.target.value.replace(/[^0-9kK]/g, "").toUpperCase();
+                      if (!raw) { setRutInput(""); return; }
+                      let cleaned = raw;
+                      if (cleaned.includes("K") && cleaned.lastIndexOf("K") !== cleaned.length - 1) {
+                        cleaned = cleaned.replace(/K/g, "");
+                      }
+                      if (cleaned.length > 9) return;
+                      if (cleaned.length <= 1) { setRutInput(cleaned); return; }
+                      const dv = cleaned.slice(-1);
+                      const body = cleaned.slice(0, -1);
+                      const formattedBody = body.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+                      setRutInput(`${formattedBody}-${dv}`);
+                    }}
+                    required
+                    placeholder="12.345.678-5"
+                    maxLength={15}
+                  />
                   {formErrors.rut && <p className="text-[11px] text-destructive">{formErrors.rut}</p>}
                 </div>
                 <div className="space-y-2">
@@ -304,6 +382,17 @@ export default function AdminConductores() {
                   >
                     <Pencil className="mr-1 h-3 w-3" /> Editar
                   </Button>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    className="w-full text-xs"
+                    onClick={() => {
+                      setDeleteTarget(conductor);
+                      setOpenDelete(true);
+                    }}
+                  >
+                    <Trash2 className="mr-1 h-3 w-3" /> Eliminar
+                  </Button>
                 </div>
               </CardContent>
             </Card>
@@ -311,7 +400,30 @@ export default function AdminConductores() {
         </div>
       )}
 
-      <Dialog open={openEdit} onOpenChange={(open) => { if (!open) { setOpenEdit(false); setEditConductor(null); } }}>
+      <Dialog open={openDelete} onOpenChange={(open) => { if (!open) { setOpenDelete(false); setDeleteTarget(null); } }}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader><DialogTitle className="font-heading">Eliminar Conductor</DialogTitle></DialogHeader>
+          {deleteTarget && (
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                ¿Estás seguro de eliminar a <strong>{deleteTarget.full_name}</strong>?
+                <br />
+                Se eliminarán todos sus datos asociados (vehículos asignados, documentos, solicitudes, etc.) y no se podrá recuperar.
+              </p>
+              <div className="flex gap-3 justify-end">
+                <Button variant="outline" size="sm" onClick={() => { setOpenDelete(false); setDeleteTarget(null); }}>
+                  Cancelar
+                </Button>
+                <Button variant="destructive" size="sm" disabled={loading} onClick={handleDelete}>
+                  {loading ? "Eliminando..." : "Eliminar"}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={openEdit} onOpenChange={(open) => { if (!open) { setOpenEdit(false); setEditConductor(null); setEditPhoneDigits(""); setEditRutInput(""); } }}>
         <DialogContent className="sm:max-w-md" onInteractOutside={(e) => e.preventDefault()}>
           <DialogHeader><DialogTitle className="font-heading">Editar Conductor</DialogTitle></DialogHeader>
           {editConductor && (
@@ -334,18 +446,50 @@ export default function AdminConductores() {
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
                   <Label>Correo electrónico</Label>
-                  <Input value={editConductor.email} disabled className="bg-muted text-muted-foreground" />
+                  <Input name="email" defaultValue={editConductor.email} type="email" required maxLength={254} />
                 </div>
                 <div className="space-y-2">
                   <Label>Teléfono</Label>
-                  <Input name="phone" defaultValue={editConductor.phone || ""} required maxLength={20} />
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none select-none z-10">
+                      +569
+                    </span>
+                    <Input
+                      name="phone"
+                      value={editPhoneDigits}
+                      onChange={(e) => setEditPhoneDigits(e.target.value.replace(/\D/g, "").slice(0, 8))}
+                      required
+                      placeholder="XXXX XXXX"
+                      className="pl-12"
+                    />
+                  </div>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
                   <Label>RUT</Label>
-                  <Input name="rut" defaultValue={editConductor.rut} required maxLength={12} />
+                  <Input
+                    name="rut"
+                    value={editRutInput}
+                    onChange={(e) => {
+                      const raw = e.target.value.replace(/[^0-9kK]/g, "").toUpperCase();
+                      if (!raw) { setEditRutInput(""); return; }
+                      let cleaned = raw;
+                      if (cleaned.includes("K") && cleaned.lastIndexOf("K") !== cleaned.length - 1) {
+                        cleaned = cleaned.replace(/K/g, "");
+                      }
+                      if (cleaned.length > 9) return;
+                      if (cleaned.length <= 1) { setEditRutInput(cleaned); return; }
+                      const dv = cleaned.slice(-1);
+                      const body = cleaned.slice(0, -1);
+                      const formattedBody = body.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+                      setEditRutInput(`${formattedBody}-${dv}`);
+                    }}
+                    required
+                    placeholder="12.345.678-5"
+                    maxLength={15}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label>Estado conductor</Label>
