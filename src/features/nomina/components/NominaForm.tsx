@@ -1,33 +1,37 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { Calculator, DollarSign } from "lucide-react";
+import { Calculator, DollarSign, UserRound, Mail, Fingerprint } from "lucide-react";
 import {
   type DatosNomina,
   type DescuentosTAG,
   crearDescuentosTAG,
   validarDatosNomina,
 } from "@/lib/nomina";
+import { fetchAdminConductores, type ConductorRecord } from "@/features/admin/services/adminConductoresService";
 
 interface NominaFormProps {
   onCalcular: (data: DatosNomina) => void;
 }
 
+const SPINNER_HIDE = "[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none";
+
 const CAMPOS_BASE = [
-  { id: "totalFacturado", label: "Total facturado", placeholder: "Ej: 1500000" },
-  { id: "gastoOperacional", label: "Gasto operacional", placeholder: "Ej: 100000" },
-  { id: "diesel", label: "Diesel", placeholder: "Ej: 200000" },
-  { id: "arriendo", label: "Arriendo", placeholder: "Ej: 150000" },
-  { id: "seguro", label: "Seguro", placeholder: "Ej: 50000" },
+  { id: "totalFacturado", label: "Total facturado", placeholder: "Ej: 1.500.000" },
+  { id: "gastoOperacional", label: "Gasto operacional", placeholder: "Ej: 100.000" },
+  { id: "diesel", label: "Diesel", placeholder: "Ej: 200.000" },
+  { id: "arriendo", label: "Arriendo", placeholder: "Ej: 150.000" },
+  { id: "seguro", label: "Seguro", placeholder: "Ej: 50.000" },
 ] as const;
 
 const CAMPOS_SECUNDARIOS = [
-  { id: "mantencion", label: "Mantención", placeholder: "Ej: 80000" },
-  { id: "anticipo", label: "Anticipo", placeholder: "Ej: 100000" },
-  { id: "prestamo", label: "Préstamo", placeholder: "Ej: 50000" },
+  { id: "mantencion", label: "Mantención", placeholder: "Ej: 80.000" },
+  { id: "anticipo", label: "Anticipo", placeholder: "Ej: 100.000" },
+  { id: "prestamo", label: "Préstamo", placeholder: "Ej: 50.000" },
 ] as const;
 
 const AUTOPISTAS = [
@@ -41,17 +45,35 @@ const AUTOPISTAS = [
   { key: "autopista8", label: "Autopista 8" },
 ] as const;
 
+function formatPesos(digits: string): string {
+  if (!digits) return "";
+  return `$ ${Number(digits).toLocaleString("es-CL")}`;
+}
+
 export default function NominaForm({ onCalcular }: NominaFormProps) {
   const [errores, setErrores] = useState<Record<string, string>>({});
+  const [values, setValues] = useState<Record<string, string>>({});
+  const [conductores, setConductores] = useState<ConductorRecord[]>([]);
+  const [selectedConductor, setSelectedConductor] = useState<ConductorRecord | null>(null);
+
+  useEffect(() => {
+    fetchAdminConductores()
+      .then((data) => setConductores(data.filter((c) => c.worker_id)))
+      .catch(() => {});
+  }, []);
+
+  const handleCurrencyChange = (id: string, raw: string) => {
+    const digits = raw.replace(/\D/g, "");
+    setValues((prev) => ({ ...prev, [id]: digits ? formatPesos(digits) : "" }));
+  };
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const form = new FormData(e.currentTarget);
 
     const parseNum = (key: string): number => {
-      const val = form.get(key) as string;
-      const parsed = parseFloat(val);
-      return isNaN(parsed) ? 0 : parsed;
+      const raw = values[key] || "";
+      const digits = raw.replace(/\D/g, "");
+      return digits ? parseInt(digits, 10) : 0;
     };
 
     const tag = crearDescuentosTAG();
@@ -60,8 +82,10 @@ export default function NominaForm({ onCalcular }: NominaFormProps) {
     }
 
     const data: DatosNomina = {
-      trabajadorId: (form.get("trabajadorId") as string) || "",
-      nombre: (form.get("nombre") as string) || "",
+      trabajadorId: selectedConductor?.worker_id || "",
+      nombre: selectedConductor?.full_name || "",
+      email: selectedConductor?.email || "",
+      rut: selectedConductor?.rut || "",
       totalFacturado: parseNum("totalFacturado"),
       gastoOperacional: parseNum("gastoOperacional"),
       diesel: parseNum("diesel"),
@@ -87,17 +111,18 @@ export default function NominaForm({ onCalcular }: NominaFormProps) {
     onCalcular(data);
   };
 
-  const renderInput = (campo: { id: string; label: string; placeholder: string }) => (
+  const renderCurrencyInput = (campo: { id: string; label: string; placeholder: string }) => (
     <div key={campo.id} className="space-y-1">
       <Label htmlFor={campo.id}>{campo.label}</Label>
       <Input
         id={campo.id}
         name={campo.id}
-        type="number"
-        min="0"
-        step="1"
+        type="text"
+        inputMode="numeric"
+        value={values[campo.id] || ""}
+        onChange={(e) => handleCurrencyChange(campo.id, e.target.value)}
         placeholder={campo.placeholder}
-        className={errores[campo.id] ? "border-destructive" : ""}
+        className={`${SPINNER_HIDE} ${errores[campo.id] ? "border-destructive" : ""}`}
       />
       {errores[campo.id] && (
         <p className="text-xs text-destructive">{errores[campo.id]}</p>
@@ -117,26 +142,53 @@ export default function NominaForm({ onCalcular }: NominaFormProps) {
         <CardContent className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-1">
             <Label htmlFor="trabajadorId">ID del trabajador</Label>
-            <Input
-              id="trabajadorId"
+            <Select
               name="trabajadorId"
-              placeholder="Ej: cond-001"
-              className={errores.trabajadorId ? "border-destructive" : ""}
-            />
+              value={selectedConductor?.worker_id || ""}
+              onValueChange={(value) => {
+                const cond = conductores.find((c) => c.worker_id === value);
+                setSelectedConductor(cond || null);
+              }}
+            >
+              <SelectTrigger className={errores.trabajadorId ? "border-destructive" : ""}>
+                <SelectValue placeholder="Seleccionar conductor..." />
+              </SelectTrigger>
+              <SelectContent>
+                {conductores.map((c) => (
+                  <SelectItem key={c.id} value={c.worker_id}>
+                    {c.worker_id} — {c.full_name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             {errores.trabajadorId && (
               <p className="text-xs text-destructive">{errores.trabajadorId}</p>
             )}
           </div>
+
           <div className="space-y-1">
-            <Label htmlFor="nombre">Nombre del trabajador</Label>
-            <Input
-              id="nombre"
-              name="nombre"
-              placeholder="Ej: Juan Pérez"
-              className={errores.nombre ? "border-destructive" : ""}
-            />
-            {errores.nombre && (
-              <p className="text-xs text-destructive">{errores.nombre}</p>
+            <Label className="text-xs text-muted-foreground">Vista previa</Label>
+            {selectedConductor ? (
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 h-[70px]">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary shrink-0">
+                  <UserRound className="h-5 w-5" />
+                </div>
+                <div className="min-w-0 space-y-0.5">
+                  <p className="font-heading font-medium text-sm truncate">{selectedConductor.full_name}</p>
+                  <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+                    <span className="flex items-center gap-1">
+                      <Mail className="h-3 w-3" /> {selectedConductor.email}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Fingerprint className="h-3 w-3" /> {selectedConductor.rut}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center justify-center rounded-lg bg-muted/20 h-[70px]">
+                <p className="text-xs text-muted-foreground italic">Seleccione un conductor</p>
+              </div>
             )}
           </div>
         </CardContent>
@@ -150,7 +202,7 @@ export default function NominaForm({ onCalcular }: NominaFormProps) {
           </CardTitle>
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-2">
-          {CAMPOS_BASE.map(renderInput)}
+          {CAMPOS_BASE.map(renderCurrencyInput)}
         </CardContent>
       </Card>
 
@@ -169,11 +221,12 @@ export default function NominaForm({ onCalcular }: NominaFormProps) {
                 <Input
                   id={key}
                   name={key}
-                  type="number"
-                  min="0"
-                  step="1"
+                  type="text"
+                  inputMode="numeric"
+                  value={values[key] || ""}
+                  onChange={(e) => handleCurrencyChange(key, e.target.value)}
                   placeholder="0"
-                  className={errores[`tag.${key}`] ? "border-destructive" : ""}
+                  className={`${SPINNER_HIDE} ${errores[`tag.${key}`] ? "border-destructive" : ""}`}
                 />
                 {errores[`tag.${key}`] && (
                   <p className="text-xs text-destructive">{errores[`tag.${key}`]}</p>
@@ -192,7 +245,7 @@ export default function NominaForm({ onCalcular }: NominaFormProps) {
           </CardTitle>
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-3">
-          {CAMPOS_SECUNDARIOS.map(renderInput)}
+          {CAMPOS_SECUNDARIOS.map(renderCurrencyInput)}
         </CardContent>
       </Card>
 
