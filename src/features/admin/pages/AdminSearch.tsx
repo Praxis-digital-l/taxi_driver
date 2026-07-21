@@ -1,6 +1,11 @@
+<<<<<<< Updated upstream
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
+=======
+import { useEffect, useMemo, useRef, useState } from "react";
+>>>>>>> Stashed changes
 import { useAuth } from "@/features/auth/context/AuthContext";
+import { useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -65,6 +70,9 @@ export default function AdminSearch() {
   const [searching, setSearching] = useState(false);
   const [found, setFound] = useState(false);
 
+  const [searchParams] = useSearchParams();
+  const initialSearchDone = useRef(false);
+
   const [previewKey, setPreviewKey] = useState<string | null>(null);
   const [previewFileName, setPreviewFileName] = useState("");
   const [previewDocumentType, setPreviewDocumentType] = useState("");
@@ -87,10 +95,19 @@ export default function AdminSearch() {
   }, [toast]);
 
   useEffect(() => {
+<<<<<<< Updated upstream
     const plateParam = searchParams.get("plate");
     if (plateParam) {
       setPlate(plateParam);
       handleSearch(plateParam);
+=======
+    if (initialSearchDone.current) return;
+    const plateParam = searchParams.get("plate");
+    if (plateParam) {
+      initialSearchDone.current = true;
+      setPlate(plateParam.toUpperCase());
+      handleSearch(plateParam.toUpperCase());
+>>>>>>> Stashed changes
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

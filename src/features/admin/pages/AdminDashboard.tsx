@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import StatusBadge from "@/components/StatusBadge";
 import RequestPriorityBadge from "@/components/RequestPriorityBadge";
@@ -20,6 +20,7 @@ import {
   fetchAdminDashboardData,
   type AdminDashboardStats,
   type AdminExpiringDocument,
+  type AdminDashboardUnreadMessage,
 } from "@/features/admin/services/adminDashboardService";
 import type { AdminRequest } from "@/features/admin/services/adminRequestsService";
 
@@ -49,6 +50,7 @@ export default function AdminDashboard() {
   const [stats, setStats] = useState<AdminDashboardStats>(EMPTY_STATS);
   const [recentRequests, setRecentRequests] = useState<AdminRequest[]>([]);
   const [expiringDocs, setExpiringDocs] = useState<AdminExpiringDocument[]>([]);
+  const [unreadMessages, setUnreadMessages] = useState<AdminDashboardUnreadMessage[]>([]);
 
   useEffect(() => {
     const load = async () => {
@@ -57,6 +59,7 @@ export default function AdminDashboard() {
         setStats(dashboard.stats);
         setRecentRequests(dashboard.activeRequests);
         setExpiringDocs(dashboard.expiringDocuments);
+        setUnreadMessages(dashboard.unreadMessages);
       } catch (error) {
         toast({
           title: "Error al cargar dashboard",
@@ -70,6 +73,62 @@ export default function AdminDashboard() {
   }, [toast]);
 
   const hasPending = stats.pendingRequests > 0 || stats.expiringDocs > 0 || stats.unreadMessages > 0;
+
+  const pendingItems = useMemo(() => {
+    const items: {
+      id: string;
+      type: "request" | "document" | "message";
+      title: string;
+      subtitle: string;
+      meta: string;
+      priorityName?: string | null;
+      status: string;
+      link: string;
+    }[] = [];
+
+    for (const r of recentRequests) {
+      items.push({
+        id: r.id,
+        type: "request",
+        title: r.request_types?.name ?? "Solicitud",
+        subtitle: `${r.profiles?.full_name ?? ""}${r.vehicles?.license_plate ? ` • ${r.vehicles.license_plate}` : ""}`,
+        meta: `${getRequestWaitingDays(r.created_at)} día(s) en espera`,
+        priorityName: r.request_types?.name,
+        status: r.status,
+        link: "/admin/requests",
+      });
+    }
+
+    for (const d of expiringDocs) {
+      const daysLeft = Math.ceil((new Date(d.expiration_date).getTime() - Date.now()) / 86400000);
+      items.push({
+        id: d.id,
+        type: "document",
+        title: d.document_types?.name ?? "Documento",
+        subtitle: `${d.profiles?.full_name ?? ""}${d.vehicles?.license_plate ? ` • ${d.vehicles.license_plate}` : ""}`,
+        meta: `${daysLeft} día(s)`,
+        priorityName: null,
+        status: daysLeft <= 7 ? "urgent" : "warning",
+        link: "/admin/search",
+      });
+    }
+
+    for (const m of unreadMessages) {
+      const daysAgo = Math.ceil((Date.now() - new Date(m.created_at).getTime()) / 86400000);
+      items.push({
+        id: m.id,
+        type: "message",
+        title: `Mensaje de ${m.sender?.full_name ?? "desconocido"}`,
+        subtitle: m.content.length > 80 ? `${m.content.slice(0, 80)}…` : m.content,
+        meta: `hace ${daysAgo} día(s)`,
+        priorityName: null,
+        status: "pendiente",
+        link: "/admin/messages",
+      });
+    }
+
+    return items;
+  }, [recentRequests, expiringDocs, unreadMessages]);
 
   const metricCards: MetricCardConfig[] = [
     {
@@ -168,69 +227,49 @@ export default function AdminDashboard() {
 
         <Card className="lg:col-span-2">
           <CardHeader className="flex flex-row items-center justify-between pb-3">
-            <CardTitle className="font-heading text-base">Solicitudes Activas</CardTitle>
+            <CardTitle className="font-heading text-base">Pendientes</CardTitle>
             <Link to="/admin/requests" className="text-xs text-primary hover:underline flex items-center gap-1">
-              Ver todas <ArrowRight className="h-3 w-3" />
+              Ver solicitudes <ArrowRight className="h-3 w-3" />
             </Link>
           </CardHeader>
           <CardContent>
-            {recentRequests.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-6">No hay solicitudes activas.</p>
+            {pendingItems.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-6">No hay tareas pendientes.</p>
             ) : (
               <div className="space-y-2">
-                {recentRequests.map((request) => (
-                  <div key={request.id} className="flex items-center justify-between gap-3 rounded-lg border p-3 hover:bg-muted/30 transition-colors">
+                {pendingItems.map((item) => (
+                  <Link
+                    key={`${item.type}-${item.id}`}
+                    to={item.link}
+                    className="flex items-center justify-between gap-3 rounded-lg border p-3 hover:bg-muted/30 transition-colors group"
+                  >
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <p className="text-sm font-medium">{request.request_types?.name}</p>
-                        <RequestPriorityBadge requestTypeName={request.request_types?.name} className="text-[10px]" />
+                        {item.type === "request" && <ClipboardList className="h-4 w-4 text-warning shrink-0" />}
+                        {item.type === "document" && <FileText className="h-4 w-4 text-destructive shrink-0" />}
+                        {item.type === "message" && <MessageSquare className="h-4 w-4 text-info shrink-0" />}
+                        <p className="text-sm font-medium">{item.title}</p>
+                        {item.type === "request" && item.priorityName && (
+                          <RequestPriorityBadge requestTypeName={item.priorityName} className="text-[10px]" />
+                        )}
                       </div>
-                      <p className="text-xs text-muted-foreground">
-                        {request.profiles?.full_name} {request.vehicles?.license_plate ? `• ${request.vehicles.license_plate}` : ""}
-                        {` • ${new Date(request.created_at).toLocaleDateString("es-CL")}`}
-                      </p>
-                      <p className="text-[10px] text-muted-foreground">{getRequestWaitingDays(request.created_at)} día(s) en espera</p>
+                      <p className="text-xs text-muted-foreground">{item.subtitle}</p>
+                      <p className="text-[10px] text-muted-foreground">{item.meta}</p>
                     </div>
-                    <StatusBadge status={request.status} />
-                  </div>
+                    {item.type === "document" ? (
+                      <span className={`shrink-0 text-xs font-medium ${item.status === "urgent" ? "text-destructive" : "text-warning"}`}>
+                        {item.meta}
+                      </span>
+                    ) : (
+                      <StatusBadge status={item.status} />
+                    )}
+                  </Link>
                 ))}
               </div>
             )}
           </CardContent>
         </Card>
       </div>
-
-      {expiringDocs.length > 0 && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="font-heading text-base flex items-center gap-2">
-              <AlertTriangle className="h-4 w-4 text-destructive" />
-              Documentos Próximos a Vencer
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {expiringDocs.map((document) => {
-                const daysLeft = Math.ceil((new Date(document.expiration_date).getTime() - Date.now()) / 86400000);
-
-                return (
-                  <div key={document.id} className="flex items-center justify-between rounded-lg border p-3">
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium">{document.document_types?.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {document.profiles?.full_name} {document.vehicles?.license_plate ? `• ${document.vehicles.license_plate}` : ""}
-                      </p>
-                    </div>
-                    <span className={`text-xs font-medium ${daysLeft <= 7 ? "text-destructive" : "text-warning"}`}>
-                      {daysLeft} día(s)
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 }
