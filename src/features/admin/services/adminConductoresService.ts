@@ -10,6 +10,7 @@ export type ConductorRecord = {
   email: string;
   phone: string | null;
   rut: string;
+  worker_id?: string;
   estado_conductor: string;
   role: string;
   created_at: string;
@@ -48,6 +49,8 @@ export type UpdateConductorPayload = {
   estado_conductor?: string;
 };
 
+const CONDUCTOR_COLUMNS = "id, user_id, nombres, apellido_paterno, apellido_materno, full_name, email, phone, rut, worker_id, estado_conductor, role, created_at, updated_at";
+
 function assertNoError(error: { message: string; code?: string; details?: string | null } | null) {
   if (error) {
     throw new Error(error.message);
@@ -57,7 +60,7 @@ function assertNoError(error: { message: string; code?: string; details?: string
 export async function fetchAdminConductores() {
   const { data, error } = await supabase
     .from("profiles")
-    .select("id, user_id, nombres, apellido_paterno, apellido_materno, full_name, email, phone, rut, estado_conductor, role, created_at, updated_at")
+    .select(CONDUCTOR_COLUMNS)
     .eq("role", "conductor")
     .order("full_name", { ascending: true });
 
@@ -68,7 +71,7 @@ export async function fetchAdminConductores() {
 export async function fetchConductorDetail(id: string) {
   const { data: conductor, error: conductorError } = await supabase
     .from("profiles")
-    .select("id, user_id, nombres, apellido_paterno, apellido_materno, full_name, email, phone, rut, estado_conductor, role, created_at, updated_at")
+    .select(CONDUCTOR_COLUMNS)
     .eq("id", id)
     .single();
 
@@ -88,6 +91,26 @@ export async function fetchConductorDetail(id: string) {
   } as ConductorDetailRecord;
 }
 
+async function generateWorkerId(): Promise<string> {
+  const { data: last } = await supabase
+    .from("profiles")
+    .select("worker_id")
+    .not("worker_id", "is", null)
+    .order("worker_id", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  let nextNumber = 1;
+  if (last?.worker_id) {
+    const match = last.worker_id.match(/TR-(\d+)/);
+    if (match) {
+      nextNumber = parseInt(match[1], 10) + 1;
+    }
+  }
+
+  return `TR-${String(nextNumber).padStart(6, "0")}`;
+}
+
 export async function createConductor(payload: CreateConductorPayload) {
   const { data: existing } = await supabase
     .from("profiles")
@@ -100,20 +123,27 @@ export async function createConductor(payload: CreateConductorPayload) {
     if (existing.phone === payload.phone.trim()) throw new Error("Ya existe un conductor con este teléfono");
   }
 
+  const workerId = await generateWorkerId();
+
   const fullName = `${payload.nombres.trim()} ${payload.apellidoPaterno.trim()} ${payload.apellidoMaterno.trim()}`.trim();
 
-  const { error: fnError } = await supabase.functions.invoke("create-conductor", {
-    body: {
-      email: payload.email.trim().toLowerCase(),
-      password: payload.password,
-      nombres: payload.nombres.trim(),
-      apellido_paterno: payload.apellidoPaterno.trim(),
-      apellido_materno: payload.apellidoMaterno.trim(),
-      phone: payload.phone.trim(),
-      rut: payload.rut.trim(),
-      full_name: fullName,
-    },
-  });
+const { error: fnError } = await supabase.functions.invoke("create-conductor", {
+  body: {
+    email: payload.email.trim().toLowerCase(),
+    password: payload.password,
+    full_name: fullName,
+    nombres: payload.nombres.trim(),
+    apellido_paterno: payload.apellidoPaterno.trim(),
+    apellido_materno: payload.apellidoMaterno.trim(),
+    phone: payload.phone.trim(),
+    rut: payload.rut.trim(),
+    worker_id: workerId,
+  },
+});
+
+if (fnError) {
+  throw new Error(fnError.message);
+}
 
   if (fnError) {
     let msg = fnError.message;
