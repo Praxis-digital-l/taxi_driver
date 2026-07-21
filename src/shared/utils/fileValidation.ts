@@ -5,11 +5,18 @@ export const ALLOWED_DOCUMENT_MIME_TYPES = [
   "image/webp",
   "image/heic",
   "image/heif",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "application/vnd.ms-excel",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/msword",
 ] as const;
 
-export const ALLOWED_DOCUMENT_EXTENSIONS = ["pdf", "jpg", "jpeg", "png", "webp", "heic", "heif"] as const;
+export const ALLOWED_DOCUMENT_EXTENSIONS = [
+  "pdf", "jpg", "jpeg", "png", "webp", "heic", "heif",
+  "xlsx", "xls", "docx", "doc",
+] as const;
 
-export const DOCUMENT_ACCEPT_ATTR = ".pdf,.jpg,.jpeg,.png,.webp,.heic,.heif";
+export const DOCUMENT_ACCEPT_ATTR = ".pdf,.jpg,.jpeg,.png,.webp,.heic,.heif,.xlsx,.xls,.docx,.doc";
 
 const normalizeExtension = (fileName: string) => {
   const parts = fileName.toLowerCase().split(".");

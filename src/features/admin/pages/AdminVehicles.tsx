@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,7 +19,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import PageHeader from "@/components/PageHeader";
-import { Link } from "react-router-dom";
 import { Plus, Truck, Users, Trash2 } from "lucide-react";
 import {
   assignConductorToVehicle,
@@ -33,7 +32,6 @@ import {
 } from "@/features/admin/services/adminVehiclesService";
 
 export default function AdminVehicles() {
-  const navigate = useNavigate();
   const { toast } = useToast();
   const [vehicles, setVehicles] = useState<VehicleRecord[]>([]);
   const [conductors, setConductors] = useState<ConductorRecord[]>([]);
@@ -274,15 +272,9 @@ export default function AdminVehicles() {
 
           return (
             <Card key={vehicle.id} className="stat-card overflow-hidden">
-<<<<<<< Updated upstream
-              <div
-                className="bg-muted/50 border-b px-5 py-3 flex items-center justify-between gap-2 cursor-pointer hover:bg-muted/80 transition-colors"
-                onClick={() => navigate(`/admin/search?plate=${encodeURIComponent(vehicle.license_plate)}`)}
-=======
               <Link
                 to={`/admin/search?plate=${vehicle.license_plate}`}
                 className="bg-muted/50 border-b px-5 py-3 flex items-center justify-between gap-2 hover:bg-muted/70 transition-colors"
->>>>>>> Stashed changes
               >
                 <div className="flex items-center gap-3 min-w-0">
                   <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
