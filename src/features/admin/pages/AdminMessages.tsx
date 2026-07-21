@@ -19,6 +19,7 @@ export default function AdminMessages() {
   const [conductors, setConductors] = useState<any[]>([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [newMessage, setNewMessage] = useState("");
 
   const load = async () => {
     const [msgRes, condRes] = await Promise.all([
@@ -39,7 +40,7 @@ export default function AdminMessages() {
     if (!profile) return;
     setLoading(true);
     const form = new FormData(e.currentTarget);
-    const content = (form.get("content") as string).trim();
+    const content = newMessage.trim();
     if (!content) {
       toast({ title: "Error", description: "El mensaje no puede estar vacío.", variant: "destructive" });
       setLoading(false);
@@ -55,6 +56,7 @@ export default function AdminMessages() {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
       toast({ title: "Mensaje enviado" });
+      setNewMessage("");
       setOpen(false);
       load();
     }
@@ -88,7 +90,8 @@ export default function AdminMessages() {
               </div>
               <div className="space-y-2">
                 <Label>Mensaje *</Label>
-                <Textarea name="content" required placeholder="Escribe tu mensaje al conductor..." maxLength={1000} rows={4} />
+                <Textarea name="content" required placeholder="Escribe tu mensaje al conductor..." maxLength={500} rows={4} value={newMessage} onChange={(e) => setNewMessage(e.target.value)} />
+                <p className="text-xs text-muted-foreground text-right">{newMessage.length}/500</p>
               </div>
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? "Enviando..." : "Enviar Mensaje"}
@@ -111,7 +114,7 @@ export default function AdminMessages() {
                       Para: <span className="font-medium text-foreground">{msg.receiver?.full_name}</span>
                       {" • De: "}{msg.sender?.full_name}
                     </p>
-                    <p className="text-sm mt-1.5 leading-relaxed">{msg.content}</p>
+                    <p className="text-sm mt-1.5 leading-relaxed break-all whitespace-pre-wrap">{msg.content}</p>
                     <p className="text-xs text-muted-foreground mt-2">
                       {new Date(msg.created_at).toLocaleString("es-CL", { dateStyle: "medium", timeStyle: "short" })}
                     </p>

@@ -74,7 +74,7 @@ export default function ConductorMessages() {
                       <p className="text-xs font-medium text-muted-foreground">De: {msg.sender?.full_name || "Administrador"}</p>
                       <StatusBadge status={msg.status} />
                     </div>
-                    <p className="text-sm mt-2 leading-relaxed">{msg.content}</p>
+                    <p className="text-sm mt-2 leading-relaxed break-all whitespace-pre-wrap">{msg.content}</p>
                     <p className="text-xs text-muted-foreground mt-2">
                       {new Date(msg.created_at).toLocaleString("es-CL", { dateStyle: "medium", timeStyle: "short" })}
                     </p>

@@ -112,7 +112,7 @@ export default function AdminRequests() {
                       {request.profiles?.full_name}
                       {request.vehicles?.license_plate ? ` • ${request.vehicles.license_plate}` : ""}
                     </p>
-                    <p className="text-xs text-muted-foreground truncate mt-0.5">{request.details || "Sin detalles"}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5 break-all whitespace-pre-wrap">{request.details || "Sin detalles"}</p>
                     <div className="flex gap-3 text-xs text-muted-foreground mt-1">
                       {request.amount && <span>$ {Number(request.amount).toLocaleString("es-CL")}</span>}
                       <span>{new Date(request.created_at).toLocaleDateString("es-CL")}</span>

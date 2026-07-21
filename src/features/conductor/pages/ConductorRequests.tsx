@@ -22,6 +22,7 @@ export default function ConductorRequests() {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [filterStatus, setFilterStatus] = useState("all");
+  const [newDetails, setNewDetails] = useState("");
 
   const load = async () => {
     if (!profile) return;
@@ -49,13 +50,14 @@ export default function ConductorRequests() {
       profile_id: profile.id,
       request_type_id: form.get("request_type_id") as string,
       vehicle_id: vehicleId === "none" ? null : vehicleId,
-      details: (form.get("details") as string).trim(),
+      details: newDetails.trim(),
       amount: isNaN(amount) ? null : amount,
     });
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
       toast({ title: "Solicitud creada exitosamente" });
+      setNewDetails("");
       setOpen(false);
       load();
     }
@@ -106,7 +108,8 @@ export default function ConductorRequests() {
               </div>
               <div className="space-y-2">
                 <Label>Detalles *</Label>
-                <Textarea name="details" required placeholder="Describe tu solicitud con el mayor detalle posible..." maxLength={500} />
+                <Textarea name="details" required placeholder="Describe tu solicitud con el mayor detalle posible..." maxLength={500} value={newDetails} onChange={(e) => setNewDetails(e.target.value)} />
+                <p className="text-xs text-muted-foreground text-right">{newDetails.length}/500</p>
               </div>
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? "Creando..." : "Enviar Solicitud"}
@@ -125,7 +128,7 @@ export default function ConductorRequests() {
               <CardContent className="flex items-center gap-4 p-4">
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-sm">{req.request_types?.name}</p>
-                  <p className="text-xs text-muted-foreground truncate mt-0.5">{req.details || "Sin detalles"}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5 break-all whitespace-pre-wrap">{req.details || "Sin detalles"}</p>
                   <div className="flex gap-3 text-xs text-muted-foreground mt-1">
                     {req.vehicles?.license_plate && <span>🚗 {req.vehicles.license_plate}</span>}
                     {req.amount && <span>💰 ${Number(req.amount).toLocaleString("es-CL")}</span>}

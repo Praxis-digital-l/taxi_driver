@@ -456,9 +456,10 @@ export default function AdminSearch() {
                         value={newMessage}
                         onChange={(event) => setNewMessage(event.target.value)}
                         placeholder="Ej: Programar mantención preventiva para esta semana..."
-                        maxLength={1000}
+                        maxLength={500}
                         rows={2}
                       />
+                      <p className="text-xs text-muted-foreground text-right -mt-1">{newMessage.length}/500</p>
                       <Select value={newMessageStatus} onValueChange={setNewMessageStatus}>
                         <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
                         <SelectContent>
@@ -488,7 +489,7 @@ export default function AdminSearch() {
                   messages.slice(0, 8).map((message) => (
                     <div key={message.id} className="flex items-start justify-between gap-3 rounded-lg border p-3">
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm">{message.content}</p>
+                        <p className="text-sm break-all whitespace-pre-wrap">{message.content}</p>
                         <p className="text-xs text-muted-foreground mt-1">
                           {new Date(message.created_at).toLocaleString("es-CL", { dateStyle: "short", timeStyle: "short" })}
                         </p>
