@@ -103,7 +103,7 @@ export default function ConductorMessages() {
                 <div className="flex items-start justify-between gap-3 max-w-full overflow-hidden">
                   <div className="flex-1 min-w-0 max-w-full">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <p className="text-xs font-medium text-muted-foreground break-words">De: {msg.sender?.full_name || "Administrador"}</p>
+                      <p className="text-xs font-medium text-muted-foreground break-all">De: {msg.sender?.full_name || "Administrador"}</p>
                       <StatusBadge status={statusForConductor(msg.status)} />
                     </div>
                     <p className="text-sm mt-2 leading-relaxed break-all whitespace-pre-wrap">{msg.content}</p>
@@ -133,7 +133,7 @@ export default function ConductorMessages() {
               </div>
               <div className="min-w-0">
                 <span className="text-muted-foreground block mb-1">Mensaje:</span>
-                <div className="rounded-lg border bg-muted/30 p-3 text-sm max-h-96 overflow-y-auto whitespace-pre-wrap break-words">
+                <div className="rounded-lg border bg-muted/30 p-3 text-sm max-h-96 overflow-y-auto whitespace-pre-wrap break-all">
                   {detailMsg.content || "Sin contenido"}
                 </div>
               </div>

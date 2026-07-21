@@ -137,7 +137,7 @@ export default function ConductorDashboard() {
                   <div key={msg.id} onClick={() => navigate("/conductor/messages", { state: { openMessageId: msg.id } })} className="flex items-start justify-between gap-3 rounded-lg border p-3 hover:bg-muted/50 transition-colors cursor-pointer">
                     <div className="min-w-0 flex-1">
                       <p className="text-xs text-muted-foreground">De: {msg.sender?.full_name || "Admin"}</p>
-                      <p className="text-sm mt-0.5 line-clamp-2">{msg.content}</p>
+                      <p className="text-sm mt-0.5 line-clamp-2 break-all">{msg.content}</p>
                     </div>
                     <StatusBadge status={msg.status === "enviado" ? "pendiente" : "visto"} />
                   </div>

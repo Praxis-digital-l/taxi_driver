@@ -186,12 +186,12 @@ export default function AdminRequests() {
                   <div className="flex items-start justify-between gap-4 max-w-full overflow-hidden">
                     <div className="flex-1 min-w-0 max-w-full space-y-1">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <p className="font-medium text-sm break-words">
+                        <p className="font-medium text-sm break-all">
                           {request.profiles?.full_name ?? "Desconocido"} · {request.request_types?.name ?? "Sin tipo"}
                         </p>
                         <RequestPriorityBadge requestTypeName={request.request_types?.name} />
                       </div>
-                      <p className="text-xs text-muted-foreground break-words">
+                      <p className="text-xs text-muted-foreground break-all">
                         RUT: {request.profiles?.rut ?? "—"}
                         {request.profiles?.phone ? ` · 📞 ${request.profiles.phone}` : ""}
                       </p>
@@ -202,7 +202,7 @@ export default function AdminRequests() {
                         <span>{waitingDays} día(s) en espera</span>
                       </div>
                       <div className="pt-1">
-                        <p className="text-xs text-muted-foreground line-clamp-2 break-words">{request.details || "Sin detalles"}</p>
+                        <p className="text-xs text-muted-foreground line-clamp-2 break-all">{request.details || "Sin detalles"}</p>
                       </div>
                     </div>
                     <p className="text-xs text-muted-foreground">
@@ -251,7 +251,7 @@ export default function AdminRequests() {
               </div>
               <div className="min-w-0">
                 <span className="text-muted-foreground block mb-1">Detalles:</span>
-                <div className="rounded-lg border bg-muted/30 p-3 text-sm max-h-96 overflow-y-auto whitespace-pre-wrap break-words">
+                <div className="rounded-lg border bg-muted/30 p-3 text-sm max-h-96 overflow-y-auto whitespace-pre-wrap break-all">
                   {detailReq.details || "Sin detalles"}
                 </div>
               </div>

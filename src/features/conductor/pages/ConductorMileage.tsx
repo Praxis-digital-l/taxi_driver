@@ -144,7 +144,7 @@ export default function ConductorMileage() {
                     <p className="text-xs text-muted-foreground">
                       {rec.vehicles?.license_plate} • {new Date(rec.recorded_date).toLocaleDateString("es-CL")}
                     </p>
-                    {rec.notes && <p className="text-xs text-muted-foreground mt-0.5">{rec.notes}</p>}
+                    {rec.notes && <p className="text-xs text-muted-foreground mt-0.5 break-all whitespace-pre-wrap">{rec.notes}</p>}
                   </div>
                 </CardContent>
               </Card>

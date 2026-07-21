@@ -519,7 +519,7 @@ export default function AdminSearch() {
                           </span>
                         )}
                       </div>
-                      <p className="text-xs text-muted-foreground">{document.profiles?.full_name} • {document.description || ""}</p>
+                      <p className="text-xs text-muted-foreground break-all whitespace-pre-wrap">{document.profiles?.full_name} • {document.description || ""}</p>
                       {document.expiration_date && (
                         <p className="text-xs text-muted-foreground">Vence: {new Date(document.expiration_date).toLocaleDateString("es-CL")}</p>
                       )}
@@ -560,7 +560,7 @@ export default function AdminSearch() {
                   <CardContent className="flex items-center gap-4 p-4">
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-sm">{request.request_types?.name}</p>
-                      <p className="text-xs text-muted-foreground">{request.profiles?.full_name} • {request.details || ""}</p>
+                      <p className="text-xs text-muted-foreground break-all whitespace-pre-wrap">{request.profiles?.full_name} • {request.details || ""}</p>
                       <div className="flex gap-3 text-xs text-muted-foreground mt-0.5">
                         {request.amount && <span>$ {Number(request.amount).toLocaleString("es-CL")}</span>}
                         <span>{new Date(request.created_at).toLocaleDateString("es-CL")}</span>
@@ -584,7 +584,7 @@ export default function AdminSearch() {
                     <div className="flex-1">
                       <p className="font-heading font-bold">{record.kilometers.toLocaleString("es-CL")} km</p>
                       <p className="text-xs text-muted-foreground">{record.profiles?.full_name} • {new Date(record.recorded_date).toLocaleDateString("es-CL")}</p>
-                      {record.notes && <p className="text-xs text-muted-foreground">{record.notes}</p>}
+                      {record.notes && <p className="text-xs text-muted-foreground break-all whitespace-pre-wrap">{record.notes}</p>}
                     </div>
                   </CardContent>
                 </Card>
@@ -614,7 +614,7 @@ export default function AdminSearch() {
                   <Card key={note.id} className="stat-card">
                     <CardContent className="p-4 flex items-start justify-between gap-3">
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm">{note.note_text}</p>
+                        <p className="text-sm break-all whitespace-pre-wrap">{note.note_text}</p>
                         <p className="text-xs text-muted-foreground mt-1.5">
                           {new Date(note.created_at).toLocaleString("es-CL", { dateStyle: "medium", timeStyle: "short" })}
                         </p>

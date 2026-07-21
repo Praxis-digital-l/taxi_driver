@@ -237,7 +237,7 @@ export default function ConductorRequests() {
               </div>
               <div className="min-w-0">
                 <span className="text-muted-foreground block mb-1">Detalles:</span>
-                <div className="rounded-lg border bg-muted/30 p-3 text-sm max-h-96 overflow-y-auto whitespace-pre-wrap break-words">
+                <div className="rounded-lg border bg-muted/30 p-3 text-sm max-h-96 overflow-y-auto whitespace-pre-wrap break-all">
                   {detailReq.details || "Sin detalles"}
                 </div>
               </div>

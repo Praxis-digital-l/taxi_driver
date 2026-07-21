@@ -163,7 +163,7 @@ export default function AdminMessages() {
               <CardContent className="p-4">
                 <div className="flex items-start justify-between gap-3 max-w-full overflow-hidden">
                   <div className="flex-1 min-w-0 max-w-full">
-                    <p className="text-xs text-muted-foreground break-words">
+                    <p className="text-xs text-muted-foreground break-all">
                       Para: <span className="font-medium text-foreground">{msg.receiver?.full_name}</span>
                       {" • De: "}{msg.sender?.full_name}
                     </p>
@@ -208,7 +208,7 @@ export default function AdminMessages() {
               </div>
               <div className="min-w-0">
                 <span className="text-muted-foreground block mb-1">Mensaje:</span>
-                <div className="rounded-lg border bg-muted/30 p-3 text-sm max-h-96 overflow-y-auto whitespace-pre-wrap break-words">
+                <div className="rounded-lg border bg-muted/30 p-3 text-sm max-h-96 overflow-y-auto whitespace-pre-wrap break-all">
                   {detailMsg.content || "Sin contenido"}
                 </div>
               </div>
