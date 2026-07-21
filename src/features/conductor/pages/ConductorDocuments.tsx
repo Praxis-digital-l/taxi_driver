@@ -61,7 +61,7 @@ export default function ConductorDocuments() {
     if (!isAllowedDocumentFile(file)) {
       toast({
         title: "Formato no permitido",
-        description: "Solo se permiten archivos PDF o fotos (JPG, PNG, WEBP, HEIC, HEIF).",
+        description: "Solo se permiten archivos PDF, Excel, Word o imágenes (JPG, PNG, WEBP, HEIC, HEIF).",
         variant: "destructive",
       });
       setUploading(false);
@@ -69,14 +69,14 @@ export default function ConductorDocuments() {
     }
 
     const fileKey = `${user.id}/${Date.now()}_${file.name}`;
-    const { error: uploadError } = await supabase.storage.from("documents").upload(fileKey, file);
+    const { error: uploadError } = await supabase.storage.from("Documents").upload(fileKey, file);
     if (uploadError) {
       toast({ title: "Error al subir", description: uploadError.message, variant: "destructive" });
       setUploading(false);
       return;
     }
 
-    const { data: urlData } = supabase.storage.from("documents").getPublicUrl(fileKey);
+    const { data: urlData } = supabase.storage.from("Documents").getPublicUrl(fileKey);
     const vehicleId = form.get("vehicle_id") as string;
 
     const { error } = await supabase.from("documents").insert({
@@ -101,7 +101,7 @@ export default function ConductorDocuments() {
 
   const handleDelete = async (id: string, fileKey: string) => {
     if (!confirm("¿Estás seguro de eliminar este documento?")) return;
-    await supabase.storage.from("documents").remove([fileKey]);
+    await supabase.storage.from("Documents").remove([fileKey]);
     await supabase.from("documents").delete().eq("id", id);
     toast({ title: "Documento eliminado" });
     load();
@@ -172,7 +172,7 @@ export default function ConductorDocuments() {
               <div className="space-y-2">
                 <Label>Archivo * (máx. 10MB)</Label>
                 <Input name="file" type="file" required accept={DOCUMENT_ACCEPT_ATTR} />
-                <p className="text-[11px] text-muted-foreground">Formatos permitidos: PDF e imágenes (JPG, PNG, WEBP, HEIC, HEIF).</p>
+                <p className="text-[11px] text-muted-foreground">Formatos permitidos: PDF, Excel, Word e imágenes (JPG, PNG, WEBP, HEIC, HEIF).</p>
               </div>
               <Button type="submit" className="w-full" disabled={uploading}>
                 {uploading ? "Subiendo archivo..." : "Subir Documento"}
