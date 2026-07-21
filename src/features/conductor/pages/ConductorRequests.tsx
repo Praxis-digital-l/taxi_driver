@@ -24,6 +24,7 @@ export default function ConductorRequests() {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [filterStatus, setFilterStatus] = useState("all");
+  const [newDetails, setNewDetails] = useState("");
 
   const [detailReq, setDetailReq] = useState<any>(null);
   const [detailOpen, setDetailOpen] = useState(false);
@@ -77,13 +78,14 @@ export default function ConductorRequests() {
       profile_id: profile.id,
       request_type_id: form.get("request_type_id") as string,
       vehicle_id: vehicleId === "none" ? null : vehicleId,
-      details: (form.get("details") as string).trim(),
+      details: newDetails.trim(),
       amount: isNaN(amount) ? null : amount,
     });
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
       toast({ title: "Solicitud creada exitosamente" });
+      setNewDetails("");
       setOpen(false);
       load();
     }
@@ -174,7 +176,8 @@ export default function ConductorRequests() {
               </div>
               <div className="space-y-2">
                 <Label>Detalles *</Label>
-                <Textarea name="details" required placeholder="Describe tu solicitud con el mayor detalle posible..." maxLength={500} className="resize-none" />
+                <Textarea name="details" required placeholder="Describe tu solicitud ..." maxLength={500} value={newDetails} onChange={(e) => setNewDetails(e.target.value)} />
+                <p className="text-xs text-muted-foreground text-right">{newDetails.length}/500</p>
               </div>
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? "Creando..." : "Enviar Solicitud"}
@@ -189,28 +192,15 @@ export default function ConductorRequests() {
       ) : (
         <div className="grid gap-3">
           {filtered.map((req: any) => (
-            <Card key={req.id} className="stat-card overflow-hidden cursor-pointer" onClick={() => { setDetailReq(req); setDetailOpen(true); }}>
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between gap-4 max-w-full overflow-hidden">
-                    <div className="flex-1 min-w-0 max-w-full space-y-1">
-                      <p className="font-medium text-sm break-words">{profile?.full_name ?? "Yo"} · {req.request_types?.name}</p>
-                      <p className="text-xs text-muted-foreground break-words">
-                        RUT: {profile?.rut ?? "—"}
-                        {profile?.phone ? ` · 📞 ${profile.phone}` : ""}
-                      </p>
-                      <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                        {req.vehicles?.license_plate && <span>🚗 {req.vehicles.license_plate}</span>}
-                        {req.amount && <span>💰 ${Number(req.amount).toLocaleString("es-CL")}</span>}
-                        <span>{new Date(req.created_at).toLocaleDateString("es-CL")}</span>
-                      </div>
-                      <div className="pt-1">
-                        <p className="text-xs text-muted-foreground line-clamp-2 break-words">{req.details || "Sin detalles"}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0" onClick={(e) => e.stopPropagation()}>
-                    <StatusBadge status={req.status} />
-                    <button onClick={() => { setEditReq(req); setEditOpen(true); }} className="p-1.5 rounded-md hover:bg-muted transition-colors"><Pencil className="h-4 w-4" /></button>
-                    <button onClick={() => { setDeleteReq(req); setDeleteOpen(true); }} className="p-1.5 rounded-md hover:bg-destructive/10 transition-colors"><Trash2 className="h-4 w-4 text-destructive" /></button>
+            <Card key={req.id} className="stat-card">
+              <CardContent className="flex items-center gap-4 p-4">
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-sm">{req.request_types?.name}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5 break-all whitespace-pre-wrap">{req.details || "Sin detalles"}</p>
+                  <div className="flex gap-3 text-xs text-muted-foreground mt-1">
+                    {req.vehicles?.license_plate && <span>🚗 {req.vehicles.license_plate}</span>}
+                    {req.amount && <span>💰 ${Number(req.amount).toLocaleString("es-CL")}</span>}
+                    <span>{new Date(req.created_at).toLocaleDateString("es-CL")}</span>
                   </div>
                 </div>
               </CardContent>
@@ -247,7 +237,7 @@ export default function ConductorRequests() {
               </div>
               <div className="min-w-0">
                 <span className="text-muted-foreground block mb-1">Detalles:</span>
-                <div className="rounded-lg border bg-muted/30 p-3 text-sm max-h-96 overflow-y-auto whitespace-pre-wrap break-words">
+                <div className="rounded-lg border bg-muted/30 p-3 text-sm max-h-96 overflow-y-auto whitespace-pre-wrap break-all">
                   {detailReq.details || "Sin detalles"}
                 </div>
               </div>

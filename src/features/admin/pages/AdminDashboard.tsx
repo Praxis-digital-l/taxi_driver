@@ -248,12 +248,12 @@ export default function AdminDashboard() {
                         {item.type === "request" && <ClipboardList className="h-4 w-4 text-warning shrink-0" />}
                         {item.type === "document" && <FileText className="h-4 w-4 text-destructive shrink-0" />}
                         {item.type === "message" && <MessageSquare className="h-4 w-4 text-info shrink-0" />}
-                        <p className="text-sm font-medium">{item.title}</p>
+                        <p className="text-sm font-medium break-all">{item.title}</p>
                         {item.type === "request" && item.priorityName && (
                           <RequestPriorityBadge requestTypeName={item.priorityName} className="text-[10px]" />
                         )}
                       </div>
-                      <p className="text-xs text-muted-foreground">{item.subtitle}</p>
+                      <p className="text-xs text-muted-foreground break-all whitespace-pre-wrap">{item.subtitle}</p>
                       <p className="text-[10px] text-muted-foreground">{item.meta}</p>
                     </div>
                     {item.type === "document" ? (

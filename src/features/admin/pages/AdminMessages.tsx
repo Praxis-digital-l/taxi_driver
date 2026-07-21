@@ -20,6 +20,7 @@ export default function AdminMessages() {
   const [conductors, setConductors] = useState<any[]>([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [newMessage, setNewMessage] = useState("");
 
   const [detailMsg, setDetailMsg] = useState<any>(null);
   const [detailOpen, setDetailOpen] = useState(false);
@@ -64,7 +65,7 @@ export default function AdminMessages() {
     if (!profile) return;
     setLoading(true);
     const form = new FormData(e.currentTarget);
-    const content = (form.get("content") as string).trim();
+    const content = newMessage.trim();
     if (!content) {
       toast({ title: "Error", description: "El mensaje no puede estar vacío.", variant: "destructive" });
       setLoading(false);
@@ -80,6 +81,7 @@ export default function AdminMessages() {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
       toast({ title: "Mensaje enviado" });
+      setNewMessage("");
       setOpen(false);
       load();
     }
@@ -141,7 +143,8 @@ export default function AdminMessages() {
               </div>
               <div className="space-y-2">
                 <Label>Mensaje *</Label>
-                <Textarea name="content" required placeholder="Escribe tu mensaje al conductor..." maxLength={1000} rows={4} className="resize-none" />
+                <Textarea name="content" required placeholder="Escribe tu mensaje al conductor..." maxLength={500} rows={4} value={newMessage} onChange={(e) => setNewMessage(e.target.value)} />
+                <p className="text-xs text-muted-foreground text-right">{newMessage.length}/500</p>
               </div>
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? "Enviando..." : "Enviar Mensaje"}
@@ -160,11 +163,11 @@ export default function AdminMessages() {
               <CardContent className="p-4">
                 <div className="flex items-start justify-between gap-3 max-w-full overflow-hidden">
                   <div className="flex-1 min-w-0 max-w-full">
-                    <p className="text-xs text-muted-foreground break-words">
+                    <p className="text-xs text-muted-foreground break-all">
                       Para: <span className="font-medium text-foreground">{msg.receiver?.full_name}</span>
                       {" • De: "}{msg.sender?.full_name}
                     </p>
-                    <p className="text-sm mt-1.5 leading-relaxed line-clamp-2 break-words">{msg.content}</p>
+                    <p className="text-sm mt-1.5 leading-relaxed break-all whitespace-pre-wrap">{msg.content}</p>
                     <p className="text-xs text-muted-foreground mt-2">
                       {new Date(msg.created_at).toLocaleString("es-CL", { dateStyle: "medium", timeStyle: "short" })}
                     </p>
@@ -205,7 +208,7 @@ export default function AdminMessages() {
               </div>
               <div className="min-w-0">
                 <span className="text-muted-foreground block mb-1">Mensaje:</span>
-                <div className="rounded-lg border bg-muted/30 p-3 text-sm max-h-96 overflow-y-auto whitespace-pre-wrap break-words">
+                <div className="rounded-lg border bg-muted/30 p-3 text-sm max-h-96 overflow-y-auto whitespace-pre-wrap break-all">
                   {detailMsg.content || "Sin contenido"}
                 </div>
               </div>

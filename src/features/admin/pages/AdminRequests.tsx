@@ -186,12 +186,12 @@ export default function AdminRequests() {
                   <div className="flex items-start justify-between gap-4 max-w-full overflow-hidden">
                     <div className="flex-1 min-w-0 max-w-full space-y-1">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <p className="font-medium text-sm break-words">
+                        <p className="font-medium text-sm break-all">
                           {request.profiles?.full_name ?? "Desconocido"} · {request.request_types?.name ?? "Sin tipo"}
                         </p>
                         <RequestPriorityBadge requestTypeName={request.request_types?.name} />
                       </div>
-                      <p className="text-xs text-muted-foreground break-words">
+                      <p className="text-xs text-muted-foreground break-all">
                         RUT: {request.profiles?.rut ?? "—"}
                         {request.profiles?.phone ? ` · 📞 ${request.profiles.phone}` : ""}
                       </p>
@@ -202,23 +202,18 @@ export default function AdminRequests() {
                         <span>{waitingDays} día(s) en espera</span>
                       </div>
                       <div className="pt-1">
-                        <p className="text-xs text-muted-foreground line-clamp-2 break-words">{request.details || "Sin detalles"}</p>
+                        <p className="text-xs text-muted-foreground line-clamp-2 break-all">{request.details || "Sin detalles"}</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 shrink-0" onClick={(e) => e.stopPropagation()}>
-                      <StatusBadge status={request.status} />
-                      <Select value={request.status} onValueChange={(value) => updateStatus(request.id, value)}>
-                        <SelectTrigger className="w-[135px] h-8 text-xs"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          {REQUEST_STATUSES.map((status) => (
-                            <SelectItem key={status} value={status} className="capitalize">
-                              {status.replace("_", " ")}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <button onClick={() => openEdit(request)} className="p-1.5 rounded-md hover:bg-muted transition-colors"><Pencil className="h-4 w-4" /></button>
-                      <button onClick={() => confirmDelete(request)} className="p-1.5 rounded-md hover:bg-destructive/10 transition-colors"><Trash2 className="h-4 w-4 text-destructive" /></button>
+                    <p className="text-xs text-muted-foreground">
+                      {request.profiles?.full_name}
+                      {request.vehicles?.license_plate ? ` • ${request.vehicles.license_plate}` : ""}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-0.5 break-all whitespace-pre-wrap">{request.details || "Sin detalles"}</p>
+                    <div className="flex gap-3 text-xs text-muted-foreground mt-1">
+                      {request.amount && <span>$ {Number(request.amount).toLocaleString("es-CL")}</span>}
+                      <span>{new Date(request.created_at).toLocaleDateString("es-CL")}</span>
+                      <span>{waitingDays} día(s) en espera</span>
                     </div>
                   </div>
                 </CardContent>
@@ -256,7 +251,7 @@ export default function AdminRequests() {
               </div>
               <div className="min-w-0">
                 <span className="text-muted-foreground block mb-1">Detalles:</span>
-                <div className="rounded-lg border bg-muted/30 p-3 text-sm max-h-96 overflow-y-auto whitespace-pre-wrap break-words">
+                <div className="rounded-lg border bg-muted/30 p-3 text-sm max-h-96 overflow-y-auto whitespace-pre-wrap break-all">
                   {detailReq.details || "Sin detalles"}
                 </div>
               </div>

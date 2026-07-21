@@ -1,6 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 
-const DOCUMENTS_BUCKET = "documents";
+const DOCUMENTS_BUCKET = "Documents";
 
 function getDefaultFileName(fileKey: string) {
   const segments = fileKey.split("/");
