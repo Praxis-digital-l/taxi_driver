@@ -12,6 +12,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "reset:conductors:password": "node scripts/reset-conductors-password.mjs",
+    "migrate:worker-id": "node scripts/apply-migration.mjs",
     "deploy": "npm run build && npx gh-pages -d dist"
   },
   "dependencies": {
@@ -50,7 +51,9 @@
     "cmdk": "^1.1.1",
     "date-fns": "^3.6.0",
     "embla-carousel-react": "^8.6.0",
+    "html2canvas": "^1.4.1",
     "input-otp": "^1.4.2",
+    "jspdf": "^4.2.1",
     "lucide-react": "^0.462.0",
     "next-themes": "^0.3.0",
     "react": "^18.3.1",

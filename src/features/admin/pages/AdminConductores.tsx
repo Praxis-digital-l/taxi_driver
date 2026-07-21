@@ -543,6 +543,10 @@ export default function AdminConductores() {
                   <p className="font-medium">{selectedConductor.rut || "—"}</p>
                 </div>
                 <div>
+                  <p className="text-xs text-muted-foreground">ID Trabajador</p>
+                  <p className="font-medium">{selectedConductor.worker_id || "—"}</p>
+                </div>
+                <div>
                   <p className="text-xs text-muted-foreground">Registrado desde</p>
                   <p className="font-medium">{new Date(selectedConductor.created_at).toLocaleDateString("es-CL")}</p>
                 </div>

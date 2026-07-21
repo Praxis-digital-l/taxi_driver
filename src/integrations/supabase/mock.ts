@@ -120,6 +120,7 @@ const initialProfiles = [
     phone: "+56 9 7777 0001",
     role: "super_admin",
     rut: "",
+    worker_id: "",
     estado_conductor: "nuevo",
     created_at: nowIso(),
     updated_at: nowIso(),
@@ -133,6 +134,7 @@ const initialProfiles = [
     phone: "+56 9 7777 0002",
     role: "admin",
     rut: "",
+    worker_id: "",
     estado_conductor: "nuevo",
     created_at: nowIso(),
     updated_at: nowIso(),
@@ -146,6 +148,7 @@ const initialProfiles = [
     phone: "+56 9 1111 1001",
     role: "conductor",
     rut: "12.345.678-5",
+    worker_id: "TR-000001",
     estado_conductor: "antiguo",
     created_at: nowIso(),
     updated_at: nowIso(),
@@ -159,6 +162,7 @@ const initialProfiles = [
     phone: "+56 9 1723 2101",
     role: "conductor",
     rut: "23.456.789-0",
+    worker_id: "TR-000002",
     estado_conductor: "antiguo",
     created_at: nowIso(),
     updated_at: nowIso(),
@@ -172,6 +176,7 @@ const initialProfiles = [
     phone: "+56 9 2222 2003",
     role: "conductor",
     rut: "34.567.890-1",
+    worker_id: "TR-000003",
     estado_conductor: "nuevo",
     created_at: nowIso(),
     updated_at: nowIso(),
@@ -185,6 +190,7 @@ const initialProfiles = [
     phone: "+56 9 3333 3004",
     role: "conductor",
     rut: "45.678.901-2",
+    worker_id: "TR-000004",
     estado_conductor: "nuevo",
     created_at: nowIso(),
     updated_at: nowIso(),
@@ -198,6 +204,7 @@ const initialProfiles = [
     phone: "+56 9 4444 4005",
     role: "conductor",
     rut: "56.789.012-3",
+    worker_id: "TR-000005",
     estado_conductor: "desactivado",
     created_at: nowIso(),
     updated_at: nowIso(),
@@ -211,6 +218,7 @@ const initialProfiles = [
     phone: "+56 9 5555 5006",
     role: "conductor",
     rut: "67.890.123-4",
+    worker_id: "TR-000006",
     estado_conductor: "antiguo",
     created_at: nowIso(),
     updated_at: nowIso(),
@@ -954,6 +962,7 @@ class MockSupabaseAuth {
     const fullName = String(params.options?.data?.full_name ?? "Nuevo Conductor").trim() || "Nuevo Conductor";
     const phone = String(params.options?.data?.phone ?? "").trim() || null;
     const rut = String(params.options?.data?.rut ?? "").trim() || "";
+    const workerId = String(params.options?.data?.worker_id ?? "").trim() || "";
 
     const user: MockUserRecord = {
       id: userId,
@@ -977,6 +986,7 @@ class MockSupabaseAuth {
       phone,
       role: "conductor",
       rut,
+      worker_id: workerId,
       estado_conductor: "nuevo",
       created_at: nowIso(),
       updated_at: nowIso(),

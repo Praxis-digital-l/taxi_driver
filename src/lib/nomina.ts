@@ -12,6 +12,8 @@ export type DescuentosTAG = {
 export type DatosNomina = {
   trabajadorId: string;
   nombre: string;
+  email: string;
+  rut: string;
   totalFacturado: number;
   gastoOperacional: number;
   diesel: number;
@@ -31,6 +33,8 @@ export type DetalleDescuento = {
 export type ResultadoNomina = {
   trabajadorId: string;
   nombre: string;
+  email: string;
+  rut: string;
   totalFacturado: number;
   descuentosPrimarios: DetalleDescuento[];
   subtotal: number;
@@ -90,10 +94,7 @@ export function validarDatosNomina(data: Partial<DatosNomina>): ErrorValidacion[
   const errores: ErrorValidacion[] = [];
 
   if (!data.trabajadorId?.trim()) {
-    errores.push({ campo: "trabajadorId", mensaje: "El ID del trabajador es obligatorio" });
-  }
-  if (!data.nombre?.trim()) {
-    errores.push({ campo: "nombre", mensaje: "El nombre del trabajador es obligatorio" });
+    errores.push({ campo: "trabajadorId", mensaje: "Debe seleccionar un trabajador" });
   }
 
   const validarCampo = (campo: string, valor: unknown, etiqueta: string) => {
@@ -152,6 +153,8 @@ export function calcularNomina(data: DatosNomina): ResultadoNomina {
   return {
     trabajadorId: data.trabajadorId,
     nombre: data.nombre,
+    email: data.email,
+    rut: data.rut,
     totalFacturado: data.totalFacturado,
     descuentosPrimarios,
     subtotal,
