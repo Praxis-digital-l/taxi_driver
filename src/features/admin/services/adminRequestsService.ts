@@ -3,12 +3,15 @@ import { sortRequestsByPriority } from "@/lib/requestPriority";
 
 export type AdminRequest = {
   id: string;
+  profile_id: string;
+  request_type_id: string;
   status: string;
   details: string | null;
   amount: number | null;
   created_at: string;
+  vehicle_id: string | null;
   request_types?: { name: string | null } | null;
-  profiles?: { full_name: string | null } | null;
+  profiles?: { full_name: string | null; rut: string | null; phone: string | null } | null;
   vehicles?: { license_plate: string | null } | null;
 };
 
@@ -21,7 +24,7 @@ function assertNoError(error: { message: string } | null) {
 export async function fetchAdminRequests(statusFilter: string) {
   let query = supabase
     .from("requests")
-    .select("id, status, details, amount, created_at, request_types(name), profiles(full_name), vehicles(license_plate)")
+    .select("id, profile_id, request_type_id, status, details, amount, created_at, vehicle_id, request_types(name), profiles(full_name, rut, phone), vehicles(license_plate)")
     .limit(200);
 
   if (statusFilter !== "all") {
@@ -41,6 +44,21 @@ export async function fetchAdminRequests(statusFilter: string) {
 
 export async function updateAdminRequestStatus(requestId: string, status: string) {
   const { error } = await supabase.from("requests").update({ status }).eq("id", requestId);
+  assertNoError(error);
+}
+
+export async function updateRequest(requestId: string, updates: {
+  request_type_id?: string;
+  vehicle_id?: string | null;
+  amount?: number | null;
+  details?: string;
+}) {
+  const { error } = await supabase.from("requests").update(updates).eq("id", requestId);
+  assertNoError(error);
+}
+
+export async function deleteRequest(requestId: string) {
+  const { error } = await supabase.from("requests").delete().eq("id", requestId);
   assertNoError(error);
 }
 

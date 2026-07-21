@@ -7,6 +7,8 @@ const STATUS_LABELS: Record<string, string> = {
   aprobado: "Aprobado",
   rechazado: "Rechazado",
   completado: "Completado",
+  enviado: "Enviado ✓",
+  visto: "Visto ✓✓",
 };
 
 interface StatusBadgeProps {
@@ -20,8 +22,8 @@ export default function StatusBadge({ status, className }: StatusBadgeProps) {
     <span className={cn("status-badge", `status-${status}`, className)}>
       <span className={cn("h-1.5 w-1.5 rounded-full", {
         "bg-warning": status === "pendiente",
-        "bg-info": status === "en_proceso",
-        "bg-accent": status === "aprobado" || status === "completado",
+        "bg-info": status === "en_proceso" || status === "enviado",
+        "bg-accent": status === "aprobado" || status === "completado" || status === "visto",
         "bg-destructive": status === "rechazado",
       })} />
       {STATUS_LABELS[status] || status}
@@ -36,4 +38,4 @@ export const REQUEST_STATUSES = ["pendiente", "en_proceso", "aprobado", "rechaza
 export const DOC_STATUSES = ["pendiente", "aprobado", "rechazado"] as const;
 
 /** Todos los estados posibles de mensaje */
-export const MESSAGE_STATUSES = ["pendiente", "en_proceso", "completado"] as const;
+export const MESSAGE_STATUSES = ["enviado", "visto"] as const;

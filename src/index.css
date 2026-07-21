@@ -121,6 +121,12 @@
   .status-completado {
     @apply bg-accent/10 text-accent border-accent/20;
   }
+  .status-enviado {
+    @apply bg-info/10 text-info border-info/20;
+  }
+  .status-visto {
+    @apply bg-accent/10 text-accent border-accent/20;
+  }
 
   .empty-state {
     @apply flex flex-col items-center justify-center py-16 text-muted-foreground;
