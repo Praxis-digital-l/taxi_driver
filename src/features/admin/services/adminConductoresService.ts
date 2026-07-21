@@ -127,44 +127,31 @@ export async function createConductor(payload: CreateConductorPayload) {
 
   const fullName = `${payload.nombres.trim()} ${payload.apellidoPaterno.trim()} ${payload.apellidoMaterno.trim()}`.trim();
 
-  const { data: authData, error: signUpError } = await supabase.auth.signUp({
+const { error: fnError } = await supabase.functions.invoke("create-conductor", {
+  body: {
     email: payload.email.trim().toLowerCase(),
     password: payload.password,
-      options: {
-        data: {
-          full_name: fullName,
-          nombres: payload.nombres.trim(),
-          apellido_paterno: payload.apellidoPaterno.trim(),
-          apellido_materno: payload.apellidoMaterno.trim(),
-          phone: payload.phone.trim(),
-          rut: payload.rut.trim(),
-          worker_id: workerId,
-        },
-      },
-  });
+    full_name: fullName,
+    nombres: payload.nombres.trim(),
+    apellido_paterno: payload.apellidoPaterno.trim(),
+    apellido_materno: payload.apellidoMaterno.trim(),
+    phone: payload.phone.trim(),
+    rut: payload.rut.trim(),
+    worker_id: workerId,
+  },
+});
 
-  if (signUpError) {
-    throw new Error(signUpError.message);
-  }
+if (fnError) {
+  throw new Error(fnError.message);
+}
 
-  if (!authData.user) {
-    throw new Error("No se pudo crear el usuario de autenticación");
-  }
-
-  const { error: updateError } = await supabase
-    .from("profiles")
-    .update({
-      nombres: payload.nombres.trim(),
-      apellido_paterno: payload.apellidoPaterno.trim(),
-      apellido_materno: payload.apellidoMaterno.trim(),
-      phone: payload.phone.trim(),
-      rut: payload.rut.trim(),
-      worker_id: workerId,
-    })
-    .eq("user_id", authData.user.id);
-
-  if (updateError) {
-    throw new Error(updateError.message);
+  if (fnError) {
+    let msg = fnError.message;
+    try {
+      const parsed = JSON.parse(fnError.message);
+      if (parsed.error) msg = parsed.error;
+    } catch {}
+    throw new Error(msg);
   }
 }
 
