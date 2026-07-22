@@ -110,14 +110,16 @@ export default function AdminMessages() {
   const handleDelete = async () => {
     if (!deleteMsg) return;
     setDeleteLoading(true);
-    const { error } = await supabase.from("messages").delete().eq("id", deleteMsg.id);
+    const removedId = deleteMsg.id;
+    setMessages((prev) => prev.filter((m) => m.id !== removedId));
+    setDeleteOpen(false);
+    if (detailMsg?.id === removedId) setDetailOpen(false);
+    const { error } = await supabase.from("messages").delete().eq("id", removedId);
     if (error) {
       toast({ title: "Error al eliminar", description: error.message, variant: "destructive" });
+      load();
     } else {
       toast({ title: "Mensaje eliminado" });
-      setDeleteOpen(false);
-      if (detailMsg?.id === deleteMsg.id) setDetailOpen(false);
-      load();
     }
     setDeleteLoading(false);
   };
@@ -167,7 +169,7 @@ export default function AdminMessages() {
                       Para: <span className="font-medium text-foreground">{msg.receiver?.full_name}</span>
                       {" • De: "}{msg.sender?.full_name}
                     </p>
-                    <p className="text-sm mt-1.5 leading-relaxed break-all whitespace-pre-wrap">{msg.content}</p>
+                    <p className="text-sm mt-1.5 leading-relaxed break-all whitespace-pre-wrap line-clamp-2">{msg.content}</p>
                     <p className="text-xs text-muted-foreground mt-2">
                       {new Date(msg.created_at).toLocaleString("es-CL", { dateStyle: "medium", timeStyle: "short" })}
                     </p>
