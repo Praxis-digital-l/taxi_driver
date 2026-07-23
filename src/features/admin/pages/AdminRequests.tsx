@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,9 +25,11 @@ import {
 
 export default function AdminRequests() {
   const { toast } = useToast();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [requests, setRequests] = useState<AdminRequest[]>([]);
   const [reqTypes, setReqTypes] = useState<any[]>([]);
-  const [filter, setFilter] = useState("pendiente");
+  const [filter, setFilter] = useState("all");
+  const initialIdOpened = useRef(false);
 
   const [detailReq, setDetailReq] = useState<AdminRequest | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
@@ -56,6 +59,19 @@ export default function AdminRequests() {
   useEffect(() => {
     load();
   }, [load]);
+
+  useEffect(() => {
+    if (initialIdOpened.current || requests.length === 0) return;
+    const idParam = searchParams.get("id");
+    if (!idParam) return;
+    const match = requests.find((r) => r.id === idParam);
+    if (match) {
+      initialIdOpened.current = true;
+      setDetailReq(match);
+      setDetailOpen(true);
+      setSearchParams({}, { replace: true });
+    }
+  }, [requests, searchParams, setSearchParams]);
 
   useEffect(() => {
     supabase.from("request_types").select("*").order("name").then(({ data }) => setReqTypes(data || []));
