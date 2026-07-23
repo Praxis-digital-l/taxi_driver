@@ -14,6 +14,7 @@ import ConductorRequests from "@/features/conductor/pages/ConductorRequests";
 import ConductorMileage from "@/features/conductor/pages/ConductorMileage";
 import ConductorMessages from "@/features/conductor/pages/ConductorMessages";
 import AdminDashboard from "@/features/admin/pages/AdminDashboard";
+import AdminDocuments from "@/features/admin/pages/AdminDocuments";
 import AdminSearch from "@/features/admin/pages/AdminSearch";
 import AdminVehicles from "@/features/admin/pages/AdminVehicles";
 import AdminRequests from "@/features/admin/pages/AdminRequests";
@@ -79,6 +80,7 @@ const App = () => (
 
             {/* Rutas Admin */}
             <Route path="/admin" element={<ProtectedRoute requiredRole="admin"><AppLayout><AdminDashboard /></AppLayout></ProtectedRoute>} />
+            <Route path="/admin/documents" element={<ProtectedRoute requiredRole="admin"><AppLayout><AdminDocuments /></AppLayout></ProtectedRoute>} />
             <Route path="/admin/search" element={<ProtectedRoute requiredRole="admin"><AppLayout><AdminSearch /></AppLayout></ProtectedRoute>} />
             <Route path="/admin/vehicles" element={<ProtectedRoute requiredRole="admin"><AppLayout><AdminVehicles /></AppLayout></ProtectedRoute>} />
             <Route path="/admin/requests" element={<ProtectedRoute requiredRole="admin"><AppLayout><AdminRequests /></AppLayout></ProtectedRoute>} />
