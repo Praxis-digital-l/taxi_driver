@@ -11,9 +11,24 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import StatusBadge, { REQUEST_STATUSES } from "@/components/StatusBadge";
+import StatusBadge from "@/components/StatusBadge";
 import PageHeader from "@/components/PageHeader";
-import { Plus, ClipboardList, Pencil, Trash2 } from "lucide-react";
+import { Plus, ClipboardList, Pencil, Trash2, XCircle, CheckCircle2 } from "lucide-react";
+
+const TERMINAL_STATUSES = ["aprobado", "rechazado", "completado"];
+const FILTER_STATUSES = ["pendiente", "aprobado", "rechazado"];
+
+function parseResolution(details: string | null) {
+  if (!details) return null;
+  const match = details.match(/\n\n--- MOTIVO DEL RECHAZO \(([^)]+)\) ---\n([\s\S]*)$/);
+  if (!match) return null;
+  return { date: match[1], reason: match[2].trim() };
+}
+
+function stripResolution(details: string | null) {
+  if (!details) return "";
+  return details.replace(/\n\n--- MOTIVO DEL RECHAZO .*/s, "");
+}
 
 export default function ConductorRequests() {
   const { profile } = useAuth();
@@ -104,7 +119,7 @@ export default function ConductorRequests() {
       request_type_id: form.get("request_type_id") as string,
       vehicle_id: vehicleId === "none" ? null : vehicleId,
       amount: isNaN(amount) ? null : amount,
-      details: (form.get("details") as string).trim(),
+      details: stripResolution(form.get("details") as string),
     }).eq("id", editReq.id);
 
     if (error) {
@@ -141,7 +156,7 @@ export default function ConductorRequests() {
           <SelectTrigger className="w-[140px] h-8 text-xs"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos</SelectItem>
-            {REQUEST_STATUSES.map((s) => <SelectItem key={s} value={s} className="capitalize">{s.replace("_", " ")}</SelectItem>)}
+            {FILTER_STATUSES.map((s) => <SelectItem key={s} value={s} className="capitalize">{s.replace("_", " ")}</SelectItem>)}
           </SelectContent>
         </Select>
         <Dialog open={open} onOpenChange={setOpen}>
@@ -191,21 +206,25 @@ export default function ConductorRequests() {
         <Card><CardContent className="empty-state"><ClipboardList /><p>No hay solicitudes con estos filtros.</p></CardContent></Card>
       ) : (
         <div className="grid gap-3">
-          {filtered.map((req: any) => (
-            <Card key={req.id} className="stat-card">
-              <CardContent className="flex items-center gap-4 p-4">
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-sm">{req.request_types?.name}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5 break-all whitespace-pre-wrap">{req.details || "Sin detalles"}</p>
-                  <div className="flex gap-3 text-xs text-muted-foreground mt-1">
-                    {req.vehicles?.license_plate && <span>🚗 {req.vehicles.license_plate}</span>}
-                    {req.amount && <span>💰 ${Number(req.amount).toLocaleString("es-CL")}</span>}
-                    <span>{new Date(req.created_at).toLocaleDateString("es-CL")}</span>
+          {filtered.map((req: any) => {
+            return (
+              <Card key={req.id} className="stat-card cursor-pointer" onClick={() => { setDetailReq(req); setDetailOpen(true); }}>
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between gap-3 max-w-full overflow-hidden">
+                    <div className="flex-1 min-w-0 max-w-full space-y-1">
+                      <p className="font-medium text-sm truncate">{req.request_types?.name}</p>
+                      <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                        <StatusBadge status={req.status} />
+                        {req.amount && <span>$ {Number(req.amount).toLocaleString("es-CL")}</span>}
+                        {req.vehicles?.license_plate && <span>{req.vehicles.license_plate}</span>}
+                        <span>{new Date(req.created_at).toLocaleDateString("es-CL")}</span>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       )}
 
@@ -215,7 +234,7 @@ export default function ConductorRequests() {
           <DialogHeader className="flex flex-row items-center justify-between">
             <DialogTitle className="font-heading">Detalle de Solicitud</DialogTitle>
             <div className="flex items-center gap-1">
-              {detailReq && (
+              {detailReq && !TERMINAL_STATUSES.includes(detailReq.status) && (
                 <>
                   <button onClick={() => { setDetailOpen(false); setEditReq(detailReq); setEditOpen(true); }} className="p-1.5 rounded-md hover:bg-muted transition-colors"><Pencil className="h-4 w-4" /></button>
                   <button onClick={() => { setDetailOpen(false); setDeleteReq(detailReq); setDeleteOpen(true); }} className="p-1.5 rounded-md hover:bg-destructive/10 transition-colors"><Trash2 className="h-4 w-4 text-destructive" /></button>
@@ -225,7 +244,7 @@ export default function ConductorRequests() {
           </DialogHeader>
           {detailReq && (
             <div className="space-y-3 text-sm min-w-0">
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="min-w-0"><span className="text-muted-foreground">Conductor:</span><p className="font-medium truncate">{profile?.full_name ?? "—"}</p></div>
                 <div className="min-w-0"><span className="text-muted-foreground">Tipo:</span><p className="font-medium truncate">{detailReq.request_types?.name ?? "—"}</p></div>
                 <div className="min-w-0"><span className="text-muted-foreground">RUT:</span><p className="font-medium truncate">{profile?.rut ?? "—"}</p></div>
@@ -234,13 +253,57 @@ export default function ConductorRequests() {
                 <div className="min-w-0"><span className="text-muted-foreground">Monto:</span><p className="font-medium truncate">{detailReq.amount ? `$${Number(detailReq.amount).toLocaleString("es-CL")}` : "—"}</p></div>
                 <div className="min-w-0"><span className="text-muted-foreground">Estado:</span><p><StatusBadge status={detailReq.status} /></p></div>
                 <div className="min-w-0"><span className="text-muted-foreground">Creado:</span><p className="font-medium truncate">{new Date(detailReq.created_at).toLocaleString("es-CL")}</p></div>
+                {detailReq.status !== "pendiente" && (
+                  <div className="min-w-0"><span className="text-muted-foreground">Actualizado:</span><p className="font-medium truncate">{new Date(detailReq.updated_at).toLocaleString("es-CL")}</p></div>
+                )}
               </div>
-              <div className="min-w-0">
-                <span className="text-muted-foreground block mb-1">Detalles:</span>
-                <div className="rounded-lg border bg-muted/30 p-3 text-sm max-h-96 overflow-y-auto whitespace-pre-wrap break-all">
-                  {detailReq.details || "Sin detalles"}
+
+              <div>
+                <span className="text-muted-foreground block mb-1">Detalles de la solicitud:</span>
+                <div className="rounded-lg border bg-muted/30 p-3 text-sm max-h-40 overflow-y-auto whitespace-pre-wrap break-all">
+                  {stripResolution(detailReq.details) || "Sin detalles"}
                 </div>
               </div>
+
+              {parseResolution(detailReq.details) && (
+                <div>
+                  <span className="text-destructive block mb-1 font-medium flex items-center gap-1.5">
+                    <XCircle className="h-4 w-4" /> Motivo del rechazo
+                  </span>
+                  <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm whitespace-pre-wrap break-all">
+                    <p className="text-xs text-muted-foreground mb-1">{parseResolution(detailReq.details)?.date}</p>
+                    {parseResolution(detailReq.details)?.reason}
+                  </div>
+                </div>
+              )}
+
+              {detailReq.status === "aprobado" && (
+                <div>
+                  <span className="text-green-600 block mb-1 font-medium flex items-center gap-1.5">
+                    <CheckCircle2 className="h-4 w-4" /> Aprobada
+                  </span>
+                  <div className="rounded-lg border border-green-300 bg-green-50 p-3 text-sm">
+                    <p className="text-xs text-muted-foreground">Aprobada el {new Date(detailReq.updated_at).toLocaleString("es-CL")}</p>
+                  </div>
+                </div>
+              )}
+
+              {detailReq.status === "completado" && (
+                <div>
+                  <span className="text-green-600 block mb-1 font-medium flex items-center gap-1.5">
+                    <CheckCircle2 className="h-4 w-4" /> Completada
+                  </span>
+                  <div className="rounded-lg border border-green-300 bg-green-50 p-3 text-sm">
+                    <p className="text-xs text-muted-foreground">Completada el {new Date(detailReq.updated_at).toLocaleString("es-CL")}</p>
+                  </div>
+                </div>
+              )}
+
+              {TERMINAL_STATUSES.includes(detailReq.status) && (
+                <p className="text-xs text-muted-foreground text-center pt-2 border-t">
+                  Solicitud {detailReq.status}.
+                </p>
+              )}
             </div>
           )}
         </DialogContent>
@@ -277,7 +340,7 @@ export default function ConductorRequests() {
               </div>
               <div className="space-y-2">
                 <Label>Detalles</Label>
-                <Textarea name="details" required placeholder="Describe tu solicitud..." maxLength={500} defaultValue={editReq.details ?? ""} className="resize-none" />
+                <Textarea name="details" required placeholder="Describe tu solicitud..." maxLength={500} defaultValue={stripResolution(editReq.details)} className="resize-none" />
               </div>
               <div className="flex gap-2 justify-end">
                 <Button type="button" variant="outline" onClick={() => setEditOpen(false)}>Cancelar</Button>

@@ -4,7 +4,7 @@ import { useAuth } from "@/features/auth/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import {
   Truck, LayoutDashboard, FileText, ClipboardList, Gauge, MessageSquare,
-  Search, LogOut, Menu, X, ChevronRight, User, Users, Calculator
+  Search, LogOut, Menu, X, ChevronRight, User, Users, Calculator, Upload
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { logDevInteraction } from "@/shared/monitoring/devLogger";
@@ -18,6 +18,7 @@ const baseAdminLinks = [
   { to: "/admin/vehicles", icon: Truck, label: "Vehículos" },
   { to: "/admin/requests", icon: ClipboardList, label: "Solicitudes" },
   { to: "/admin/messages", icon: MessageSquare, label: "Mensajes" },
+  { to: "/admin/bulk-upload", icon: Upload, label: "Carga Masiva" },
 ];
 
 const conductorLinks = [
