@@ -22,6 +22,7 @@ import AdminMessages from "@/features/admin/pages/AdminMessages";
 import AdminUsers from "@/features/admin/pages/AdminUsers";
 import AdminConductores from "@/features/admin/pages/AdminConductores";
 import AdminNomina from "@/features/admin/pages/AdminNomina";
+import AdminBulkUpload from "@/features/admin/pages/AdminBulkUpload";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -87,6 +88,7 @@ const App = () => (
             <Route path="/admin/messages" element={<ProtectedRoute requiredRole="admin"><AppLayout><AdminMessages /></AppLayout></ProtectedRoute>} />
             <Route path="/admin/conductores" element={<ProtectedRoute requiredRole="admin"><AppLayout><AdminConductores /></AppLayout></ProtectedRoute>} />
             <Route path="/admin/nomina" element={<ProtectedRoute requiredRole="admin"><AppLayout><AdminNomina /></AppLayout></ProtectedRoute>} />
+            <Route path="/admin/bulk-upload" element={<ProtectedRoute requiredRole="admin"><AppLayout><AdminBulkUpload /></AppLayout></ProtectedRoute>} />
             <Route path="/admin/users" element={<ProtectedRoute requiredRole="super_admin"><AppLayout><AdminUsers /></AppLayout></ProtectedRoute>} />
 
             <Route path="*" element={<NotFound />} />
