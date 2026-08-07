@@ -94,18 +94,18 @@ export default function AdminDocuments() {
   return (
     <div>
       <PageHeader title="Documentos" description="Todos los documentos registrados">
-        <div className="flex items-center gap-2">
-          <div className="relative">
+        <div className="flex flex-wrap items-center gap-2 w-full min-w-0">
+          <div className="relative flex-1 min-w-[10rem] sm:flex-none">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Buscar documento..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-8 h-9 w-48 text-sm"
+              className="pl-8 h-9 w-full sm:w-48 text-sm"
             />
           </div>
           <Select value={filterType} onValueChange={setFilterType}>
-            <SelectTrigger className="h-9 w-40 text-sm">
+            <SelectTrigger className="h-9 w-full sm:w-44 text-sm">
               <SelectValue placeholder="Tipo" />
             </SelectTrigger>
             <SelectContent>
@@ -116,7 +116,7 @@ export default function AdminDocuments() {
             </SelectContent>
           </Select>
           <Select value={filterStatus} onValueChange={setFilterStatus}>
-            <SelectTrigger className="h-9 w-36 text-sm">
+            <SelectTrigger className="h-9 w-full sm:w-40 text-sm">
               <SelectValue placeholder="Estado" />
             </SelectTrigger>
             <SelectContent>
@@ -145,7 +145,11 @@ export default function AdminDocuments() {
             Mostrando {filtered.length} de {documents.length} documento(s)
           </p>
           {filtered.map((document) => (
-            <Card key={document.id} className="stat-card">
+            <Card
+              key={document.id}
+              className="stat-card cursor-pointer transition-colors hover:border-primary/40 hover:bg-muted/50"
+              onClick={() => openPreview(document.file_key, document.document_types?.name || "Documento")}
+            >
               <CardContent className="flex items-center gap-4 p-4">
                 <FileText className="h-5 w-5 text-primary shrink-0" />
                 <div className="flex-1 min-w-0">
@@ -174,7 +178,7 @@ export default function AdminDocuments() {
                     variant="ghost"
                     size="icon"
                     className="h-8 w-8 shrink-0"
-                    onClick={() => openPreview(document.file_key, document.document_types?.name || "Documento")}
+                    onClick={(e) => { e.stopPropagation(); openPreview(document.file_key, document.document_types?.name || "Documento"); }}
                     title="Vista previa"
                   >
                     <Eye className="h-4 w-4" />
@@ -183,7 +187,7 @@ export default function AdminDocuments() {
                     variant="ghost"
                     size="icon"
                     className="h-8 w-8 shrink-0"
-                    onClick={() => handleDownload(document.file_key)}
+                    onClick={(e) => { e.stopPropagation(); handleDownload(document.file_key); }}
                     title="Descargar documento"
                   >
                     <Download className="h-4 w-4" />

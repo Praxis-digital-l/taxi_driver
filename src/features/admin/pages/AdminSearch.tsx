@@ -412,7 +412,7 @@ export default function AdminSearch() {
                   <CardTitle className="font-heading text-sm flex items-center gap-2"><Truck className="h-4 w-4 text-primary" />Datos del Vehículo</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2 text-sm">
-                  <div className="grid grid-cols-2 gap-y-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 gap-x-4">
                     <div><p className="text-xs text-muted-foreground">Patente</p><p className="font-heading font-bold">{vehicle.license_plate}</p></div>
                     <div><p className="text-xs text-muted-foreground">Estado</p><p className="capitalize">{vehicle.status}</p></div>
                     <div><p className="text-xs text-muted-foreground">Marca</p><p>{vehicle.make}</p></div>
@@ -429,9 +429,9 @@ export default function AdminSearch() {
                 </CardHeader>
                 <CardContent className="space-y-2 text-sm">
                   {conductor ? (
-                    <div className="grid grid-cols-2 gap-y-2">
-                      <div className="col-span-2"><p className="text-xs text-muted-foreground">Nombre</p><p className="font-medium">{conductor.full_name}</p></div>
-                      <div><p className="text-xs text-muted-foreground">Email</p><p>{conductor.email}</p></div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 gap-x-4">
+                      <div className="sm:col-span-2"><p className="text-xs text-muted-foreground">Nombre</p><p className="font-medium break-words">{conductor.full_name}</p></div>
+                      <div><p className="text-xs text-muted-foreground">Email</p><p className="break-all">{conductor.email}</p></div>
                       <div><p className="text-xs text-muted-foreground">Teléfono</p><p>{conductor.phone || "—"}</p></div>
                     </div>
                   ) : (

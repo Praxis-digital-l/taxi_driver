@@ -30,6 +30,17 @@ function stripResolution(details: string | null) {
   return details.replace(/\n\n--- MOTIVO DEL RECHAZO .*/s, "");
 }
 
+function formatDateOnly(value: string | null | undefined) {
+  if (!value) return null;
+  const d = new Date(value);
+  return isNaN(d.getTime()) ? null : d.toLocaleDateString("es-CL");
+}
+function formatDateFull(value: string | null | undefined) {
+  if (!value) return null;
+  const d = new Date(value);
+  return isNaN(d.getTime()) ? null : d.toLocaleString("es-CL");
+}
+
 export default function ConductorRequests() {
   const { profile } = useAuth();
   const { toast } = useToast();
@@ -153,7 +164,7 @@ export default function ConductorRequests() {
     <div>
       <PageHeader title="Mis Solicitudes" description={`${requests.length} solicitud(es) en total`}>
         <Select value={filterStatus} onValueChange={setFilterStatus}>
-          <SelectTrigger className="w-[140px] h-8 text-xs"><SelectValue /></SelectTrigger>
+          <SelectTrigger className="w-full sm:w-[140px] h-8 text-xs"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos</SelectItem>
             {FILTER_STATUSES.map((s) => <SelectItem key={s} value={s} className="capitalize">{s.replace("_", " ")}</SelectItem>)}
@@ -251,10 +262,10 @@ export default function ConductorRequests() {
                 <div className="min-w-0"><span className="text-muted-foreground">Teléfono:</span><p className="font-medium truncate">{profile?.phone ?? "—"}</p></div>
                 <div className="min-w-0"><span className="text-muted-foreground">Patente:</span><p className="font-medium truncate">{detailReq.vehicles?.license_plate ?? "Sin vehículo"}</p></div>
                 <div className="min-w-0"><span className="text-muted-foreground">Monto:</span><p className="font-medium truncate">{detailReq.amount ? `$${Number(detailReq.amount).toLocaleString("es-CL")}` : "—"}</p></div>
-                <div className="min-w-0"><span className="text-muted-foreground">Estado:</span><p><StatusBadge status={detailReq.status} /></p></div>
-                <div className="min-w-0"><span className="text-muted-foreground">Creado:</span><p className="font-medium truncate">{new Date(detailReq.created_at).toLocaleString("es-CL")}</p></div>
+                <div className="min-w-0"><span className="text-muted-foreground">Estado:</span><p className="flex items-center gap-2"><StatusBadge status={detailReq.status} />{detailReq.status === "aprobado" && (() => { const d = formatDateOnly(detailReq.updated_at); return d ? <span className="text-xs text-muted-foreground">· {d}</span> : null; })()}</p></div>
+                <div className="min-w-0"><span className="text-muted-foreground">Creado:</span><p className="font-medium truncate">{formatDateFull(detailReq.created_at)}</p></div>
                 {detailReq.status !== "pendiente" && (
-                  <div className="min-w-0"><span className="text-muted-foreground">Actualizado:</span><p className="font-medium truncate">{new Date(detailReq.updated_at).toLocaleString("es-CL")}</p></div>
+                  <div className="min-w-0"><span className="text-muted-foreground">Actualizado:</span><p className="font-medium truncate">{formatDateFull(detailReq.updated_at) ?? "—"}</p></div>
                 )}
               </div>
 
@@ -280,10 +291,10 @@ export default function ConductorRequests() {
               {detailReq.status === "aprobado" && (
                 <div>
                   <span className="text-green-600 block mb-1 font-medium flex items-center gap-1.5">
-                    <CheckCircle2 className="h-4 w-4" /> Aprobada
+                    <CheckCircle2 className="h-4 w-4" /> Aprobado
                   </span>
                   <div className="rounded-lg border border-green-300 bg-green-50 p-3 text-sm">
-                    <p className="text-xs text-muted-foreground">Aprobada el {new Date(detailReq.updated_at).toLocaleString("es-CL")}</p>
+                    <p className="text-xs text-muted-foreground">{formatDateOnly(detailReq.updated_at) ? `Fecha de aprobación: ${formatDateOnly(detailReq.updated_at)}` : "Fecha de aprobación: —"}</p>
                   </div>
                 </div>
               )}

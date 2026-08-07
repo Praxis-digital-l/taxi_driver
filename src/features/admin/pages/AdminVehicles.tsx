@@ -199,7 +199,7 @@ export default function AdminVehicles() {
     <div>
       <PageHeader title="Gestión de Vehículos" description={`${vehicles.length} vehículos en flota`}>
         <Select value={filter} onValueChange={setFilter}>
-          <SelectTrigger className="w-[130px] h-8 text-xs"><SelectValue /></SelectTrigger>
+          <SelectTrigger className="w-full sm:w-[130px] h-8 text-xs"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos</SelectItem>
             <SelectItem value="active">Activos</SelectItem>
@@ -221,7 +221,7 @@ export default function AdminVehicles() {
                 <p className="text-[11px] text-muted-foreground">Formato sugerido: AAAA-11</p>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 min-[400px]:grid-cols-2 gap-3">
                 <div className="space-y-2">
                   <Label>Marca *</Label>
                   <Input list="vehicle-make-suggestions" name="make" required placeholder="Toyota" />
@@ -242,7 +242,7 @@ export default function AdminVehicles() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 min-[400px]:grid-cols-2 gap-3">
                 <div className="space-y-2">
                   <Label>Año</Label>
                   <Input name="year" type="number" min={2000} max={2030} placeholder="2023" />
