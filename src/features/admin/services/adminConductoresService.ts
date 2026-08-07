@@ -155,6 +155,51 @@ if (fnError) {
   }
 }
 
+export async function createConductorProfile(payload: {
+  nombres: string;
+  apellidoPaterno: string;
+  apellidoMaterno: string;
+  email: string;
+  phone: string;
+  rut: string;
+}) {
+  const { data: existing } = await supabase
+    .from("profiles")
+    .select("rut, phone")
+    .or(`rut.eq.${payload.rut.trim()},phone.eq.${payload.phone.trim()}`)
+    .maybeSingle();
+
+  if (existing) {
+    if (existing.rut === payload.rut.trim()) throw new Error("Ya existe un conductor con este RUT");
+    if (existing.phone === payload.phone.trim()) throw new Error("Ya existe un conductor con este teléfono");
+  }
+
+  const workerId = await generateWorkerId();
+
+  const fullName = `${payload.nombres.trim()} ${payload.apellidoPaterno.trim()} ${payload.apellidoMaterno.trim()}`.trim();
+
+  const { data, error } = await supabase
+    .from("profiles")
+    .insert({
+      nombres: payload.nombres.trim(),
+      apellido_paterno: payload.apellidoPaterno.trim(),
+      apellido_materno: payload.apellidoMaterno.trim(),
+      full_name: fullName,
+      email: payload.email.trim().toLowerCase(),
+      phone: payload.phone.trim(),
+      rut: payload.rut.trim(),
+      worker_id: workerId,
+      role: "conductor",
+    })
+    .select("id")
+    .single();
+  assertNoError(error);
+
+  const createdId = Array.isArray(data) ? (data[0] as { id: string } | undefined)?.id : (data as { id: string } | undefined)?.id;
+  if (!createdId) throw new Error("No se pudo obtener el id del conductor creado");
+  return createdId;
+}
+
 export async function updateConductor(id: string, payload: UpdateConductorPayload) {
   const updateData: Record<string, string> = {};
 

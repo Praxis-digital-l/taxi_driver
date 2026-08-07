@@ -126,7 +126,7 @@ export default function ConductorMessages() {
           </DialogHeader>
           {detailMsg && (
             <div className="space-y-3 text-sm min-w-0">
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="min-w-0"><span className="text-muted-foreground">De:</span><p className="font-medium truncate">{detailMsg.sender?.full_name ?? "Administrador"}</p></div>
                 <div className="min-w-0"><span className="text-muted-foreground">Estado:</span><p><StatusBadge status={statusForConductor(detailMsg.status)} /></p></div>
                 <div className="min-w-0"><span className="text-muted-foreground">Fecha:</span><p className="font-medium truncate">{new Date(detailMsg.created_at).toLocaleString("es-CL")}</p></div>

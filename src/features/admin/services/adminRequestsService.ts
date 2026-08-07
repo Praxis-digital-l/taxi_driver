@@ -25,7 +25,7 @@ function assertNoError(error: { message: string } | null) {
 export async function fetchAdminRequests(statusFilter: string) {
   let query = supabase
     .from("requests")
-    .select("id, profile_id, request_type_id, status, details, amount, created_at, vehicle_id, request_types(name), profiles(full_name, rut, phone), vehicles(license_plate)")
+    .select("id, profile_id, request_type_id, status, details, amount, created_at, updated_at, vehicle_id, request_types(name), profiles(full_name, rut, phone), vehicles(license_plate)")
     .limit(200);
 
   if (statusFilter !== "all") {

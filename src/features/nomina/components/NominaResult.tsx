@@ -97,7 +97,7 @@ export default function NominaResult({ resultado }: NominaResultProps) {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-end gap-2">
+      <div className="flex flex-wrap justify-end gap-2">
         <Button
           variant="outline"
           size="sm"
@@ -123,23 +123,23 @@ export default function NominaResult({ resultado }: NominaResultProps) {
       <div ref={cardRef}>
         <Card className="border-primary/20">
           <CardHeader className="bg-muted/30 pb-4">
-            <div className="flex items-start justify-between">
-              <div className="space-y-0.5">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div className="min-w-0 space-y-0.5">
                 <CardTitle className="text-lg">Liquidación mes {mes}</CardTitle>
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium">{resultado.nombre}</span>
-                  <Badge variant="outline" className="text-xs">{resultado.trabajadorId}</Badge>
+                  <span className="text-sm font-medium truncate">{resultado.nombre}</span>
+                  <Badge variant="outline" className="text-xs shrink-0">{resultado.trabajadorId}</Badge>
                 </div>
-                <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                  <span className="flex items-center gap-1">
-                    <Mail className="h-3 w-3" /> {resultado.email}
+                <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+                  <span className="flex items-center gap-1 min-w-0">
+                    <Mail className="h-3 w-3 shrink-0" /> <span className="break-all">{resultado.email}</span>
                   </span>
                   <span className="flex items-center gap-1">
                     <Fingerprint className="h-3 w-3" /> {resultado.rut}
                   </span>
                 </div>
               </div>
-              <div className="text-right text-xs text-muted-foreground space-y-0.5 shrink-0">
+              <div className="text-left sm:text-right text-xs text-muted-foreground space-y-0.5 shrink-0">
                 <p className="font-medium text-foreground">Santa Aurora</p>
                 <p>77.777.777-7</p>
                 <p>{fecha}</p>

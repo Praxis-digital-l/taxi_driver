@@ -2,12 +2,11 @@ import { useState, useRef } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import PageHeader from "@/components/PageHeader";
 import { Upload, FileSpreadsheet, Download, AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
-import { createConductor } from "@/features/admin/services/adminConductoresService";
-import { createVehicle } from "@/features/admin/services/adminVehiclesService";
+import { createConductorProfile } from "@/features/admin/services/adminConductoresService";
+import { createVehicle, assignConductorToVehicle } from "@/features/admin/services/adminVehiclesService";
 import * as XLSX from "xlsx";
 
 type Row = Record<string, string>;
@@ -17,6 +16,57 @@ type ImportResult = {
   status: "ok" | "error";
   message: string;
 };
+
+type Field =
+  | "nombres"
+  | "apellido_paterno"
+  | "apellido_materno"
+  | "email"
+  | "phone"
+  | "rut"
+  | "license_plate"
+  | "make"
+  | "model"
+  | "year"
+  | "color";
+
+const FIELDS: Field[] = [
+  "nombres",
+  "apellido_paterno",
+  "apellido_materno",
+  "email",
+  "phone",
+  "rut",
+  "license_plate",
+  "make",
+  "model",
+  "year",
+  "color",
+];
+
+const HEADER_ALIASES: Record<Field, string[]> = {
+  nombres: ["nombres", "nombre", "name"],
+  apellido_paterno: ["apellido paterno", "apellidopaterno", "paterno"],
+  apellido_materno: ["apellido materno", "apellidomaterno", "materno"],
+  email: ["email", "correo", "correo electronico"],
+  phone: ["phone", "telefono", "telefonoorigen", "celular", "celularconductor"],
+  rut: ["rut"],
+  license_plate: ["license plate", "licenseplate", "patente", "matricula", "patentevehiculo"],
+  make: ["make", "marca"],
+  model: ["model", "modelo"],
+  year: ["year", "ano", "año"],
+  color: ["color"],
+};
+
+const TEMPLATE_HEADERS = ["Nombres", "Apellido Paterno", "Apellido Materno", "Email", "Teléfono", "RUT", "Patente", "Marca", "Modelo", "Año", "Color"];
+
+function normalizeHeader(value: string): string {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[\s_-]+/g, "");
+}
 
 function detectDelimiter(headerLine: string): string {
   const commaCount = (headerLine.match(/,/g) || []).length;
@@ -59,8 +109,7 @@ function parseCsv(text: string): { headers: string[]; rows: Row[] } {
     const line = rawLines[i].trim();
     if (line.length === 0) continue;
 
-    const values = splitLine(line, delimiter)
-      .map((v) => v.replace(/^"|"$/g, ""));
+    const values = splitLine(line, delimiter).map((v) => v.replace(/^"|"$/g, ""));
 
     const row: Row = {};
     let hasData = false;
@@ -95,22 +144,36 @@ function extractErrorMessage(err: unknown): string {
   }
   return "Error desconocido";
 }
-function generateConductorTemplate() {
-  const headers = ["nombres", "apellido_paterno", "apellido_materno", "email", "phone", "rut", "password"];
-  const sample = ["Carlos", "Muñoz", "Rojas", "carlos@ejemplo.cl", "+56912345678", "12.345.678-5", "clave123"];
-  return [headers.join(","), sample.join(",")].join("\n");
+
+function buildHeaderMap(row: Row): Record<Field, string> | null {
+  const aliasMap: Record<string, Field> = {};
+  FIELDS.forEach((field) => {
+    HEADER_ALIASES[field].forEach((alias) => {
+      aliasMap[normalizeHeader(alias)] = field;
+    });
+  });
+
+  const mapping: Partial<Record<Field, string>> = {};
+  Object.keys(row).forEach((header) => {
+    const field = aliasMap[normalizeHeader(header)];
+    if (field && !mapping[field]) mapping[field] = header;
+  });
+
+  const required: Field[] = ["nombres", "apellido_paterno", "email", "rut"];
+  for (const field of required) {
+    if (!mapping[field]) return null;
+  }
+  return mapping as Record<Field, string>;
 }
 
-function generateVehicleTemplate() {
-  const headers = ["license_plate", "make", "model", "year", "color"];
-  const sample = ["ABCD-12", "Toyota", "Hiace", "2023", "Blanco"];
-  return [headers.join(","), sample.join(",")].join("\n");
+function generateTemplate() {
+  const sample = ["Carlos", "Muñoz", "Rojas", "carlos@ejemplo.cl", "+56912345678", "12.345.678-5", "ABCD-12", "Toyota", "Hiace", "2023", "Blanco"];
+  return [TEMPLATE_HEADERS.join(","), sample.join(",")].join("\n");
 }
 
 export default function AdminBulkUpload() {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [activeTab, setActiveTab] = useState("conductores");
   const [previewRows, setPreviewRows] = useState<Row[]>([]);
   const [fileName, setFileName] = useState("");
   const [importing, setImporting] = useState(false);
@@ -147,68 +210,84 @@ export default function AdminBulkUpload() {
   };
 
   const downloadTemplate = () => {
-    const csv = activeTab === "conductores" ? generateConductorTemplate() : generateVehicleTemplate();
     const bom = "\uFEFF";
-    const blob = new Blob([bom + csv], { type: "text/csv;charset=utf-8" });
+    const blob = new Blob([bom + generateTemplate()], { type: "text/csv;charset=utf-8" });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
-    link.download = `plantilla_${activeTab}.csv`;
+    link.download = "plantilla_carga_datos.csv";
     link.click();
     URL.revokeObjectURL(link.href);
   };
 
   const handleImport = async () => {
     if (previewRows.length === 0) return;
+    const headerMap = buildHeaderMap(previewRows[0]);
+    if (!headerMap) {
+      toast({
+        title: "Error de formato",
+        description: `Las columnas del archivo no coinciden con las esperadas. Usa: ${TEMPLATE_HEADERS.join(", ")}.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
     setImporting(true);
     setResults([]);
     setShowResults(true);
 
     const resultList: ImportResult[] = [];
+    let okCount = 0;
+    let errorCount = 0;
 
     for (let i = 0; i < previewRows.length; i++) {
       const row = previewRows[i];
+      const rowKey = i + 2;
       try {
-        if (activeTab === "conductores") {
-          if (!row.email || !row.password || !row.nombres || !row.apellido_paterno) {
-            throw new Error("Faltan campos requeridos: email, password, nombres, apellido_paterno");
-          }
-          await createConductor({
-            nombres: row.nombres.trim(),
-            apellidoPaterno: row.apellido_paterno.trim(),
-            apellidoMaterno: (row.apellido_materno || "").trim(),
-            email: row.email.trim(),
-            phone: (row.phone || "").trim(),
-            rut: (row.rut || "").trim(),
-            password: row.password,
-          });
-          resultList.push({ row: i + 2, status: "ok", message: "Conductor creado" });
-        } else {
-          if (!row.license_plate) {
-            throw new Error("Falta campo requerido: license_plate");
-          }
-          await createVehicle({
-            licensePlate: row.license_plate.trim(),
-            make: (row.make || "").trim(),
-            model: (row.model || "").trim(),
-            year: row.year ? Number.parseInt(row.year, 10) : null,
-            color: (row.color || "").trim(),
-          });
-          resultList.push({ row: i + 2, status: "ok", message: "Vehículo creado" });
+        const nombres = (row[headerMap.nombres] || "").trim();
+        const apellidoPaterno = (row[headerMap.apellido_paterno] || "").trim();
+        const apellidoMaterno = (row[headerMap.apellido_materno] || "").trim();
+        const email = (row[headerMap.email] || "").trim();
+        const phone = (row[headerMap.phone] || "").trim();
+        const rut = (row[headerMap.rut] || "").trim();
+
+        if (!nombres || !apellidoPaterno || !email || !rut) {
+          throw new Error("Faltan campos requeridos: Nombres, Apellido Paterno, Email, RUT");
         }
-      } catch (err) {
-        resultList.push({
-          row: i + 2,
-          status: "error",
-          message: extractErrorMessage(err),
+
+        const conductorId = await createConductorProfile({
+          nombres,
+          apellidoPaterno,
+          apellidoMaterno,
+          email,
+          phone,
+          rut,
         });
+
+        const licensePlate = (row[headerMap.license_plate] || "").trim();
+        if (licensePlate) {
+          const vehicleId = await createVehicle({
+            licensePlate,
+            make: (row[headerMap.make] || "").trim(),
+            model: (row[headerMap.model] || "").trim(),
+            year: row[headerMap.year] ? Number.parseInt(row[headerMap.year], 10) : null,
+            color: (row[headerMap.color] || "").trim(),
+          });
+          if (vehicleId) {
+            await assignConductorToVehicle(vehicleId, conductorId);
+          }
+        }
+
+        resultList.push({ row: rowKey, status: "ok", message: "Conductor y vehículo importados" });
+        okCount += 1;
+      } catch (err) {
+        resultList.push({ row: rowKey, status: "error", message: extractErrorMessage(err) });
+        errorCount += 1;
       }
     }
 
     setResults(resultList);
     setImporting(false);
 
-    const okCount = resultList.filter((r) => r.status === "ok").length;
-    const errorCount = resultList.filter((r) => r.status === "error").length;
     toast({
       title: errorCount > 0 ? "Importación completada con errores" : "Importación exitosa",
       description: `${okCount} registros importados, ${errorCount} errores`,
@@ -226,103 +305,76 @@ export default function AdminBulkUpload() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Carga Masiva" description="Sube conductores y vehículos mediante archivos CSV o Excel">
+      <PageHeader title="Carga Masiva" description="Sube conductores y vehículos en un solo archivo CSV o Excel">
         <Button variant="outline" size="sm" onClick={downloadTemplate}>
           <Download className="mr-1.5 h-4 w-4" />
           Descargar Plantilla
         </Button>
       </PageHeader>
 
-      <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); resetUpload(); }}>
-        <TabsList>
-          <TabsTrigger value="conductores">Conductores</TabsTrigger>
-          <TabsTrigger value="vehiculos">Vehículos</TabsTrigger>
-        </TabsList>
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Subir Conductores y Vehículos</CardTitle>
+          <CardDescription>
+            El archivo (CSV o Excel) debe contener una fila por conductor con los datos solicitados en español:
+            Nombres, Apellido Paterno, Apellido Materno, Email, Teléfono, RUT, Patente, Marca, Modelo, Año, Color.
+            Usa el botón "Descargar Plantilla" para ver el formato esperado.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".csv,.xlsx,.xls"
+              onChange={handleFileSelect}
+              className="text-sm w-full sm:w-auto file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
+            />
+            {fileName && (
+              <span className="text-sm text-muted-foreground flex items-center gap-1 truncate max-w-full">
+                <FileSpreadsheet className="h-4 w-4 shrink-0" /> {fileName}
+              </span>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
-        <TabsContent value="conductores" className="space-y-4 mt-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Subir Conductores</CardTitle>
-              <CardDescription>
-                El archivo (CSV o Excel) debe contener las columnas: nombres, apellido_paterno, apellido_materno, email, phone, rut, password.
-                Usa el botón "Descargar Plantilla" para ver el formato esperado.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".csv,.xlsx,.xls"
-                  onChange={handleFileSelect}
-                  className="text-sm w-full sm:w-auto file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
-                />
-                {fileName && (
-                  <span className="text-sm text-muted-foreground flex items-center gap-1 truncate max-w-full">
-                    <FileSpreadsheet className="h-4 w-4 shrink-0" /> {fileName}
-                  </span>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="vehiculos" className="space-y-4 mt-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Subir Vehículos</CardTitle>
-              <CardDescription>
-                El archivo (CSV o Excel) debe contener las columnas: license_plate, make, model, year, color.
-                Usa el botón "Descargar Plantilla" para ver el formato esperado.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".csv,.xlsx,.xls"
-                  onChange={handleFileSelect}
-                  className="text-sm w-full sm:w-auto file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
-                />
-                {fileName && (
-                  <span className="text-sm text-muted-foreground flex items-center gap-1 truncate max-w-full">
-                    <FileSpreadsheet className="h-4 w-4 shrink-0" /> {fileName}
-                  </span>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-
-      {previewRows.length > 0 && !showResults && (
+      {previewRows.length > 0 && buildHeaderMap(previewRows[0]) && (
         <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Previsualización</CardTitle>
-            <CardDescription>{previewRows.length} registros detectados</CardDescription>
+          <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <CardTitle className="text-lg">Previsualización</CardTitle>
+              <CardDescription>{previewRows.length} registros detectados</CardDescription>
+            </div>
+            <span className="text-xs text-muted-foreground max-w-md text-right">
+              Se importarán los datos del conductor y del vehículo de cada fila. La contraseña se gestiona
+              por separado en la base de datos.
+            </span>
           </CardHeader>
           <CardContent>
             <div className="max-h-64 overflow-auto rounded-md border">
-              <div className="min-w-[600px]">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    {Object.keys(previewRows[0]).map((key) => (
-                      <TableHead key={key} className="text-xs uppercase">{key}</TableHead>
-                    ))}
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {previewRows.map((row, i) => (
-                    <TableRow key={i}>
-                      {Object.values(row).map((val, j) => (
-                        <TableCell key={j} className="text-sm">{val}</TableCell>
+              <div className="min-w-[800px]">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      {TEMPLATE_HEADERS.map((key) => (
+                        <TableHead key={key} className="text-xs uppercase">{key}</TableHead>
                       ))}
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {previewRows.map((row, i) => {
+                      const map = buildHeaderMap(row) as Record<Field, string>;
+                      return (
+                        <TableRow key={i}>
+                          {FIELDS.map((field) => (
+                            <TableCell key={field} className="text-sm">{row[map[field]] ?? ""}</TableCell>
+                          ))}
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
               </div>
             </div>
             <div className="flex flex-col sm:flex-row gap-3 mt-4">
@@ -334,6 +386,17 @@ export default function AdminBulkUpload() {
                 Cancelar
               </Button>
             </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {previewRows.length > 0 && !buildHeaderMap(previewRows[0]) && (
+        <Card>
+          <CardContent className="py-6">
+            <p className="text-sm text-destructive flex items-center gap-1.5">
+              <AlertCircle className="h-4 w-4" /> Las columnas del archivo no son válidas. Usa:{" "}
+              {TEMPLATE_HEADERS.join(", ")}. Descarga la plantilla para ver el formato.
+            </p>
           </CardContent>
         </Card>
       )}
@@ -350,34 +413,34 @@ export default function AdminBulkUpload() {
           <CardContent>
             <div className="max-h-64 overflow-auto rounded-md border">
               <div className="min-w-[500px]">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-16">Fila</TableHead>
-                    <TableHead className="w-20">Estado</TableHead>
-                    <TableHead>Mensaje</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {results.map((r, i) => (
-                    <TableRow key={i}>
-                      <TableCell className="text-sm font-mono">{r.row}</TableCell>
-                      <TableCell>
-                        {r.status === "ok" ? (
-                          <span className="flex items-center gap-1 text-xs text-green-600">
-                            <CheckCircle2 className="h-3.5 w-3.5" /> OK
-                          </span>
-                        ) : (
-                          <span className="flex items-center gap-1 text-xs text-destructive">
-                            <AlertCircle className="h-3.5 w-3.5" /> Error
-                          </span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-sm">{r.message}</TableCell>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-16">Fila</TableHead>
+                      <TableHead className="w-20">Estado</TableHead>
+                      <TableHead>Mensaje</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {results.map((r, i) => (
+                      <TableRow key={i}>
+                        <TableCell className="text-sm font-mono">{r.row}</TableCell>
+                        <TableCell>
+                          {r.status === "ok" ? (
+                            <span className="flex items-center gap-1 text-xs text-green-600">
+                              <CheckCircle2 className="h-3.5 w-3.5" /> OK
+                            </span>
+                          ) : (
+                            <span className="flex items-center gap-1 text-xs text-destructive">
+                              <AlertCircle className="h-3.5 w-3.5" /> Error
+                            </span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-sm">{r.message}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               </div>
             </div>
             <Button variant="outline" className="mt-4" onClick={resetUpload}>

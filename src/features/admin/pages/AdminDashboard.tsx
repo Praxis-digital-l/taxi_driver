@@ -182,7 +182,7 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         {metricCards.map(({ icon: Icon, label, value, sub, color, to }) => (
           <Link key={label} to={to} className="block group">
             <Card className="stat-card transition-all group-hover:-translate-y-0.5 group-hover:shadow-md group-hover:border-primary/20">
