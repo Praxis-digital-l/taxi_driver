@@ -20,6 +20,7 @@ export default function ConductorMileage() {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [kmError, setKmError] = useState("");
+  const [tipoError, setTipoError] = useState("");
 
   const load = async () => {
     if (!profile) return;
@@ -49,13 +50,27 @@ export default function ConductorMileage() {
     const vehicleId = form.get("vehicle_id") as string;
     const lastRecordRes = await supabase
       .from("mileage_records")
-      .select("kilometers")
+      .select("kilometers, notes")
       .eq("vehicle_id", vehicleId)
       .order("recorded_date", { ascending: false })
       .limit(1);
-    const lastKm = lastRecordRes.data?.[0]?.kilometers;
+    const lastRecord = lastRecordRes.data?.[0];
+    const lastKm = lastRecord?.kilometers;
     if (lastKm != null && km <= lastKm) {
       setKmError(`El kilometraje debe ser mayor al último registro (${lastKm} km).`);
+      setLoading(false);
+      return;
+    }
+    const tipo = (form.get("tipo_jornada") as string) || "";
+    const lastTipo = (lastRecord?.notes ?? "").toLowerCase();
+    const tipoEsInicio = tipo.toLowerCase().includes("inicio");
+    if (lastTipo.includes("inicio") && tipoEsInicio) {
+      setTipoError("No puede registrar dos Inicio de jornada seguidos. Debe registrar primero el Fin de jornada.");
+      setLoading(false);
+      return;
+    }
+    if (lastTipo.includes("fin") && !tipoEsInicio) {
+      setTipoError("No puede registrar dos Fin de jornada seguidos. Debe registrar primero el Inicio de jornada.");
       setLoading(false);
       return;
     }
@@ -65,7 +80,7 @@ export default function ConductorMileage() {
       vehicle_id: vehicleId,
       kilometers: km,
       recorded_date: chileDate,
-      notes: (form.get("tipo_jornada") as string) || "",
+      notes: tipo,
     });
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -80,7 +95,7 @@ export default function ConductorMileage() {
   return (
     <div>
       <PageHeader title="Registro de Kilometraje" description={`${records.length} registro(s)`}>
-          <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (v) setKmError(""); }}>
+          <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (v) { setKmError(""); setTipoError(""); } }}>
           <DialogTrigger asChild>
             <Button size="sm"><Plus className="mr-1.5 h-4 w-4" />Registrar Km</Button>
           </DialogTrigger>
@@ -103,13 +118,14 @@ export default function ConductorMileage() {
               </div>
               <div className="space-y-2">
                 <Label>Tipo de jornada *</Label>
-                <Select name="tipo_jornada" required>
+                <Select name="tipo_jornada" required onValueChange={() => setTipoError("")}>
                   <SelectTrigger><SelectValue placeholder="Seleccionar tipo" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="Inicio jornada">Inicio jornada</SelectItem>
                     <SelectItem value="Fin jornada">Fin jornada</SelectItem>
                   </SelectContent>
                 </Select>
+                {tipoError && <p className="text-sm text-red-500">{tipoError}</p>}
               </div>
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? "Guardando..." : "Registrar"}
@@ -126,10 +142,15 @@ export default function ConductorMileage() {
           {records.map((rec: any, i: number) => {
             const prev = records[i + 1];
             const diff = prev ? rec.kilometers - prev.kilometers : null;
+            const jornada = (rec.notes ?? "").toLowerCase();
+            const esInicio = jornada.includes("inicio");
+            const esFin = jornada.includes("fin");
+            const cardColor = esInicio ? "bg-success/10 border-success" : esFin ? "bg-destructive/10 border-destructive" : "";
+            const iconColor = esInicio ? "bg-success/15 text-success" : esFin ? "bg-destructive/15 text-destructive" : "bg-info/10 text-info";
             return (
-              <Card key={rec.id} className="stat-card">
+              <Card key={rec.id} className={`stat-card ${cardColor}`}>
                 <CardContent className="flex items-center gap-4 p-4">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-info/10 text-info shrink-0">
+                  <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${iconColor} shrink-0`}>
                     <Gauge className="h-5 w-5" />
                   </div>
                   <div className="flex-1">
