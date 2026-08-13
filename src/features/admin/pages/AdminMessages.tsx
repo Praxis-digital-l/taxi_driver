@@ -35,6 +35,9 @@ export default function AdminMessages() {
 
   const OLD_STATUSES = ["pendiente", "en_proceso", "completado"];
 
+  const formatDateTime = (iso: string) =>
+    new Date(iso).toLocaleString("es-CL", { dateStyle: "medium", timeStyle: "short" });
+
   const load = async () => {
     const [msgRes, condRes] = await Promise.all([
       supabase.from("messages")
@@ -171,8 +174,17 @@ export default function AdminMessages() {
                     </p>
                     <p className="text-sm mt-1.5 leading-relaxed break-all whitespace-pre-wrap line-clamp-2">{msg.content}</p>
                     <p className="text-xs text-muted-foreground mt-2">
-                      {new Date(msg.created_at).toLocaleString("es-CL", { dateStyle: "medium", timeStyle: "short" })}
+                      {formatDateTime(msg.created_at)}
                     </p>
+                    {msg.status === "visto" ? (
+                      msg.read_at ? (
+                        <p className="text-xs text-accent mt-1">Visto el {formatDateTime(msg.read_at)}</p>
+                      ) : (
+                        <p className="text-xs text-muted-foreground mt-1">Visto (sin registro de fecha)</p>
+                      )
+                    ) : (
+                      <p className="text-xs text-warning mt-1">Pendiente</p>
+                    )}
                   </div>
                   <div className="flex items-center gap-2 shrink-0" onClick={(e) => e.stopPropagation()}>
                     <StatusBadge status={msg.status} />
@@ -207,6 +219,7 @@ export default function AdminMessages() {
                 <div className="min-w-0"><span className="text-muted-foreground">Para:</span><p className="font-medium truncate">{detailMsg.receiver?.full_name ?? "—"}</p></div>
                 <div className="min-w-0"><span className="text-muted-foreground">Estado:</span><p><StatusBadge status={detailMsg.status} /></p></div>
                 <div className="min-w-0"><span className="text-muted-foreground">Fecha:</span><p className="font-medium truncate">{new Date(detailMsg.created_at).toLocaleString("es-CL")}</p></div>
+                <div className="min-w-0"><span className="text-muted-foreground">Visto el:</span><p className="font-medium truncate">{detailMsg.read_at ? new Date(detailMsg.read_at).toLocaleString("es-CL") : "—"}</p></div>
               </div>
               <div className="min-w-0">
                 <span className="text-muted-foreground block mb-1">Mensaje:</span>

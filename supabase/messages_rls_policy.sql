@@ -5,7 +5,10 @@ ALTER TABLE public.messages DROP CONSTRAINT IF EXISTS messages_status_check;
 ALTER TABLE public.messages ADD CONSTRAINT messages_status_check
   CHECK (status IN ('pendiente', 'en_proceso', 'completado', 'enviado', 'visto'));
 
--- 3. Función que permite al conductor marcar como visto (bypass RLS con SECURITY DEFINER)
+-- 3. Columna que guarda la fecha/hora en que el receptor leyó el mensaje
+ALTER TABLE public.messages ADD COLUMN IF NOT EXISTS read_at TIMESTAMPTZ;
+
+-- 4. Función que permite al conductor marcar como visto (bypass RLS con SECURITY DEFINER)
 CREATE OR REPLACE FUNCTION public.mark_message_read(msg_id UUID)
 RETURNS VOID
 LANGUAGE plpgsql
@@ -13,9 +16,12 @@ SECURITY DEFINER
 SET search_path = 'public'
 AS $$
 BEGIN
-  UPDATE public.messages SET status = 'visto' WHERE id = msg_id;
+  UPDATE public.messages
+  SET status = 'visto',
+      read_at = COALESCE(read_at, NOW())
+  WHERE id = msg_id;
 END;
 $$;
 
--- 4. Dar permiso de ejecución a usuarios autenticados
+-- 5. Dar permiso de ejecución a usuarios autenticados
 GRANT EXECUTE ON FUNCTION public.mark_message_read TO authenticated;

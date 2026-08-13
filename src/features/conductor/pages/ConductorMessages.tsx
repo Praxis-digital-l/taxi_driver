@@ -18,6 +18,7 @@ export default function ConductorMessages() {
     status: string;
     content: string;
     created_at: string;
+    read_at?: string | null;
     sender?: { full_name?: string | null } | null;
   }>>([]);
 
@@ -27,6 +28,9 @@ export default function ConductorMessages() {
   const OLD_STATUSES = ["pendiente", "en_proceso", "completado"];
   const statusForConductor = (s: string) => s === "enviado" ? "pendiente" : "visto";
 
+  const formatDateTime = (iso: string) =>
+    new Date(iso).toLocaleString("es-CL", { dateStyle: "medium", timeStyle: "short" });
+
   const markAsVisto = async (msg: any) => {
     if (msg.status === "visto") return msg;
     const { error } = await supabase.rpc("mark_message_read", { msg_id: msg.id });
@@ -35,8 +39,9 @@ export default function ConductorMessages() {
       toast({ title: "Error al marcar como visto", description: error.message, variant: "destructive" });
       return msg;
     }
-    const updated = { ...msg, status: "visto" };
-    setMessages((prev) => prev.map((m) => m.id === msg.id ? { ...m, status: "visto" } : m));
+    const now = new Date().toISOString();
+    const updated = { ...msg, status: "visto", read_at: msg.read_at ?? now };
+    setMessages((prev) => prev.map((m) => m.id === msg.id ? { ...m, status: "visto", read_at: m.read_at ?? now } : m));
     return updated;
   };
 
@@ -108,8 +113,11 @@ export default function ConductorMessages() {
                     </div>
                     <p className="text-sm mt-2 leading-relaxed break-all whitespace-pre-wrap line-clamp-2">{msg.content}</p>
                     <p className="text-xs text-muted-foreground mt-2">
-                      {new Date(msg.created_at).toLocaleString("es-CL", { dateStyle: "medium", timeStyle: "short" })}
+                      {formatDateTime(msg.created_at)}
                     </p>
+                    {msg.status === "visto" && msg.read_at && (
+                      <p className="text-xs text-accent mt-1">Visto el {formatDateTime(msg.read_at)}</p>
+                    )}
                   </div>
                 </div>
               </CardContent>
@@ -130,6 +138,7 @@ export default function ConductorMessages() {
                 <div className="min-w-0"><span className="text-muted-foreground">De:</span><p className="font-medium truncate">{detailMsg.sender?.full_name ?? "Administrador"}</p></div>
                 <div className="min-w-0"><span className="text-muted-foreground">Estado:</span><p><StatusBadge status={statusForConductor(detailMsg.status)} /></p></div>
                 <div className="min-w-0"><span className="text-muted-foreground">Fecha:</span><p className="font-medium truncate">{new Date(detailMsg.created_at).toLocaleString("es-CL")}</p></div>
+                <div className="min-w-0"><span className="text-muted-foreground">Visto:</span><p className="font-medium truncate">{detailMsg.read_at ? new Date(detailMsg.read_at).toLocaleString("es-CL") : "—"}</p></div>
               </div>
               <div className="min-w-0">
                 <span className="text-muted-foreground block mb-1">Mensaje:</span>
