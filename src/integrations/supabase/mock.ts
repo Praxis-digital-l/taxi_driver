@@ -1043,6 +1043,19 @@ class MockSupabaseClient {
   from(table: string) {
     return new MockQueryBuilder(table);
   }
+
+  async rpc(fnName: string, params: Record<string, any> = {}) {
+    if (fnName === "mark_message_read") {
+      const rows = getTableRows("messages");
+      const row = rows.find((r) => r.id === params.msg_id);
+      if (row) {
+        row.status = "visto";
+        row.read_at = row.read_at ?? nowIso();
+      }
+      return { data: null, error: null };
+    }
+    return { data: null, error: { message: `RPC ${fnName} no implementado en mock`, code: "PGRST202" } };
+  }
 }
 
 export const mockSupabase = new MockSupabaseClient();
