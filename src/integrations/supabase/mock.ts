@@ -368,10 +368,10 @@ const initialRequests = [
 ];
 
 const initialMileage = [
-  { id: "km-1", profile_id: "profile-cond-2", vehicle_id: "veh-1", kilometers: 84510, recorded_date: "2026-03-28", notes: "Ruta mañana", created_at: nowIso() },
-  { id: "km-2", profile_id: "profile-cond-2", vehicle_id: "veh-1", kilometers: 85120, recorded_date: "2026-04-01", notes: "Ruta tarde", created_at: nowIso() },
-  { id: "km-3", profile_id: "profile-cond-1", vehicle_id: "veh-2", kilometers: 62310, recorded_date: "2026-04-02", notes: "", created_at: nowIso() },
-  { id: "km-4", profile_id: "profile-cond-3", vehicle_id: "veh-3", kilometers: 73450, recorded_date: "2026-03-30", notes: "Control semanal", created_at: nowIso() },
+  { id: "km-1", profile_id: "profile-cond-2", vehicle_id: "veh-1", kilometers: 84510, recorded_date: "2026-03-28", notes: "Inicio jornada", created_at: nowIso() },
+  { id: "km-2", profile_id: "profile-cond-2", vehicle_id: "veh-1", kilometers: 85120, recorded_date: "2026-04-01", notes: "Fin jornada", created_at: nowIso() },
+  { id: "km-3", profile_id: "profile-cond-1", vehicle_id: "veh-2", kilometers: 62310, recorded_date: "2026-04-02", notes: "Inicio jornada", created_at: nowIso() },
+  { id: "km-4", profile_id: "profile-cond-3", vehicle_id: "veh-3", kilometers: 73450, recorded_date: "2026-03-30", notes: "Fin jornada", created_at: nowIso() },
 ];
 
 const initialMessages = [

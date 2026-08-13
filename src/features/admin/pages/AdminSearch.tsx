@@ -19,6 +19,7 @@ import {
   FileText,
   ClipboardList,
   Gauge,
+  TrendingUp,
   StickyNote,
   Plus,
   AlertCircle,
@@ -577,18 +578,34 @@ export default function AdminSearch() {
             {mileage.length === 0 ? (
               <p className="text-sm text-muted-foreground py-6 text-center">Sin registros de kilometraje.</p>
             ) : (
-              mileage.map((record) => (
-                <Card key={record.id} className="stat-card">
-                  <CardContent className="flex items-center gap-4 p-4">
-                    <Gauge className="h-5 w-5 text-info shrink-0" />
-                    <div className="flex-1">
-                      <p className="font-heading font-bold">{record.kilometers.toLocaleString("es-CL")} km</p>
-                      <p className="text-xs text-muted-foreground">{record.profiles?.full_name} • {new Date(record.recorded_date).toLocaleDateString("es-CL")}</p>
-                      {record.notes && <p className="text-xs text-muted-foreground break-all whitespace-pre-wrap">{record.notes}</p>}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
+              mileage.map((record, i) => {
+                const prev = mileage[i + 1];
+                const diff = prev ? record.kilometers - prev.kilometers : null;
+                const jornada = (record.notes ?? "").toLowerCase();
+                const esInicio = jornada.includes("inicio");
+                const esFin = jornada.includes("fin");
+                const cardColor = esInicio ? "bg-success/10 border-success" : esFin ? "bg-destructive/10 border-destructive" : "";
+                const iconColor = esInicio ? "text-success" : esFin ? "text-destructive" : "text-info";
+                return (
+                  <Card key={record.id} className={`stat-card ${cardColor}`}>
+                    <CardContent className="flex items-center gap-4 p-4">
+                      <Gauge className={`h-5 w-5 ${iconColor} shrink-0`} />
+                      <div className="flex-1">
+                        <div className="flex items-baseline gap-2">
+                          <p className="font-heading font-bold">{record.kilometers.toLocaleString("es-CL")} km</p>
+                          {diff !== null && diff > 0 && (
+                            <span className="text-xs text-accent flex items-center gap-0.5">
+                              <TrendingUp className="h-3 w-3" />+{diff.toLocaleString("es-CL")} km
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground">{record.profiles?.full_name} • {new Date(record.recorded_date).toLocaleDateString("es-CL")}</p>
+                        {record.notes && <p className="text-xs text-muted-foreground break-all whitespace-pre-wrap">{record.notes}</p>}
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })
             )}
           </TabsContent>
 
