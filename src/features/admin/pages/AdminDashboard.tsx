@@ -23,6 +23,7 @@ import {
   type AdminDashboardUnreadMessage,
 } from "@/features/admin/services/adminDashboardService";
 import type { AdminRequest } from "@/features/admin/services/adminRequestsService";
+import { ConductorDelMesCard } from "@/components/ConductorDelMesCard";
 
 type MetricCardConfig = {
   label: string;
@@ -181,6 +182,8 @@ export default function AdminDashboard() {
           </div>
         </div>
       )}
+
+      <ConductorDelMesCard editable />
 
       <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
         {metricCards.map(({ icon: Icon, label, value, sub, color, to }) => (

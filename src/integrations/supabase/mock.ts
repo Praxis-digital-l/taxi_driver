@@ -110,6 +110,11 @@ const splitName = (fullName: string) => {
   };
 };
 
+const mockAvatarUri = (label: string, color: string) => {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160"><rect width="160" height="160" rx="80" fill="${color}"/><text x="80" y="104" font-size="64" text-anchor="middle" fill="#ffffff" font-family="Arial, sans-serif">${label}</text></svg>`;
+  return `data:image/svg+xml,${encodeURIComponent(svg)}`;
+};
+
 const initialProfiles = [
   {
     id: "profile-admin-1",
@@ -150,6 +155,7 @@ const initialProfiles = [
     rut: "12.345.678-5",
     worker_id: "TR-000001",
     estado_conductor: "antiguo",
+    photo_url: null,
     created_at: nowIso(),
     updated_at: nowIso(),
   },
@@ -164,6 +170,7 @@ const initialProfiles = [
     rut: "23.456.789-0",
     worker_id: "TR-000002",
     estado_conductor: "antiguo",
+    photo_url: mockAvatarUri("C", "#0891b2"),
     created_at: nowIso(),
     updated_at: nowIso(),
   },
@@ -178,6 +185,7 @@ const initialProfiles = [
     rut: "34.567.890-1",
     worker_id: "TR-000003",
     estado_conductor: "nuevo",
+    photo_url: null,
     created_at: nowIso(),
     updated_at: nowIso(),
   },
@@ -192,6 +200,7 @@ const initialProfiles = [
     rut: "45.678.901-2",
     worker_id: "TR-000004",
     estado_conductor: "nuevo",
+    photo_url: null,
     created_at: nowIso(),
     updated_at: nowIso(),
   },
@@ -206,6 +215,7 @@ const initialProfiles = [
     rut: "56.789.012-3",
     worker_id: "TR-000005",
     estado_conductor: "desactivado",
+    photo_url: null,
     created_at: nowIso(),
     updated_at: nowIso(),
   },
@@ -220,6 +230,7 @@ const initialProfiles = [
     rut: "67.890.123-4",
     worker_id: "TR-000006",
     estado_conductor: "antiguo",
+    photo_url: null,
     created_at: nowIso(),
     updated_at: nowIso(),
   },
@@ -415,6 +426,19 @@ const initialAdminNotes = [
   },
 ];
 
+const conductorDelMesMonth = new Date().getMonth() + 1;
+const conductorDelMesYear = new Date().getFullYear();
+const initialConductorDelMes = [
+  {
+    id: "cdm-1",
+    conductor_id: "profile-cond-2",
+    month: conductorDelMesMonth,
+    year: conductorDelMesYear,
+    selected_by: "profile-admin-1",
+    created_at: new Date(Date.now() - 86400000).toISOString(),
+  },
+];
+
 const mockDb: Record<string, RowRecord[]> = {
   profiles: initialProfiles,
   vehicles: initialVehicles,
@@ -426,6 +450,7 @@ const mockDb: Record<string, RowRecord[]> = {
   mileage_records: initialMileage,
   messages: initialMessages,
   admin_notes: initialAdminNotes,
+  conductor_del_mes: initialConductorDelMes,
 };
 
 const mockStorage = new Map<string, Blob>();
@@ -534,6 +559,15 @@ function attachRelations(table: string, row: RowRecord, columns: string): RowRec
     if (columns.includes("receiver:profiles!messages_receiver_id_fkey(")) {
       const receiver = getTableRows("profiles").find((item) => item.id === row.receiver_id);
       response.receiver = receiver ? { full_name: receiver.full_name } : null;
+    }
+  }
+
+  if (table === "conductor_del_mes") {
+    if (columns.includes("conductor:profiles!conductor_del_mes_conductor_id_fkey(")) {
+      const conductor = getTableRows("profiles").find((item) => item.id === row.conductor_id);
+      response.conductor = conductor
+        ? { full_name: conductor.full_name, photo_url: conductor.photo_url ?? null, id: conductor.id }
+        : null;
     }
   }
 
@@ -744,6 +778,7 @@ class MockQueryBuilder {
         baseRow.apellido_paterno = payload.apellido_paterno ?? "";
         baseRow.apellido_materno = payload.apellido_materno ?? "";
         baseRow.rut = payload.rut ?? "";
+        baseRow.photo_url = payload.photo_url ?? null;
         baseRow.full_name = (baseRow.full_name || [baseRow.nombres, baseRow.apellido_paterno, baseRow.apellido_materno].filter(Boolean).join(" ")).trim();
         baseRow.created_at = payload.created_at ?? timestamp;
         baseRow.updated_at = timestamp;
@@ -1051,6 +1086,17 @@ class MockSupabaseClient {
       if (row) {
         row.status = "visto";
         row.read_at = row.read_at ?? nowIso();
+      }
+      return { data: null, error: null };
+    }
+    if (fnName === "set_profile_photo_url") {
+      const { data } = await this.auth.getSession();
+      const userId = (data.session?.user as { id?: string } | undefined)?.id;
+      const profiles = getTableRows("profiles");
+      const row = userId ? profiles.find((r) => r.user_id === userId) : undefined;
+      if (row) {
+        row.photo_url = params.new_photo_url;
+        row.updated_at = nowIso();
       }
       return { data: null, error: null };
     }

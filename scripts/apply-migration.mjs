@@ -9,10 +9,11 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const rl = createInterface({ input: process.stdin, output: process.stdout });
 const ask = (q) => new Promise((r) => rl.question(q, r));
 
-const MIGRATION_FILE = resolve(__dirname, "../supabase/add_worker_id.sql");
+const MIGRATION_FILE = resolve(__dirname, "../", process.argv[2] || "supabase/add_worker_id.sql");
 
 async function main() {
-  console.log("\n=== Migración: Agregar worker_id a profiles ===\n");
+  const migrationName = process.argv[2] || "supabase/add_worker_id.sql";
+  console.log(`\n=== Migración: ${migrationName} ===\n`);
 
   const envPath = resolve(__dirname, "../.env");
   if (!existsSync(envPath)) {
@@ -47,7 +48,7 @@ async function main() {
       console.log("\n--- Instrucciones manuales ---");
       console.log("1. Abre https://supabase.com/dashboard/project/ywcgtwlhievzgflmncsq");
       console.log("2. Ve a SQL Editor");
-      console.log("3. Copia y pega el contenido de: supabase/add_worker_id.sql");
+      console.log(`3. Copia y pega el contenido de: ${migrationName}`);
       console.log("4. Ejecuta la consulta\n");
       process.exit(0);
     }
@@ -83,7 +84,7 @@ async function main() {
       console.log("\n--- Instrucciones manuales ---");
       console.log("1. Abre https://supabase.com/dashboard/project/ywcgtwlhievzgflmncsq");
       console.log("2. Ve a SQL Editor");
-      console.log("3. Copia y pega el contenido de: supabase/add_worker_id.sql");
+      console.log(`3. Copia y pega el contenido de: ${migrationName}`);
       console.log("4. Ejecuta la consulta\n");
       process.exit(1);
     }

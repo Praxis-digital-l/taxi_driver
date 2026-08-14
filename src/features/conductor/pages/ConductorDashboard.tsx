@@ -5,6 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import StatusBadge from "@/components/StatusBadge";
 import { Truck, FileText, ClipboardList, AlertTriangle, Gauge, MessageSquare, ArrowRight } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
+import { PhotoUploadCard } from "@/features/conductor/components/PhotoUploadCard";
+import { ConductorDelMesCard } from "@/components/ConductorDelMesCard";
 
 export default function ConductorDashboard() {
   const { profile } = useAuth();
@@ -67,6 +69,13 @@ export default function ConductorDashboard() {
           </div>
         </div>
       )}
+
+      <div className="grid gap-4 lg:grid-cols-3">
+        <PhotoUploadCard />
+        <div className="lg:col-span-2">
+          <ConductorDelMesCard />
+        </div>
+      </div>
 
       {/* Métricas rápidas */}
       <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
