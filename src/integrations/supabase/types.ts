@@ -56,6 +56,48 @@ export type Database = {
           },
         ]
       }
+      conductor_del_mes: {
+        Row: {
+          conductor_id: string
+          created_at: string
+          id: string
+          month: number
+          selected_by: string | null
+          year: number
+        }
+        Insert: {
+          conductor_id: string
+          created_at?: string
+          id?: string
+          month: number
+          selected_by?: string | null
+          year: number
+        }
+        Update: {
+          conductor_id?: string
+          created_at?: string
+          id?: string
+          month?: number
+          selected_by?: string | null
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conductor_del_mes_conductor_id_fkey"
+            columns: ["conductor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conductor_del_mes_selected_by_fkey"
+            columns: ["selected_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       document_types: {
         Row: {
           id: string
@@ -236,6 +278,7 @@ export type Database = {
           id: string
           nombres: string
           phone: string | null
+          photo_url: string | null
           role: Database["public"]["Enums"]["app_role"]
           rut: string
           updated_at: string
@@ -252,6 +295,7 @@ export type Database = {
           id?: string
           nombres?: string
           phone?: string | null
+          photo_url?: string | null
           role?: Database["public"]["Enums"]["app_role"]
           rut?: string
           updated_at?: string
@@ -268,6 +312,7 @@ export type Database = {
           id?: string
           nombres?: string
           phone?: string | null
+          photo_url?: string | null
           role?: Database["public"]["Enums"]["app_role"]
           rut?: string
           updated_at?: string

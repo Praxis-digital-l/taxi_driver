@@ -2,9 +2,10 @@ import { ReactNode, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { Button } from "@/components/ui/button";
+import { ConductorAvatar } from "@/components/ConductorAvatar";
 import {
   Truck, LayoutDashboard, FileText, ClipboardList, Gauge, MessageSquare,
-  Search, LogOut, Menu, X, ChevronRight, User, Users, Calculator, Upload
+  Search, LogOut, Menu, X, ChevronRight, Users, Calculator
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { logDevInteraction } from "@/shared/monitoring/devLogger";
@@ -100,9 +101,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 
         <div className="border-t border-sidebar-border p-3 space-y-2">
           <div className="flex items-center gap-3 rounded-lg px-3 py-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-sidebar-accent text-sidebar-accent-foreground">
-              <User className="h-4 w-4" />
-            </div>
+            <ConductorAvatar fullName={profile?.full_name} photoUrl={profile?.photo_url} className="h-9 w-9" />
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium truncate">{profile?.full_name || "Usuario"}</p>
               <p className="text-[11px] text-sidebar-foreground/50 capitalize">

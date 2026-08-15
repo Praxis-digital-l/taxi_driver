@@ -13,6 +13,7 @@
     "test:watch": "vitest",
     "reset:conductors:password": "node scripts/reset-conductors-password.mjs",
     "migrate:worker-id": "node scripts/apply-migration.mjs",
+    "migrate:conductor-del-mes": "node scripts/apply-migration.mjs supabase/conductor_del_mes.sql",
     "deploy": "npm run build && npx gh-pages -d dist"
   },
   "dependencies": {
