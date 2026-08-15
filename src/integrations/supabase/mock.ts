@@ -439,6 +439,36 @@ const initialConductorDelMes = [
   },
 ];
 
+const initialLiquidaciones: RowRecord[] = [
+  {
+    id: "liq-1",
+    profile_id: "profile-cond-2",
+    worker_id: "TR-000002",
+    nombre: "Camila Soto Paredes",
+    email: "camila.soto@demo-flota.cl",
+    rut: "23.456.789-0",
+    total_facturado: 1500000,
+    descuentos_primarios: [
+      { concepto: "Gasto operacional", monto: 100000 },
+      { concepto: "Diesel", monto: 200000 },
+      { concepto: "TAG - Autopista 1", monto: 15000 },
+      { concepto: "Arriendo", monto: 150000 },
+      { concepto: "Seguro", monto: 50000 },
+    ],
+    subtotal: 985000,
+    descuentos_secundarios: [
+      { concepto: "Mantención", monto: 80000 },
+    ],
+    total_descuentos: 595000,
+    total_a_pagar: 905000,
+    mes: new Date().toLocaleDateString("es-CL", { month: "long" }),
+    fecha: new Date().toLocaleDateString("es-CL", { year: "numeric", month: "long", day: "numeric" }),
+    file_url: null,
+    enviado_por: "profile-admin-1",
+    created_at: nowIso(),
+  },
+];
+
 const mockDb: Record<string, RowRecord[]> = {
   profiles: initialProfiles,
   vehicles: initialVehicles,
@@ -451,6 +481,7 @@ const mockDb: Record<string, RowRecord[]> = {
   messages: initialMessages,
   admin_notes: initialAdminNotes,
   conductor_del_mes: initialConductorDelMes,
+  liquidaciones: initialLiquidaciones,
 };
 
 const mockStorage = new Map<string, Blob>();
@@ -772,6 +803,10 @@ class MockQueryBuilder {
         baseRow.assigned_at = payload.assigned_at ?? timestamp;
       }
 
+      if (this.table === "liquidaciones") {
+        baseRow.created_at = payload.created_at ?? timestamp;
+      }
+
       if (this.table === "profiles") {
         baseRow.estado_conductor = payload.estado_conductor ?? "nuevo";
         baseRow.nombres = payload.nombres ?? "";
@@ -882,6 +917,14 @@ class MockStorageBucket {
   }
 
   getPublicUrl(fileKey: string) {
+    const existing = mockStorage.get(fileKey);
+    if (existing) {
+      return {
+        data: {
+          publicUrl: URL.createObjectURL(existing),
+        },
+      };
+    }
     return {
       data: {
         publicUrl: `https://mock.local/${this.bucketName}/${encodeURIComponent(fileKey)}`,

@@ -2,7 +2,7 @@ import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 
 serve(async (req) => {
   try {
-    const { email, password, nombres, apellido_paterno, apellido_materno, phone, rut, full_name } = await req.json();
+    const { email, password, nombres, apellido_paterno, apellido_materno, phone, rut, full_name, worker_id } = await req.json();
 
     if (!email || !password) {
       return new Response(JSON.stringify({ error: "Faltan campos requeridos" }), { status: 400 });
@@ -24,6 +24,7 @@ serve(async (req) => {
         apellido_materno,
         phone,
         rut,
+        worker_id,
       },
     };
 
@@ -46,7 +47,24 @@ serve(async (req) => {
     let userData;
     try { userData = JSON.parse(text); } catch { userData = null; }
 
-    return new Response(JSON.stringify({ success: true, user_id: userData?.id }), {
+    const userId = userData?.id;
+
+    // Asegurar worker_id en el perfil aunque el trigger esté desactualizado
+    if (userId && worker_id) {
+      const restUrl = supabaseUrl.replace(/\/$/, "") + "/rest/v1/profiles";
+      await fetch(`${restUrl}?user_id=eq.${userId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": serviceRoleKey,
+          "Authorization": `Bearer ${serviceRoleKey}`,
+          "Prefer": "return=minimal",
+        },
+        body: JSON.stringify({ worker_id }),
+      });
+    }
+
+    return new Response(JSON.stringify({ success: true, user_id: userId }), {
       headers: { "Content-Type": "application/json" },
     });
   } catch (err) {

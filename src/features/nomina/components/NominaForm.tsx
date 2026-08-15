@@ -58,7 +58,7 @@ export default function NominaForm({ onCalcular }: NominaFormProps) {
 
   useEffect(() => {
     fetchAdminConductores()
-      .then((data) => setConductores(data.filter((c) => c.worker_id)))
+      .then((data) => setConductores(data))
       .catch(() => {});
   }, []);
 
@@ -82,7 +82,7 @@ export default function NominaForm({ onCalcular }: NominaFormProps) {
     }
 
     const data: DatosNomina = {
-      trabajadorId: selectedConductor?.worker_id || "",
+      trabajadorId: selectedConductor?.worker_id || selectedConductor?.id || "",
       nombre: selectedConductor?.full_name || "",
       email: selectedConductor?.email || "",
       rut: selectedConductor?.rut || "",
@@ -144,9 +144,9 @@ export default function NominaForm({ onCalcular }: NominaFormProps) {
             <Label htmlFor="trabajadorId">ID del trabajador</Label>
             <Select
               name="trabajadorId"
-              value={selectedConductor?.worker_id || ""}
+              value={selectedConductor?.id || ""}
               onValueChange={(value) => {
-                const cond = conductores.find((c) => c.worker_id === value);
+                const cond = conductores.find((c) => c.id === value);
                 setSelectedConductor(cond || null);
               }}
             >
@@ -155,8 +155,8 @@ export default function NominaForm({ onCalcular }: NominaFormProps) {
               </SelectTrigger>
               <SelectContent>
                 {conductores.map((c) => (
-                  <SelectItem key={c.id} value={c.worker_id}>
-                    {c.worker_id} — {c.full_name}
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.worker_id ? `${c.worker_id} — ` : ""}{c.full_name}
                   </SelectItem>
                 ))}
               </SelectContent>

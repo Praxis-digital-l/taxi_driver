@@ -394,6 +394,81 @@ export type Database = {
           },
         ]
       }
+      liquidaciones: {
+        Row: {
+          created_at: string
+          descuentos_primarios: Json
+          descuentos_secundarios: Json
+          email: string | null
+          enviado_por: string | null
+          fecha: string
+          file_url: string | null
+          id: string
+          mes: string
+          nombre: string
+          profile_id: string
+          rut: string | null
+          subtotal: number
+          total_a_pagar: number
+          total_descuentos: number
+          total_facturado: number
+          worker_id: string
+        }
+        Insert: {
+          created_at?: string
+          descuentos_primarios?: Json
+          descuentos_secundarios?: Json
+          email?: string | null
+          enviado_por?: string | null
+          fecha: string
+          file_url?: string | null
+          id?: string
+          mes: string
+          nombre: string
+          profile_id: string
+          rut?: string | null
+          subtotal?: number
+          total_a_pagar?: number
+          total_descuentos?: number
+          total_facturado?: number
+          worker_id: string
+        }
+        Update: {
+          created_at?: string
+          descuentos_primarios?: Json
+          descuentos_secundarios?: Json
+          email?: string | null
+          enviado_por?: string | null
+          fecha?: string
+          file_url?: string | null
+          id?: string
+          mes?: string
+          nombre?: string
+          profile_id?: string
+          rut?: string | null
+          subtotal?: number
+          total_a_pagar?: number
+          total_descuentos?: number
+          total_facturado?: number
+          worker_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "liquidaciones_enviado_por_fkey"
+            columns: ["enviado_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "liquidaciones_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vehicle_assignments: {
         Row: {
           assigned_at: string

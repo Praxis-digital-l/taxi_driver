@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { ConductorAvatar } from "@/components/ConductorAvatar";
 import {
   Truck, LayoutDashboard, FileText, ClipboardList, Gauge, MessageSquare,
-  Search, LogOut, Menu, X, ChevronRight, Users, Calculator, Upload
+  Search, LogOut, Menu, X, ChevronRight, Users, Calculator, Upload, Wallet
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { logDevInteraction } from "@/shared/monitoring/devLogger";
@@ -28,6 +28,7 @@ const conductorLinks = [
   { to: "/conductor/documents", icon: FileText, label: "Documentos" },
   { to: "/conductor/requests", icon: ClipboardList, label: "Solicitudes" },
   { to: "/conductor/mileage", icon: Gauge, label: "Kilometraje" },
+  { to: "/conductor/liquidaciones", icon: Wallet, label: "Liquidaciones" },
   { to: "/conductor/messages", icon: MessageSquare, label: "Mensajes" },
 ];
 
