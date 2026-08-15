@@ -22,7 +22,7 @@ import {
   ESTADO_CONDUCTOR_LABELS,
 } from "@/features/admin/services/adminConductoresService";
 import { validateConductorForm, sanitizeInput, normalizeRut } from "@/lib/validations";
-
+// aaaaa
 export default function AdminConductores() {
   const { toast } = useToast();
   const [conductores, setConductores] = useState<ConductorRecord[]>([]);
@@ -55,6 +55,7 @@ export default function AdminConductores() {
     }
   }, [toast]);
 
+  
   useEffect(() => {
     load();
   }, [load]);
@@ -210,31 +211,33 @@ export default function AdminConductores() {
   return (
     <div>
       <PageHeader title="Gestión de Conductores" description={`${conductores.length} conductores registrados`}>
-        <div className="relative">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-          <Input
-            placeholder="Buscar conductor..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-[200px] h-8 pl-8 text-xs"
-          />
-        </div>
+        <div className="flex flex-wrap items-center gap-2 w-full min-w-0 sm:w-auto">
+          <div className="relative flex-1 min-w-[10rem] sm:flex-none">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+            <Input
+              placeholder="Buscar conductor..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full sm:w-[200px] h-8 pl-8 text-xs"
+            />
+          </div>
 
-        <Select value={filter} onValueChange={setFilter}>
-          <SelectTrigger className="w-[130px] h-8 text-xs"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todos</SelectItem>
-            {ESTADO_CONDUCTOR_OPTIONS.map((opt) => (
-              <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          <Select value={filter} onValueChange={setFilter}>
+            <SelectTrigger className="w-full sm:w-[130px] h-8 text-xs"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos</SelectItem>
+              {ESTADO_CONDUCTOR_OPTIONS.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
         <Dialog open={openCreate} onOpenChange={(open) => { if (!open) { setPhoneDigits(""); setRutInput(""); setFormErrors({}); } setOpenCreate(open); }}>
           <DialogContent className="sm:max-w-md" onInteractOutside={(e) => e.preventDefault()}>
             <DialogHeader><DialogTitle className="font-heading">Agregar Conductor</DialogTitle></DialogHeader>
             <form onSubmit={handleCreate} className="space-y-4">
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="space-y-2">
                   <Label>Nombre *</Label>
                   <Input name="nombres" required placeholder="Carlos" maxLength={80} />
@@ -428,7 +431,7 @@ export default function AdminConductores() {
           <DialogHeader><DialogTitle className="font-heading">Editar Conductor</DialogTitle></DialogHeader>
           {editConductor && (
             <form onSubmit={handleEdit} className="space-y-4">
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="space-y-2">
                   <Label>Nombre</Label>
                   <Input name="nombres" defaultValue={editConductor.nombres} required maxLength={80} />

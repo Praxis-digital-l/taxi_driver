@@ -61,15 +61,21 @@ export async function fetchAdminVehiclesData() {
 }
 
 export async function createVehicle(payload: CreateVehiclePayload) {
-  const { error } = await supabase.from("vehicles").insert({
-    license_plate: payload.licensePlate.trim().toUpperCase(),
-    make: payload.make.trim(),
-    model: payload.model.trim(),
-    year: payload.year,
-    color: payload.color.trim(),
-  });
+  const { data, error } = await supabase
+    .from("vehicles")
+    .insert({
+      license_plate: payload.licensePlate.trim().toUpperCase(),
+      make: payload.make.trim(),
+      model: payload.model.trim(),
+      year: payload.year,
+      color: payload.color.trim(),
+    })
+    .select("id")
+    .single();
 
   assertNoError(error);
+  const createdId = Array.isArray(data) ? (data[0] as { id: string } | undefined)?.id : (data as { id: string } | undefined)?.id;
+  return createdId ?? null;
 }
 
 export async function assignConductorToVehicle(vehicleId: string, profileId: string) {

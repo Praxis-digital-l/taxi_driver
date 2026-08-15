@@ -54,7 +54,7 @@ export async function fetchAdminDashboardData() {
     supabase.from("vehicles").select("id", { count: "exact", head: true }),
     supabase.from("vehicles").select("id", { count: "exact", head: true }).eq("status", "active"),
     supabase.from("profiles").select("id", { count: "exact", head: true }).eq("role", "conductor"),
-    supabase.from("requests").select("id", { count: "exact", head: true }).eq("status", "pendiente"),
+    supabase.from("requests").select("id", { count: "exact", head: true }).neq("status", "completado"),
     supabase.from("requests").select("id", { count: "exact", head: true }).eq("status", "en_proceso"),
     supabase.from("documents").select("id", { count: "exact", head: true }).lte("expiration_date", thirtyDays).gte("expiration_date", today),
     supabase.from("documents").select("id", { count: "exact", head: true }),
@@ -62,7 +62,7 @@ export async function fetchAdminDashboardData() {
     supabase
       .from("requests")
       .select("id, status, details, amount, created_at, request_types(name), profiles(full_name), vehicles(license_plate)")
-      .in("status", ["pendiente", "en_proceso"])
+      .neq("status", "completado")
       .limit(50),
     supabase
       .from("documents")

@@ -10,9 +10,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { useToast } from "@/hooks/use-toast";
 import StatusBadge from "@/components/StatusBadge";
 import PageHeader from "@/components/PageHeader";
-import { Plus, FileText, Trash2, Download, AlertCircle } from "lucide-react";
+import { Plus, FileText, Trash2, Download, Eye, AlertCircle } from "lucide-react";
 import { DOCUMENT_ACCEPT_ATTR, isAllowedDocumentFile } from "@/shared/utils/fileValidation";
 import { downloadDocumentFile } from "@/shared/utils/storageFiles";
+import DocumentPreviewDialog from "@/features/admin/components/DocumentPreviewDialog";
 
 export default function ConductorDocuments() {
   const { profile, user } = useAuth();
@@ -24,6 +25,13 @@ export default function ConductorDocuments() {
   const [uploading, setUploading] = useState(false);
   const [filterType, setFilterType] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
+
+  const [preview, setPreview] = useState<{ fileKey: string; name: string; type: string } | null>(null);
+
+  const getDefaultFileName = (fileKey: string) => {
+    const segments = fileKey.split("/");
+    return segments[segments.length - 1] || "archivo";
+  };
 
   const load = async () => {
     if (!profile) return;
@@ -207,7 +215,11 @@ export default function ConductorDocuments() {
       ) : (
         <div className="grid gap-3">
           {filtered.map((doc: any) => (
-            <Card key={doc.id} className="stat-card">
+            <Card
+              key={doc.id}
+              className="stat-card cursor-pointer transition-colors hover:border-primary/40 hover:bg-muted/50"
+              onClick={() => setPreview({ fileKey: doc.file_key, name: getDefaultFileName(doc.file_key), type: doc.document_types?.name || "Documento" })}
+            >
               <CardContent className="flex items-center gap-4 p-4">
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary shrink-0">
                   <FileText className="h-5 w-5" />
@@ -234,12 +246,21 @@ export default function ConductorDocuments() {
                     variant="ghost"
                     size="icon"
                     className="h-8 w-8"
-                    onClick={() => handleDownload(doc.file_key)}
+                    onClick={(e) => { e.stopPropagation(); setPreview({ fileKey: doc.file_key, name: getDefaultFileName(doc.file_key), type: doc.document_types?.name || "Documento" }); }}
+                    title="Vista previa"
+                  >
+                    <Eye className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={(e) => { e.stopPropagation(); handleDownload(doc.file_key); }}
                     title="Descargar archivo"
                   >
                     <Download className="h-4 w-4" />
                   </Button>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => handleDelete(doc.id, doc.file_key)} title="Eliminar">
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={(e) => { e.stopPropagation(); handleDelete(doc.id, doc.file_key); }} title="Eliminar">
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
@@ -248,6 +269,14 @@ export default function ConductorDocuments() {
           ))}
         </div>
       )}
+
+      <DocumentPreviewDialog
+        open={preview !== null}
+        onOpenChange={(open) => { if (!open) setPreview(null); }}
+        fileKey={preview?.fileKey ?? ""}
+        fileName={preview?.name ?? ""}
+        documentType={preview?.type ?? "Documento"}
+      />
     </div>
   );
 }

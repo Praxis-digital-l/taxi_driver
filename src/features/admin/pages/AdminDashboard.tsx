@@ -96,7 +96,7 @@ export default function AdminDashboard() {
         meta: `${getRequestWaitingDays(r.created_at)} día(s) en espera`,
         priorityName: r.request_types?.name,
         status: r.status,
-        link: "/admin/requests",
+        link: `/admin/requests?id=${r.id}`,
       });
     }
 
@@ -110,7 +110,7 @@ export default function AdminDashboard() {
         meta: `${daysLeft} día(s)`,
         priorityName: null,
         status: daysLeft <= 7 ? "urgent" : "warning",
-        link: "/admin/search",
+        link: "/admin/documents",
       });
     }
 
@@ -152,17 +152,17 @@ export default function AdminDashboard() {
       icon: ClipboardList,
       label: "Solicitudes",
       value: stats.pendingRequests,
-      sub: "pendientes",
+      sub: "total",
       color: "bg-warning/10 text-warning",
       to: "/admin/requests",
     },
     {
       icon: FileText,
-      label: "Docs por Vencer",
+      label: "Documentos por vencer",
       value: stats.expiringDocs,
       sub: "en 30 días",
       color: "bg-destructive/10 text-destructive",
-      to: "/admin/search",
+      to: "/admin/documents",
     },
   ];
 
@@ -174,7 +174,7 @@ export default function AdminDashboard() {
           <div>
             <p className="text-sm font-semibold">Existen tareas pendientes</p>
             <p className="text-xs text-muted-foreground mt-1">
-              {stats.pendingRequests > 0 && `${stats.pendingRequests} solicitud(es) pendiente(s). `}
+              {stats.pendingRequests > 0 && `${stats.pendingRequests} solicitud(es) activa(s). `}
               {stats.inProcessRequests > 0 && `${stats.inProcessRequests} en proceso. `}
               {stats.expiringDocs > 0 && `${stats.expiringDocs} documento(s) por vencer. `}
               {stats.unreadMessages > 0 && `${stats.unreadMessages} mensaje(s) pendiente(s).`}

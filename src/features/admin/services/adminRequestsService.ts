@@ -9,6 +9,7 @@ export type AdminRequest = {
   details: string | null;
   amount: number | null;
   created_at: string;
+  updated_at: string;
   vehicle_id: string | null;
   request_types?: { name: string | null } | null;
   profiles?: { full_name: string | null; rut: string | null; phone: string | null } | null;
@@ -24,7 +25,7 @@ function assertNoError(error: { message: string } | null) {
 export async function fetchAdminRequests(statusFilter: string) {
   let query = supabase
     .from("requests")
-    .select("id, profile_id, request_type_id, status, details, amount, created_at, vehicle_id, request_types(name), profiles(full_name, rut, phone), vehicles(license_plate)")
+    .select("id, profile_id, request_type_id, status, details, amount, created_at, updated_at, vehicle_id, request_types(name), profiles(full_name, rut, phone), vehicles(license_plate)")
     .limit(200);
 
   if (statusFilter !== "all") {
@@ -44,6 +45,27 @@ export async function fetchAdminRequests(statusFilter: string) {
 
 export async function updateAdminRequestStatus(requestId: string, status: string) {
   const { error } = await supabase.from("requests").update({ status }).eq("id", requestId);
+  assertNoError(error);
+}
+
+export async function resolveRequest(requestId: string, status: string, reason?: string) {
+  const { data: current } = await supabase
+    .from("requests")
+    .select("details")
+    .eq("id", requestId)
+    .single();
+
+  let newDetails = current?.details ?? "";
+  if (status === "rechazado" && reason) {
+    const dateStr = new Date().toLocaleString("es-CL");
+    const resolution = `\n\n--- MOTIVO DEL RECHAZO (${dateStr}) ---\n${reason}`;
+    newDetails = (newDetails || "") + resolution;
+  }
+
+  const { error } = await supabase
+    .from("requests")
+    .update({ status, details: newDetails })
+    .eq("id", requestId);
   assertNoError(error);
 }
 

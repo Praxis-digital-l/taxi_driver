@@ -14,6 +14,7 @@ import ConductorRequests from "@/features/conductor/pages/ConductorRequests";
 import ConductorMileage from "@/features/conductor/pages/ConductorMileage";
 import ConductorMessages from "@/features/conductor/pages/ConductorMessages";
 import AdminDashboard from "@/features/admin/pages/AdminDashboard";
+import AdminDocuments from "@/features/admin/pages/AdminDocuments";
 import AdminSearch from "@/features/admin/pages/AdminSearch";
 import AdminVehicles from "@/features/admin/pages/AdminVehicles";
 import AdminRequests from "@/features/admin/pages/AdminRequests";
@@ -21,6 +22,7 @@ import AdminMessages from "@/features/admin/pages/AdminMessages";
 import AdminUsers from "@/features/admin/pages/AdminUsers";
 import AdminConductores from "@/features/admin/pages/AdminConductores";
 import AdminNomina from "@/features/admin/pages/AdminNomina";
+import AdminBulkUpload from "@/features/admin/pages/AdminBulkUpload";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -79,12 +81,14 @@ const App = () => (
 
             {/* Rutas Admin */}
             <Route path="/admin" element={<ProtectedRoute requiredRole="admin"><AppLayout><AdminDashboard /></AppLayout></ProtectedRoute>} />
+            <Route path="/admin/documents" element={<ProtectedRoute requiredRole="admin"><AppLayout><AdminDocuments /></AppLayout></ProtectedRoute>} />
             <Route path="/admin/search" element={<ProtectedRoute requiredRole="admin"><AppLayout><AdminSearch /></AppLayout></ProtectedRoute>} />
             <Route path="/admin/vehicles" element={<ProtectedRoute requiredRole="admin"><AppLayout><AdminVehicles /></AppLayout></ProtectedRoute>} />
             <Route path="/admin/requests" element={<ProtectedRoute requiredRole="admin"><AppLayout><AdminRequests /></AppLayout></ProtectedRoute>} />
             <Route path="/admin/messages" element={<ProtectedRoute requiredRole="admin"><AppLayout><AdminMessages /></AppLayout></ProtectedRoute>} />
             <Route path="/admin/conductores" element={<ProtectedRoute requiredRole="admin"><AppLayout><AdminConductores /></AppLayout></ProtectedRoute>} />
             <Route path="/admin/nomina" element={<ProtectedRoute requiredRole="admin"><AppLayout><AdminNomina /></AppLayout></ProtectedRoute>} />
+            <Route path="/admin/bulk-upload" element={<ProtectedRoute requiredRole="admin"><AppLayout><AdminBulkUpload /></AppLayout></ProtectedRoute>} />
             <Route path="/admin/users" element={<ProtectedRoute requiredRole="super_admin"><AppLayout><AdminUsers /></AppLayout></ProtectedRoute>} />
 
             <Route path="*" element={<NotFound />} />
