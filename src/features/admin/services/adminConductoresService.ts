@@ -127,7 +127,7 @@ export async function createConductor(payload: CreateConductorPayload) {
 
   const fullName = `${payload.nombres.trim()} ${payload.apellidoPaterno.trim()} ${payload.apellidoMaterno.trim()}`.trim();
 
-const { error: fnError } = await supabase.functions.invoke("create-conductor", {
+const { data: fnData, error: fnError } = await supabase.functions.invoke("create-conductor", {
   body: {
     email: payload.email.trim().toLowerCase(),
     password: payload.password,
@@ -142,16 +142,28 @@ const { error: fnError } = await supabase.functions.invoke("create-conductor", {
 });
 
 if (fnError) {
-  throw new Error(fnError.message);
+  let msg = fnError.message;
+  try {
+    const parsed = JSON.parse(fnError.message);
+    if (parsed.error) msg = parsed.error;
+  } catch {
+    // El mensaje no era JSON, se usa el texto original
+  }
+  throw new Error(msg);
 }
 
-  if (fnError) {
-    let msg = fnError.message;
-    try {
-      const parsed = JSON.parse(fnError.message);
-      if (parsed.error) msg = parsed.error;
-    } catch {}
-    throw new Error(msg);
+  // Fallback: si la edge function no pudo escribir el worker_id, asignarlo directamente
+  const createdUserId = (fnData as { user_id?: string } | null)?.user_id;
+  if (createdUserId) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("id, worker_id")
+      .eq("user_id", createdUserId)
+      .maybeSingle();
+
+    if (profile && !profile.worker_id) {
+      await supabase.from("profiles").update({ worker_id: workerId }).eq("id", profile.id);
+    }
   }
 }
 

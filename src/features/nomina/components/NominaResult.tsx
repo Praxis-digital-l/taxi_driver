@@ -3,8 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { Mail, Fingerprint, FileDown, Send } from "lucide-react";
+import { Mail, Fingerprint, FileDown, Send, SendToBack } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 import { type ResultadoNomina } from "@/lib/nomina";
+import { enviarLiquidacion } from "@/features/nomina/services/liquidacionesService";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 
@@ -30,6 +32,8 @@ function Fila({ concepto, monto, esTotal = false }: { concepto: string; monto: n
 export default function NominaResult({ resultado }: NominaResultProps) {
   const cardRef = useRef<HTMLDivElement>(null);
   const [descargando, setDescargando] = useState(false);
+  const [enviando, setEnviando] = useState(false);
+  const { toast } = useToast();
   const now = new Date();
   const mes = now.toLocaleDateString("es-CL", { month: "long" });
   const fecha = now.toLocaleDateString("es-CL", {
@@ -95,6 +99,26 @@ export default function NominaResult({ resultado }: NominaResultProps) {
     }
   };
 
+  const handleEnviarLiquidacion = async () => {
+    setEnviando(true);
+    try {
+      const blob = await generarPDF();
+      await enviarLiquidacion(resultado, mes, fecha, blob);
+      toast({
+        title: "Liquidación enviada",
+        description: `Se envió la liquidación a ${resultado.nombre} (${resultado.trabajadorId}).`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error al enviar liquidación",
+        description: error instanceof Error ? error.message : "No se pudo enviar la liquidación.",
+        variant: "destructive",
+      });
+    } finally {
+      setEnviando(false);
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap justify-end gap-2">
@@ -117,6 +141,16 @@ export default function NominaResult({ resultado }: NominaResultProps) {
         >
           <FileDown className="h-4 w-4" />
           {descargando ? "Generando..." : "Descargar PDF"}
+        </Button>
+        <Button
+          variant="default"
+          size="sm"
+          onClick={handleEnviarLiquidacion}
+          disabled={enviando}
+          className="gap-2"
+        >
+          <SendToBack className="h-4 w-4" />
+          {enviando ? "Enviando..." : "Enviar liquidación"}
         </Button>
       </div>
 
