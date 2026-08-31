@@ -30,7 +30,7 @@ export default function ConductorDashboard() {
         supabase.from("vehicle_assignments").select("id", { count: "exact" }).eq("profile_id", profile.id),
         supabase.from("documents").select("id", { count: "exact" }).eq("profile_id", profile.id),
         supabase.from("requests").select("*, request_types(name)").eq("profile_id", profile.id).order("created_at", { ascending: false }).limit(5),
-        supabase.from("mileage_records").select("kilometers").eq("profile_id", profile.id).order("recorded_date", { ascending: false }).limit(1),
+        supabase.from("mileage_records").select("kilometers").eq("profile_id", profile.id).order("recorded_date", { ascending: false }).order("created_at", { ascending: false }).limit(1),
         supabase.from("messages").select("id", { count: "exact" }).eq("receiver_id", profile.id).eq("status", "pendiente"),
         supabase.from("documents").select("id", { count: "exact" }).eq("profile_id", profile.id).lte("expiration_date", thirtyDays).gte("expiration_date", now.toISOString().slice(0, 10)),
         supabase.from("messages").select("*, sender:profiles!messages_sender_id_fkey(full_name)").eq("receiver_id", profile.id).order("created_at", { ascending: false }).limit(3),

@@ -133,6 +133,7 @@ export async function fetchAdminVehicleSearchByPlate(plate: string): Promise<Adm
       .select("id, kilometers, recorded_date, notes, profiles(full_name)")
       .eq("vehicle_id", vehicle.id)
       .order("recorded_date", { ascending: false })
+      .order("created_at", { ascending: false })
       .limit(20),
     supabase
       .from("admin_notes")

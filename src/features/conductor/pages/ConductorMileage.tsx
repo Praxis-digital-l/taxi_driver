@@ -25,7 +25,7 @@ export default function ConductorMileage() {
   const load = async () => {
     if (!profile) return;
     const [rRes, vRes] = await Promise.all([
-      supabase.from("mileage_records").select("*, vehicles(license_plate)").eq("profile_id", profile.id).order("recorded_date", { ascending: false }).limit(50),
+      supabase.from("mileage_records").select("*, vehicles(license_plate)").eq("profile_id", profile.id).order("recorded_date", { ascending: false }).order("created_at", { ascending: false }).limit(50),
       supabase.from("vehicle_assignments").select("vehicles(id, license_plate)").eq("profile_id", profile.id).order("assigned_at", { ascending: false }),
     ]);
     setRecords(rRes.data || []);
@@ -53,6 +53,7 @@ export default function ConductorMileage() {
       .select("kilometers, notes")
       .eq("vehicle_id", vehicleId)
       .order("recorded_date", { ascending: false })
+      .order("created_at", { ascending: false })
       .limit(1);
     const lastRecord = lastRecordRes.data?.[0];
     const lastKm = lastRecord?.kilometers;
