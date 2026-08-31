@@ -61,7 +61,7 @@ export default function AdminSearch() {
       supabase.from("vehicle_assignments").select("profiles(*)").eq("vehicle_id", veh.id),
       supabase.from("documents").select("*, document_types(name), profiles(full_name)").eq("vehicle_id", veh.id).order("created_at", { ascending: false }),
       supabase.from("requests").select("*, request_types(name), profiles(full_name)").eq("vehicle_id", veh.id).order("created_at", { ascending: false }),
-      supabase.from("mileage_records").select("*, profiles(full_name)").eq("vehicle_id", veh.id).order("recorded_date", { ascending: false }).limit(20),
+      supabase.from("mileage_records").select("*, profiles(full_name)").eq("vehicle_id", veh.id).order("recorded_date", { ascending: false }).order("created_at", { ascending: false }).limit(20),
       supabase.from("admin_notes").select("*").eq("vehicle_id", veh.id).order("created_at", { ascending: false }),
       // Buscar mensajes enviados a conductores asignados a este vehículo
       supabase.from("vehicle_assignments").select("profile_id").eq("vehicle_id", veh.id),
