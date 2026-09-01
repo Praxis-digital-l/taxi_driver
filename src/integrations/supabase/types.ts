@@ -505,6 +505,50 @@ export type Database = {
           },
         ]
       }
+      vehicle_insurances: {
+        Row: {
+          amount: number
+          created_at: string
+          expiration_date: string
+          id: string
+          insurance_type: string
+          last_payment_date: string | null
+          payment_status: string
+          updated_at: string
+          vehicle_id: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          expiration_date: string
+          id?: string
+          insurance_type: string
+          last_payment_date?: string | null
+          payment_status?: string
+          updated_at?: string
+          vehicle_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          expiration_date?: string
+          id?: string
+          insurance_type?: string
+          last_payment_date?: string | null
+          payment_status?: string
+          updated_at?: string
+          vehicle_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicle_insurances_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: true
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vehicles: {
         Row: {
           color: string | null

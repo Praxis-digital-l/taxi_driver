@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { fetchInsuranceByVehicle, type AdminInsurance } from "@/features/admin/services/adminInsuranceService";
 
 export type VehicleSearchOption = {
   id: string;
@@ -77,6 +78,7 @@ export type AdminVehicleSearchPayload = {
   mileage: AdminSearchMileage[];
   notes: AdminSearchNote[];
   messages: AdminSearchMessage[];
+  insurance: AdminInsurance | null;
 };
 
 function assertNoError(error: { message: string } | null) {
@@ -141,6 +143,7 @@ export async function fetchAdminVehicleSearchByPlate(plate: string): Promise<Adm
       .eq("vehicle_id", vehicle.id)
       .order("created_at", { ascending: false }),
   ]);
+  const insurance = await fetchInsuranceByVehicle(vehicle.id);
 
   assertNoError(assignmentRes.error);
   assertNoError(documentsRes.error);
@@ -175,6 +178,7 @@ export async function fetchAdminVehicleSearchByPlate(plate: string): Promise<Adm
     mileage: (mileageRes.data ?? []) as AdminSearchMileage[],
     notes: (notesRes.data ?? []) as AdminSearchNote[],
     messages,
+    insurance,
   };
 }
 

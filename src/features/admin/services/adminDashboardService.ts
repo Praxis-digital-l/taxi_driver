@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { sortActiveRequestsByPriority, type AdminRequest } from "@/features/admin/services/adminRequestsService";
+import type { AdminExpiringInsurance } from "@/features/admin/services/adminInsuranceService";
 
 export type AdminDashboardStats = {
   vehicles: number;
@@ -10,6 +11,7 @@ export type AdminDashboardStats = {
   expiringDocs: number;
   totalDocs: number;
   unreadMessages: number;
+  expiringInsurances: number;
 };
 
 export type AdminExpiringDocument = {
@@ -36,6 +38,7 @@ function assertNoError(error: { message: string } | null) {
 export async function fetchAdminDashboardData() {
   const now = new Date();
   const thirtyDays = new Date(now.getTime() + 30 * 86400000).toISOString().slice(0, 10);
+  const twoMonths = new Date(now.getTime() + 60 * 86400000).toISOString().slice(0, 10);
   const today = now.toISOString().slice(0, 10);
 
   const [
@@ -50,6 +53,8 @@ export async function fetchAdminDashboardData() {
     activeRequestsRes,
     expiringDocumentsListRes,
     unreadMessagesListRes,
+    expiringInsurancesRes,
+    expiringInsurancesListRes,
   ] = await Promise.all([
     supabase.from("vehicles").select("id", { count: "exact", head: true }),
     supabase.from("vehicles").select("id", { count: "exact", head: true }).eq("status", "active"),
@@ -77,6 +82,18 @@ export async function fetchAdminDashboardData() {
       .eq("status", "pendiente")
       .order("created_at", { ascending: false })
       .limit(5),
+    supabase
+      .from("vehicle_insurances")
+      .select("id", { count: "exact", head: true })
+      .lte("expiration_date", twoMonths)
+      .gte("expiration_date", today),
+    supabase
+      .from("vehicle_insurances")
+      .select("id, vehicle_id, insurance_type, amount, expiration_date, payment_status, last_payment_date, created_at, updated_at, vehicles(license_plate)")
+      .lte("expiration_date", twoMonths)
+      .gte("expiration_date", today)
+      .order("expiration_date", { ascending: true })
+      .limit(5),
   ]);
 
   assertNoError(vehiclesRes.error);
@@ -90,6 +107,8 @@ export async function fetchAdminDashboardData() {
   assertNoError(activeRequestsRes.error);
   assertNoError(expiringDocumentsListRes.error);
   assertNoError(unreadMessagesListRes.error);
+  assertNoError(expiringInsurancesRes.error);
+  assertNoError(expiringInsurancesListRes.error);
 
   const stats: AdminDashboardStats = {
     vehicles: vehiclesRes.count || 0,
@@ -100,16 +119,19 @@ export async function fetchAdminDashboardData() {
     expiringDocs: expiringDocumentsRes.count || 0,
     totalDocs: totalDocumentsRes.count || 0,
     unreadMessages: unreadMessagesRes.count || 0,
+    expiringInsurances: expiringInsurancesRes.count || 0,
   };
 
   const activeRequests = sortActiveRequestsByPriority((activeRequestsRes.data ?? []) as AdminRequest[]).slice(0, 6);
   const expiringDocuments = (expiringDocumentsListRes.data ?? []) as AdminExpiringDocument[];
   const unreadMessages = (unreadMessagesListRes.data ?? []) as AdminDashboardUnreadMessage[];
+  const expiringInsurances = (expiringInsurancesListRes.data ?? []) as AdminExpiringInsurance[];
 
   return {
     stats,
     activeRequests,
     expiringDocuments,
     unreadMessages,
+    expiringInsurances,
   };
 }

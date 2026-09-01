@@ -256,6 +256,45 @@ const initialVehicleAssignments = [
   { id: "va-6", vehicle_id: "veh-6", profile_id: "profile-cond-6", assigned_at: nowIso() },
 ];
 
+const daysFromNow = (days: number) =>
+  new Date(Date.now() + days * 86400000).toISOString().slice(0, 10);
+
+const initialInsurances = [
+  {
+    id: "ins-1",
+    vehicle_id: "veh-1",
+    insurance_type: "comercial",
+    amount: 450000,
+    expiration_date: daysFromNow(45),
+    payment_status: "pagado",
+    last_payment_date: daysFromNow(-320),
+    created_at: nowIso(),
+    updated_at: nowIso(),
+  },
+  {
+    id: "ins-2",
+    vehicle_id: "veh-2",
+    insurance_type: "obligatorio",
+    amount: 120000,
+    expiration_date: daysFromNow(15),
+    payment_status: "pendiente",
+    last_payment_date: null,
+    created_at: nowIso(),
+    updated_at: nowIso(),
+  },
+  {
+    id: "ins-3",
+    vehicle_id: "veh-3",
+    insurance_type: "obligatorio",
+    amount: 115000,
+    expiration_date: daysFromNow(200),
+    payment_status: "pagado",
+    last_payment_date: daysFromNow(-160),
+    created_at: nowIso(),
+    updated_at: nowIso(),
+  },
+];
+
 const initialDocumentTypes = [
   { id: "dt-1", name: "Liquidación de sueldo" },
   { id: "dt-2", name: "Factura Taller" },
@@ -481,6 +520,7 @@ const mockDb: Record<string, RowRecord[]> = {
   messages: initialMessages,
   admin_notes: initialAdminNotes,
   conductor_del_mes: initialConductorDelMes,
+  vehicle_insurances: initialInsurances,
   liquidaciones: initialLiquidaciones,
 };
 
@@ -579,6 +619,10 @@ function attachRelations(table: string, row: RowRecord, columns: string): RowRec
 
   if (table === "vehicle_assignments") {
     if (columns.includes("profiles(")) addProfile("profiles", row.profile_id, columns.includes("profiles(*)"));
+    if (columns.includes("vehicles(")) addVehicle("vehicles", row.vehicle_id, columns.includes("vehicles(*)"));
+  }
+
+  if (table === "vehicle_insurances") {
     if (columns.includes("vehicles(")) addVehicle("vehicles", row.vehicle_id, columns.includes("vehicles(*)"));
   }
 
@@ -801,6 +845,14 @@ class MockQueryBuilder {
 
       if (this.table === "vehicle_assignments") {
         baseRow.assigned_at = payload.assigned_at ?? timestamp;
+      }
+
+      if (this.table === "vehicle_insurances") {
+        baseRow.payment_status = payload.payment_status ?? "pendiente";
+        baseRow.amount = payload.amount ?? 0;
+        baseRow.last_payment_date = payload.last_payment_date ?? null;
+        baseRow.created_at = payload.created_at ?? timestamp;
+        baseRow.updated_at = payload.updated_at ?? timestamp;
       }
 
       if (this.table === "liquidaciones") {

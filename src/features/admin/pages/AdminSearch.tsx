@@ -21,10 +21,13 @@ import {
   Gauge,
   TrendingUp,
   StickyNote,
+  ShieldCheck,
   Plus,
   AlertCircle,
   Download,
   Eye,
+  CheckCircle2,
+  PencilLine,
 } from "lucide-react";
 import {
   createAdminNote,
@@ -42,6 +45,18 @@ import {
   type AssignedConductor,
   type VehicleSearchOption,
 } from "@/features/admin/services/adminSearchService";
+import {
+  INSURANCE_TYPES,
+  INSURANCE_TYPE_LABEL,
+  markInsurancePaid,
+  saveVehicleInsurance,
+  getInsuranceDaysLeft,
+  isInsuranceExpired,
+  isInsuranceExpiring,
+  type AdminInsurance,
+  type InsurancePaymentStatus,
+  type InsuranceType,
+} from "@/features/admin/services/adminInsuranceService";
 import { downloadDocumentFile } from "@/shared/utils/storageFiles";
 import DocumentPreviewDialog from "@/features/admin/components/DocumentPreviewDialog";
 
@@ -58,6 +73,16 @@ export default function AdminSearch() {
   const [mileage, setMileage] = useState<AdminSearchMileage[]>([]);
   const [notes, setNotes] = useState<AdminSearchNote[]>([]);
   const [messages, setMessages] = useState<AdminSearchMessage[]>([]);
+  const [insurance, setInsurance] = useState<AdminInsurance | null>(null);
+  const [insuranceEditing, setInsuranceEditing] = useState(false);
+  const [insuranceSaving, setInsuranceSaving] = useState(false);
+  const [insurancePaying, setInsurancePaying] = useState(false);
+  const [insuranceForm, setInsuranceForm] = useState({
+    insuranceType: "comercial" as InsuranceType,
+    amount: "",
+    expirationDate: "",
+    paymentStatus: "pendiente" as InsurancePaymentStatus,
+  });
   const [plateSuggestions, setPlateSuggestions] = useState<VehicleSearchOption[]>([]);
   const [newNote, setNewNote] = useState("");
   const [newMessage, setNewMessage] = useState("");
@@ -149,6 +174,8 @@ export default function AdminSearch() {
     setMileage([]);
     setNotes([]);
     setMessages([]);
+    setInsurance(null);
+    setInsuranceEditing(false);
     setFound(false);
   };
 
@@ -182,6 +209,7 @@ export default function AdminSearch() {
       setMileage(result.mileage);
       setNotes(result.notes);
       setMessages(result.messages);
+      setInsurance(result.insurance);
       setFound(true);
     } catch (error) {
       clearResultState();
@@ -296,6 +324,77 @@ export default function AdminSearch() {
     }
   };
 
+  const startInsuranceEdit = () => {
+    setInsuranceEditing(true);
+    setInsuranceForm({
+      insuranceType: insurance?.insurance_type ?? "comercial",
+      amount: insurance ? String(insurance.amount) : "",
+      expirationDate: insurance?.expiration_date ?? "",
+      paymentStatus: insurance?.payment_status ?? "pendiente",
+    });
+  };
+
+  const handleSaveInsurance = async () => {
+    if (!vehicle) {
+      return;
+    }
+
+    const amount = Number(insuranceForm.amount);
+    if (!insuranceForm.expirationDate || Number.isNaN(amount) || amount < 0) {
+      toast({
+        title: "Datos incompletos",
+        description: "Ingresa un monto válido y la fecha de vencimiento del seguro.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setInsuranceSaving(true);
+    try {
+      await saveVehicleInsurance({
+        vehicleId: vehicle.id,
+        insuranceType: insuranceForm.insuranceType,
+        amount,
+        expirationDate: insuranceForm.expirationDate,
+        paymentStatus: insuranceForm.paymentStatus,
+      });
+      setInsuranceEditing(false);
+      await handleSearch(vehicle.license_plate);
+      toast({ title: "Seguro guardado" });
+    } catch (error) {
+      toast({
+        title: "Error al guardar seguro",
+        description: error instanceof Error ? error.message : "No se pudo guardar el seguro",
+        variant: "destructive",
+      });
+    } finally {
+      setInsuranceSaving(false);
+    }
+  };
+
+  const handlePayInsurance = async () => {
+    if (!insurance) {
+      return;
+    }
+
+    setInsurancePaying(true);
+    try {
+      await markInsurancePaid(insurance.id);
+      if (vehicle?.license_plate) {
+        await handleSearch(vehicle.license_plate);
+      }
+      toast({ title: "Pago del seguro registrado" });
+    } catch (error) {
+      toast({
+        title: "Error al registrar pago",
+        description: error instanceof Error ? error.message : "No se pudo registrar el pago",
+        variant: "destructive",
+      });
+    } finally {
+      setInsurancePaying(false);
+    }
+  };
+
   const isExpiringSoon = (date: string | null) => {
     if (!date) {
       return false;
@@ -400,6 +499,7 @@ export default function AdminSearch() {
         <Tabs defaultValue="info" className="animate-fade-in">
           <TabsList className="flex-wrap h-auto gap-1 bg-muted/50 p-1">
             <TabsTrigger value="info" className="text-xs gap-1"><Truck className="h-3.5 w-3.5" />Vehículo</TabsTrigger>
+            <TabsTrigger value="insurance" className="text-xs gap-1"><ShieldCheck className="h-3.5 w-3.5" />Seguro</TabsTrigger>
             <TabsTrigger value="documents" className="text-xs gap-1"><FileText className="h-3.5 w-3.5" />Docs ({documents.length})</TabsTrigger>
             <TabsTrigger value="requests" className="text-xs gap-1"><ClipboardList className="h-3.5 w-3.5" />Solicitudes ({requests.length})</TabsTrigger>
             <TabsTrigger value="mileage" className="text-xs gap-1"><Gauge className="h-3.5 w-3.5" />Km ({mileage.length})</TabsTrigger>
@@ -501,6 +601,151 @@ export default function AdminSearch() {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="insurance" className="mt-4 space-y-4">
+            {insuranceEditing ? (
+              <Card className="stat-card">
+                <CardHeader className="pb-2">
+                  <CardTitle className="font-heading text-sm flex items-center gap-2">
+                    <ShieldCheck className="h-4 w-4 text-primary" />
+                    {insurance ? "Editar Seguro" : "Registrar Seguro"}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label className="text-xs">Tipo de seguro</Label>
+                    <Select
+                      value={insuranceForm.insuranceType}
+                      onValueChange={(value) =>
+                        setInsuranceForm((prev) => ({ ...prev, insuranceType: value as InsuranceType }))
+                      }
+                    >
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {INSURANCE_TYPES.map((type) => (
+                          <SelectItem key={type.value} value={type.value}>{type.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs">Monto (CLP)</Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      step={1}
+                      value={insuranceForm.amount}
+                      onChange={(event) =>
+                        setInsuranceForm((prev) => ({ ...prev, amount: event.target.value }))
+                      }
+                      placeholder="Ej: 150000"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs">Fecha de vencimiento</Label>
+                    <Input
+                      type="date"
+                      value={insuranceForm.expirationDate}
+                      onChange={(event) =>
+                        setInsuranceForm((prev) => ({ ...prev, expirationDate: event.target.value }))
+                      }
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs">Estado de pago</Label>
+                    <Select
+                      value={insuranceForm.paymentStatus}
+                      onValueChange={(value) =>
+                        setInsuranceForm((prev) => ({ ...prev, paymentStatus: value as InsurancePaymentStatus }))
+                      }
+                    >
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="pendiente">Pendiente</SelectItem>
+                        <SelectItem value="pagado">Pagado</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex gap-2 sm:col-span-2">
+                    <Button onClick={handleSaveInsurance} disabled={insuranceSaving}>
+                      {insuranceSaving ? "Guardando..." : "Guardar"}
+                    </Button>
+                    <Button variant="outline" onClick={() => setInsuranceEditing(false)}>Cancelar</Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : insurance ? (
+              <Card className="stat-card">
+                <CardContent className="p-4 sm:p-5 space-y-4">
+                  <div className="flex items-start justify-between gap-3 flex-wrap">
+                    <div className="flex items-center gap-2">
+                      <ShieldCheck className="h-5 w-5 text-primary shrink-0" />
+                      <p className="font-semibold text-sm">{INSURANCE_TYPE_LABEL[insurance.insurance_type]}</p>
+                    </div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {isInsuranceExpired(insurance) ? (
+                        <Badge variant="outline" className="text-[10px] border-destructive/20 bg-destructive/10 text-destructive flex items-center gap-0.5">
+                          <AlertCircle className="h-3 w-3" />Vencido
+                        </Badge>
+                      ) : isInsuranceExpiring(insurance.expiration_date, 60) ? (
+                        <Badge variant="outline" className="text-[10px] border-warning/20 bg-warning/10 text-warning flex items-center gap-0.5">
+                          <AlertCircle className="h-3 w-3" />
+                          Por vencer ({getInsuranceDaysLeft(insurance.expiration_date)} día(s))
+                        </Badge>
+                      ) : null}
+                      {insurance.payment_status === "pagado" ? (
+                        <Badge variant="outline" className="text-[10px] border-accent/20 bg-accent/10 text-accent">Pagado</Badge>
+                      ) : (
+                        <Badge variant="outline" className="text-[10px] border-muted bg-muted text-muted-foreground">Pendiente</Badge>
+                      )}
+                      <Button variant="outline" size="sm" className="h-8" onClick={startInsuranceEdit}>
+                        <PencilLine className="h-3.5 w-3.5 mr-1" />Editar
+                      </Button>
+                      {insurance.payment_status === "pendiente" && (
+                        <Button size="sm" className="h-8" onClick={handlePayInsurance} disabled={insurancePaying}>
+                          <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
+                          {insurancePaying ? "Registrando..." : "Marcar como pagado"}
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                  <div className="grid gap-y-3 gap-x-4 sm:grid-cols-2 lg:grid-cols-4">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Monto</p>
+                      <p className="font-heading font-bold">$ {insurance.amount.toLocaleString("es-CL")}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Vence</p>
+                      <p>{new Date(insurance.expiration_date).toLocaleDateString("es-CL")}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Último pago</p>
+                      <p>{insurance.last_payment_date ? new Date(insurance.last_payment_date).toLocaleDateString("es-CL") : "—"}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Estado de pago</p>
+                      <p className="capitalize">{insurance.payment_status}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              <Card className="stat-card">
+                <CardContent className="p-6 text-center space-y-3">
+                  <ShieldCheck className="h-10 w-10 text-muted-foreground/40 mx-auto" />
+                  <div>
+                    <p className="text-sm font-medium">Sin seguro registrado</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Registra el seguro de este vehículo con su fecha de vencimiento.
+                    </p>
+                  </div>
+                  <Button onClick={startInsuranceEdit}>
+                    <Plus className="mr-2 h-4 w-4" />Registrar seguro
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
 
           <TabsContent value="documents" className="mt-4 space-y-2">

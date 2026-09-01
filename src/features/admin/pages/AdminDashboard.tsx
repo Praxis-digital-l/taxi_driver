@@ -14,6 +14,7 @@ import {
   AlertTriangle,
   Search,
   MessageSquare,
+  ShieldCheck,
   ArrowRight,
 } from "lucide-react";
 import {
@@ -22,6 +23,11 @@ import {
   type AdminExpiringDocument,
   type AdminDashboardUnreadMessage,
 } from "@/features/admin/services/adminDashboardService";
+import {
+  INSURANCE_TYPE_LABEL,
+  getInsuranceDaysLeft,
+  type AdminExpiringInsurance,
+} from "@/features/admin/services/adminInsuranceService";
 import type { AdminRequest } from "@/features/admin/services/adminRequestsService";
 import { ConductorDelMesCard } from "@/components/ConductorDelMesCard";
 
@@ -43,6 +49,7 @@ const EMPTY_STATS: AdminDashboardStats = {
   expiringDocs: 0,
   totalDocs: 0,
   unreadMessages: 0,
+  expiringInsurances: 0,
 };
 
 export default function AdminDashboard() {
@@ -52,6 +59,7 @@ export default function AdminDashboard() {
   const [recentRequests, setRecentRequests] = useState<AdminRequest[]>([]);
   const [expiringDocs, setExpiringDocs] = useState<AdminExpiringDocument[]>([]);
   const [unreadMessages, setUnreadMessages] = useState<AdminDashboardUnreadMessage[]>([]);
+  const [expiringInsurances, setExpiringInsurances] = useState<AdminExpiringInsurance[]>([]);
 
   useEffect(() => {
     const load = async () => {
@@ -61,6 +69,7 @@ export default function AdminDashboard() {
         setRecentRequests(dashboard.activeRequests);
         setExpiringDocs(dashboard.expiringDocuments);
         setUnreadMessages(dashboard.unreadMessages);
+        setExpiringInsurances(dashboard.expiringInsurances);
       } catch (error) {
         toast({
           title: "Error al cargar dashboard",
@@ -73,12 +82,12 @@ export default function AdminDashboard() {
     load();
   }, [toast]);
 
-  const hasPending = stats.pendingRequests > 0 || stats.expiringDocs > 0 || stats.unreadMessages > 0;
+  const hasPending = stats.pendingRequests > 0 || stats.expiringDocs > 0 || stats.unreadMessages > 0 || stats.expiringInsurances > 0;
 
   const pendingItems = useMemo(() => {
     const items: {
       id: string;
-      type: "request" | "document" | "message";
+      type: "request" | "document" | "message" | "insurance";
       title: string;
       subtitle: string;
       meta: string;
@@ -128,8 +137,24 @@ export default function AdminDashboard() {
       });
     }
 
+    for (const ins of expiringInsurances) {
+      const daysLeft = getInsuranceDaysLeft(ins.expiration_date);
+      items.push({
+        id: ins.id,
+        type: "insurance",
+        title: `Seguro: ${INSURANCE_TYPE_LABEL[ins.insurance_type] ?? ins.insurance_type}`,
+        subtitle: `$ ${Number(ins.amount).toLocaleString("es-CL")}${ins.vehicles?.license_plate ? ` • ${ins.vehicles.license_plate}` : ""}`,
+        meta: `${daysLeft} día(s)`,
+        priorityName: null,
+        status: daysLeft <= 7 ? "urgent" : "warning",
+        link: ins.vehicles?.license_plate
+          ? `/admin/search?plate=${encodeURIComponent(ins.vehicles.license_plate)}`
+          : "/admin/search",
+      });
+    }
+
     return items;
-  }, [recentRequests, expiringDocs, unreadMessages]);
+  }, [recentRequests, expiringDocs, unreadMessages, expiringInsurances]);
 
   const metricCards: MetricCardConfig[] = [
     {
@@ -164,6 +189,14 @@ export default function AdminDashboard() {
       color: "bg-destructive/10 text-destructive",
       to: "/admin/documents",
     },
+    {
+      icon: ShieldCheck,
+      label: "Seguros por vencer",
+      value: stats.expiringInsurances,
+      sub: "en 60 días",
+      color: "bg-warning/10 text-warning",
+      to: "/admin/search",
+    },
   ];
 
   return (
@@ -177,6 +210,7 @@ export default function AdminDashboard() {
               {stats.pendingRequests > 0 && `${stats.pendingRequests} solicitud(es) activa(s). `}
               {stats.inProcessRequests > 0 && `${stats.inProcessRequests} en proceso. `}
               {stats.expiringDocs > 0 && `${stats.expiringDocs} documento(s) por vencer. `}
+              {stats.expiringInsurances > 0 && `${stats.expiringInsurances} seguro(s) por vencer. `}
               {stats.unreadMessages > 0 && `${stats.unreadMessages} mensaje(s) pendiente(s).`}
             </p>
           </div>
@@ -250,6 +284,7 @@ export default function AdminDashboard() {
                       <div className="flex items-center gap-2 flex-wrap">
                         {item.type === "request" && <ClipboardList className="h-4 w-4 text-warning shrink-0" />}
                         {item.type === "document" && <FileText className="h-4 w-4 text-destructive shrink-0" />}
+                        {item.type === "insurance" && <ShieldCheck className="h-4 w-4 text-warning shrink-0" />}
                         {item.type === "message" && <MessageSquare className="h-4 w-4 text-info shrink-0" />}
                         <p className="text-sm font-medium break-all">{item.title}</p>
                         {item.type === "request" && item.priorityName && (
@@ -259,7 +294,7 @@ export default function AdminDashboard() {
                       <p className="text-xs text-muted-foreground break-all whitespace-pre-wrap">{item.subtitle}</p>
                       <p className="text-[10px] text-muted-foreground">{item.meta}</p>
                     </div>
-                    {item.type === "document" ? (
+                    {item.type === "document" || item.type === "insurance" ? (
                       <span className={`shrink-0 text-xs font-medium ${item.status === "urgent" ? "text-destructive" : "text-warning"}`}>
                         {item.meta}
                       </span>
