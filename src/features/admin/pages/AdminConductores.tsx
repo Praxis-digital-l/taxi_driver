@@ -8,11 +8,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { useToast } from "@/hooks/use-toast";
 import PageHeader from "@/components/PageHeader";
 import { Badge } from "@/components/ui/badge";
-import { Plus, UserRound, Search, Eye, Pencil, Truck, Phone, Mail, Fingerprint, Trash2 } from "lucide-react";
+import { Plus, UserRound, Search, Eye, Pencil, Truck, Phone, Mail, Fingerprint, Trash2, Star } from "lucide-react";
 import {
   fetchAdminConductores,
   createConductor,
   updateConductor,
+  updateConductorScore,
   deleteConductor,
   fetchConductorDetail,
   type ConductorRecord,
@@ -22,7 +23,7 @@ import {
   ESTADO_CONDUCTOR_LABELS,
 } from "@/features/admin/services/adminConductoresService";
 import { validateConductorForm, sanitizeInput, normalizeRut } from "@/lib/validations";
-// aaaaa
+
 export default function AdminConductores() {
   const { toast } = useToast();
   const [conductores, setConductores] = useState<ConductorRecord[]>([]);
@@ -41,6 +42,8 @@ export default function AdminConductores() {
   const [editRutInput, setEditRutInput] = useState("");
   const [openDelete, setOpenDelete] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<ConductorRecord | null>(null);
+  const [scoreValue, setScoreValue] = useState("");
+  const [savingScore, setSavingScore] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -191,11 +194,32 @@ export default function AdminConductores() {
     }
   };
 
+  const handleSaveScore = async () => {
+    if (!selectedConductor) return;
+    setSavingScore(true);
+    try {
+      const nextScore = scoreValue === "" ? null : Number(scoreValue);
+      await updateConductorScore(selectedConductor.id, nextScore);
+      setSelectedConductor({ ...selectedConductor, score: nextScore });
+      toast({ title: "Puntuación guardada exitosamente" });
+      await load();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "No se pudo guardar la puntuación",
+        variant: "destructive",
+      });
+    } finally {
+      setSavingScore(false);
+    }
+  };
+
   const handleViewDetail = async (conductor: ConductorRecord) => {
     setLoading(true);
     try {
       const detail = await fetchConductorDetail(conductor.id);
       setSelectedConductor(detail);
+      setScoreValue(detail.score ? String(detail.score) : "");
       setOpenDetail(true);
     } catch (error) {
       toast({
@@ -348,6 +372,11 @@ export default function AdminConductores() {
                     </div>
                   </div>
                 </div>
+                {conductor.score !== null && conductor.score !== undefined && (
+                  <Badge variant="outline" className="text-[10px] shrink-0 bg-warning/10 text-warning border-warning/20">
+                    <Star className="mr-1 h-3 w-3 fill-current" />{conductor.score}/10
+                  </Badge>
+                )}
                 <Badge variant="outline" className={`text-[10px] shrink-0 ${ESTADO_CONDUCTOR_STYLES[conductor.estado_conductor] || ""}`}>
                   {ESTADO_CONDUCTOR_LABELS[conductor.estado_conductor] || conductor.estado_conductor}
                 </Badge>
@@ -515,7 +544,7 @@ export default function AdminConductores() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={openDetail} onOpenChange={(open) => { if (!open) { setOpenDetail(false); setSelectedConductor(null); } }}>
+      <Dialog open={openDetail} onOpenChange={(open) => { if (!open) { setOpenDetail(false); setSelectedConductor(null); setScoreValue(""); } }}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader><DialogTitle className="font-heading">Detalle del Conductor</DialogTitle></DialogHeader>
           {selectedConductor && (
@@ -552,6 +581,32 @@ export default function AdminConductores() {
                 <div>
                   <p className="text-xs text-muted-foreground">Registrado desde</p>
                   <p className="font-medium">{new Date(selectedConductor.created_at).toLocaleDateString("es-CL")}</p>
+                </div>
+              </div>
+
+              <div className="rounded-lg border p-4 space-y-3">
+                <p className="text-sm font-medium flex items-center gap-1.5">
+                  <Star className="h-4 w-4 text-warning" /> Puntuación del conductor
+                </p>
+                <div className="flex items-end gap-3">
+                  <div className="space-y-2 flex-1">
+                    <Label className="text-xs text-muted-foreground">Nota (1 a 10)</Label>
+                    <Select
+                      value={scoreValue}
+                      onValueChange={(value) => setScoreValue(value === "null" ? "" : value)}
+                    >
+                      <SelectTrigger><SelectValue placeholder="Sin puntuar" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="null">Sin puntuar</SelectItem>
+                        {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
+                          <SelectItem key={n} value={String(n)}>{n}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Button size="sm" disabled={savingScore} onClick={handleSaveScore}>
+                    {savingScore ? "Guardando..." : "Guardar"}
+                  </Button>
                 </div>
               </div>
 

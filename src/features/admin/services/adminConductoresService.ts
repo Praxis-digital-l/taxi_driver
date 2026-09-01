@@ -11,6 +11,7 @@ export type ConductorRecord = {
   phone: string | null;
   rut: string;
   worker_id?: string;
+  score: number | null;
   estado_conductor: string;
   role: string;
   created_at: string;
@@ -49,7 +50,12 @@ export type UpdateConductorPayload = {
   estado_conductor?: string;
 };
 
-const CONDUCTOR_COLUMNS = "id, user_id, nombres, apellido_paterno, apellido_materno, full_name, email, phone, rut, worker_id, estado_conductor, role, created_at, updated_at";
+export async function updateConductorScore(id: string, score: number | null) {
+  const { error } = await supabase.from("profiles").update({ score }).eq("id", id);
+  assertNoError(error);
+}
+
+const CONDUCTOR_COLUMNS = "id, user_id, nombres, apellido_paterno, apellido_materno, full_name, email, phone, rut, worker_id, score, estado_conductor, role, created_at, updated_at";
 
 function assertNoError(error: { message: string; code?: string; details?: string | null } | null) {
   if (error) {
