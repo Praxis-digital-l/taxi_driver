@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import StatusBadge from "@/components/StatusBadge";
-import { Truck, FileText, ClipboardList, AlertTriangle, Gauge, MessageSquare, ArrowRight } from "lucide-react";
+import { Truck, FileText, ClipboardList, AlertTriangle, Gauge, Star, MessageSquare, ArrowRight } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { PhotoUploadCard } from "@/features/conductor/components/PhotoUploadCard";
 import { ConductorDelMesCard } from "@/components/ConductorDelMesCard";
@@ -78,27 +78,33 @@ export default function ConductorDashboard() {
       </div>
 
       {/* Métricas rápidas */}
-      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         {[
           { icon: Truck, label: "Vehículos Asignados", value: stats.vehicles, to: "/conductor/vehicles", color: "bg-primary/10 text-primary" },
           { icon: FileText, label: "Documentos", value: stats.documents, to: "/conductor/documents", color: "bg-accent/10 text-accent" },
           { icon: ClipboardList, label: "Solicitudes Pendientes", value: stats.pendingRequests, to: "/conductor/requests", color: "bg-warning/10 text-warning" },
           { icon: Gauge, label: "Último Kilometraje", value: stats.lastMileage > 0 ? `${stats.lastMileage.toLocaleString("es-CL")} km` : "—", to: "/conductor/mileage", color: "bg-info/10 text-info" },
-        ].map(({ icon: Icon, label, value, to, color }) => (
-          <Link key={label} to={to}>
-            <Card className="stat-card group cursor-pointer hover:border-primary/30">
-              <CardContent className="flex items-center gap-3 p-4 sm:p-5">
-                <div className={`flex h-10 w-10 items-center justify-center rounded-lg shrink-0 ${color}`}>
-                  <Icon className="h-5 w-5" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-xs text-muted-foreground truncate">{label}</p>
-                  <p className="text-xl font-bold font-heading">{value}</p>
-                </div>
-              </CardContent>
-            </Card>
-          </Link>
-        ))}
+          { icon: Star, label: "Mi Puntuación", value: profile?.score != null ? `${profile.score}/10` : "—", to: null, color: "bg-warning/10 text-warning" },
+        ].map(({ icon: Icon, label, value, to, color }) => {
+          const cardContent = (
+            <CardContent className="flex items-center gap-3 p-4 sm:p-5">
+              <div className={`flex h-10 w-10 items-center justify-center rounded-lg shrink-0 ${color}`}>
+                <Icon className="h-5 w-5" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs text-muted-foreground truncate">{label}</p>
+                <p className="text-xl font-bold font-heading">{value}</p>
+              </div>
+            </CardContent>
+          );
+          return to ? (
+            <Link key={label} to={to}>
+              <Card className="stat-card group cursor-pointer hover:border-primary/30">{cardContent}</Card>
+            </Link>
+          ) : (
+            <Card key={label} className="stat-card">{cardContent}</Card>
+          );
+        })}
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">

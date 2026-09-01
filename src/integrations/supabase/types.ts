@@ -281,6 +281,7 @@ export type Database = {
           photo_url: string | null
           role: Database["public"]["Enums"]["app_role"]
           rut: string
+          score: number | null
           updated_at: string
           user_id: string
           worker_id: string
@@ -298,6 +299,7 @@ export type Database = {
           photo_url?: string | null
           role?: Database["public"]["Enums"]["app_role"]
           rut?: string
+          score?: number | null
           updated_at?: string
           user_id: string
           worker_id?: string
@@ -315,6 +317,7 @@ export type Database = {
           photo_url?: string | null
           role?: Database["public"]["Enums"]["app_role"]
           rut?: string
+          score?: number | null
           updated_at?: string
           user_id?: string
           worker_id?: string
