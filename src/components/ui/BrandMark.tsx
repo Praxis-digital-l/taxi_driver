@@ -1,0 +1,36 @@
+import { cn } from "@/lib/utils";
+
+interface BrandMarkProps {
+  className?: string;
+}
+
+/** Marca oficial: el mismo icono del favicon (pestaña del navegador). */
+export function BrandMark({ className }: BrandMarkProps) {
+  return (
+    <svg
+      viewBox="0 0 32 32"
+      className={cn("shrink-0", className)}
+      aria-hidden="true"
+    >
+      <rect x="1" y="1" width="30" height="30" rx="8" fill="#141A29" />
+      <g transform="translate(2.9 4.5) scale(0.82)">
+        <rect x="11.5" y="0.8" width="9" height="3.4" rx="1" fill="#FFC93C" />
+        <rect x="14" y="1.6" width="4" height="1.8" rx="0.5" fill="#141A29" opacity="0.9" />
+        <rect x="9.5" y="3.6" width="13" height="4.6" rx="2" fill="#E88E05" />
+        <rect x="6.5" y="5.6" width="19" height="5.6" rx="2.8" fill="#20355C" />
+        <rect x="2.5" y="9.2" width="27" height="11.8" rx="3.8" fill="#FFB20F" />
+        <rect x="4.2" y="11.2" width="2.6" height="1.7" rx="0.85" fill="#FFF3D6" />
+        <rect x="25.2" y="11.2" width="2.6" height="1.7" rx="0.85" fill="#FFF3D6" />
+        <rect x="4" y="15.4" width="6" height="3.4" rx="0.7" fill="#141A29" />
+        <rect x="10" y="15.4" width="6" height="3.4" rx="0.7" fill="#FFC93C" />
+        <rect x="16" y="15.4" width="6" height="3.4" rx="0.7" fill="#141A29" />
+        <rect x="22" y="15.4" width="6" height="3.4" rx="0.7" fill="#FFC93C" />
+        <rect x="5" y="20" width="22" height="1.5" rx="0.75" fill="#141A29" />
+        <circle cx="8.2" cy="22" r="3" fill="#141A29" />
+        <circle cx="23.8" cy="22" r="3" fill="#141A29" />
+        <circle cx="8.2" cy="22" r="1" fill="#4A5468" />
+        <circle cx="23.8" cy="22" r="1" fill="#4A5468" />
+      </g>
+    </svg>
+  );
+}
