@@ -3,7 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { ConductorAvatar } from "@/components/ConductorAvatar";
-import { TaxiMark } from "@/components/ui/TaxiMark";
+import { BrandMark } from "@/components/ui/BrandMark";
 import ThemeSwitch from "@/components/ThemeSwitch";
 import {
   Truck, LayoutDashboard, FileText, ClipboardList, Gauge, MessageSquare,
@@ -56,7 +56,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       >
         <div className="flex h-16 items-center gap-3 border-b border-sidebar-border px-5">
           <div className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-sidebar-primary shadow-[0_0_16px_rgba(248,161,30,0.45)]">
-            <TaxiMark tone="night" className="h-5 w-5" />
+            <BrandMark className="h-5 w-5" />
           </div>
           <div className="flex-1 min-w-0">
             <span className="font-heading text-[15px] font-bold leading-tight block text-sidebar-accent-foreground tracking-wide">

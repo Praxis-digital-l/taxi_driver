@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { logDevInteraction } from "@/shared/monitoring/devLogger";
-import { TaxiMark } from "@/components/ui/TaxiMark";
+import { BrandMark } from "@/components/ui/BrandMark";
 import ThemeSwitch from "@/components/ThemeSwitch";
 import { Shield } from "lucide-react";
 
@@ -61,7 +61,7 @@ export default function Auth() {
             className="mb-5 flex h-16 w-16 items-center justify-center rounded-[18px] bg-board shadow-[0_0_45px_rgba(248,161,30,0.45)]"
             aria-hidden="true"
           >
-            <TaxiMark tone="day" className="h-8 w-8 animate-beacon" />
+            <BrandMark className="h-8 w-8 animate-beacon" />
           </div>
 
           <p className="font-data text-[10px] uppercase tracking-[0.34em] text-primary">Transportes Santa Aurora</p>
