@@ -1,6 +1,7 @@
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
+import { ThemeProvider } from "@/theme/theme-provider";
 import { logDevInteraction } from "@/shared/monitoring/devLogger";
 
 if (import.meta.env.DEV) {
@@ -19,4 +20,8 @@ if (import.meta.env.DEV) {
   });
 }
 
-createRoot(document.getElementById("root")!).render(<App />);
+createRoot(document.getElementById("root")!).render(
+  <ThemeProvider>
+    <App />
+  </ThemeProvider>
+);

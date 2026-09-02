@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import StatusBadge from "@/components/StatusBadge";
 import PageHeader from "@/components/PageHeader";
+import { Plate } from "@/components/ui/plate";
 import {
   Search,
   Truck,
@@ -479,7 +480,7 @@ export default function AdminSearch() {
                     className="w-full text-left rounded-md border p-2.5 hover:bg-muted/40 transition-colors"
                   >
                     <div className="flex items-center justify-between gap-2">
-                      <p className="font-heading text-sm font-semibold tracking-wider">{option.license_plate}</p>
+                      <Plate licensePlate={option.license_plate} />
                       <Badge variant="outline" className={`text-[10px] ${getStatusClassName(option.status)}`}>
                         {getStatusLabel(option.status)}
                       </Badge>
@@ -514,7 +515,7 @@ export default function AdminSearch() {
                 </CardHeader>
                 <CardContent className="space-y-2 text-sm">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 gap-x-4">
-                    <div><p className="text-xs text-muted-foreground">Patente</p><p className="font-heading font-bold">{vehicle.license_plate}</p></div>
+                    <div><p className="text-xs text-muted-foreground">Patente</p><Plate licensePlate={vehicle.license_plate} /></div>
                     <div><p className="text-xs text-muted-foreground">Estado</p><p className="capitalize">{vehicle.status}</p></div>
                     <div><p className="text-xs text-muted-foreground">Marca</p><p>{vehicle.make}</p></div>
                     <div><p className="text-xs text-muted-foreground">Modelo</p><p>{vehicle.model}</p></div>

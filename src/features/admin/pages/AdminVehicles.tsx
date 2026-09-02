@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import PageHeader from "@/components/PageHeader";
+import { Plate } from "@/components/ui/plate";
 import { Plus, Truck, Users, Trash2 } from "lucide-react";
 import {
   assignConductorToVehicle,
@@ -281,8 +282,8 @@ export default function AdminVehicles() {
                     <Truck className="h-4 w-4" />
                   </div>
                   <div className="min-w-0">
-                    <p className="font-heading font-bold tracking-wider truncate">{vehicle.license_plate}</p>
-                    <p className="text-xs text-muted-foreground truncate">{vehicle.make} {vehicle.model} {vehicle.year}</p>
+                    <Plate licensePlate={vehicle.license_plate} />
+                    <p className="mt-1.5 text-xs text-muted-foreground truncate">{vehicle.make} {vehicle.model} {vehicle.year}</p>
                   </div>
                 </div>
                 <Badge variant="outline" className={`text-[10px] ${statusColor(vehicle.status)}`}>
