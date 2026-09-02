@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fragment+Mono:ital@0;1&family=Public+Sans:ital,wght@0,300..800;1,300..800&family=Saira+Semi+Condensed:wght@400;500;600;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,90 +6,164 @@
 
 @layer base {
   :root {
-    --background: 220 20% 97%;
-    --foreground: 220 25% 10%;
+    --background: 220 22% 97%;
+    --foreground: 224 30% 13%;
 
     --card: 0 0% 100%;
-    --card-foreground: 220 25% 10%;
+    --card-foreground: 224 30% 13%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 220 25% 10%;
+    --popover-foreground: 224 30% 13%;
 
-    --primary: 220 72% 50%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 39 94% 55%;
+    --primary-foreground: 224 30% 13%;
 
-    --secondary: 220 14% 92%;
-    --secondary-foreground: 220 25% 20%;
+    --secondary: 220 16% 91%;
+    --secondary-foreground: 224 24% 20%;
 
-    --muted: 220 14% 95%;
-    --muted-foreground: 220 10% 46%;
+    --muted: 220 18% 94%;
+    --muted-foreground: 222 14% 45%;
 
-    --accent: 160 60% 40%;
+    --accent: 163 60% 34%;
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 72% 51%;
+    --destructive: 5 70% 50%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 14% 89%;
-    --input: 220 14% 89%;
-    --ring: 220 72% 50%;
+    --border: 220 18% 89%;
+    --input: 220 18% 89%;
+    --ring: 39 94% 50%;
 
-    --radius: 0.625rem;
+    --radius: 0.75rem;
 
-    --warning: 38 92% 50%;
-    --warning-foreground: 0 0% 100%;
+    --warning: 44 96% 52%;
+    --warning-foreground: 224 30% 13%;
 
-    --success: 160 60% 40%;
+    --success: 163 60% 34%;
     --success-foreground: 0 0% 100%;
 
-    --info: 200 80% 50%;
+    --info: 193 80% 38%;
     --info-foreground: 0 0% 100%;
 
-    --sidebar-background: 220 30% 11%;
-    --sidebar-foreground: 220 14% 78%;
-    --sidebar-primary: 220 72% 60%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 25% 16%;
-    --sidebar-accent-foreground: 220 14% 90%;
-    --sidebar-border: 220 20% 18%;
-    --sidebar-ring: 220 72% 50%;
+    --sidebar-background: 222 24% 92%;
+    --sidebar-foreground: 224 18% 30%;
+    --sidebar-primary: 39 94% 45%;
+    --sidebar-primary-foreground: 224 30% 13%;
+    --sidebar-accent: 220 22% 87%;
+    --sidebar-accent-foreground: 224 26% 15%;
+    --sidebar-border: 220 18% 84%;
+    --sidebar-ring: 39 94% 50%;
 
-    --font-heading: 'Space Grotesk', sans-serif;
-    --font-body: 'DM Sans', sans-serif;
+    --board-background: 224 33% 12%;
+    --board-foreground: 216 14% 75%;
+    --board-primary: 39 94% 55%;
+    --board-primary-foreground: 224 30% 13%;
+    --board-accent: 224 28% 17%;
+    --board-accent-foreground: 216 18% 90%;
+    --board-border: 224 26% 19%;
+
+    --font-heading: 'Saira Semi Condensed', sans-serif;
+    --font-body: 'Public Sans', sans-serif;
+    --font-data: 'Fragment Mono', monospace;
   }
 
   .dark {
-    --background: 220 25% 8%;
-    --foreground: 220 14% 92%;
-    --card: 220 25% 12%;
-    --card-foreground: 220 14% 92%;
-    --popover: 220 25% 12%;
-    --popover-foreground: 220 14% 92%;
-    --primary: 220 72% 60%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 220 20% 18%;
-    --secondary-foreground: 220 14% 85%;
-    --muted: 220 20% 15%;
-    --muted-foreground: 220 10% 55%;
-    --accent: 160 60% 45%;
-    --accent-foreground: 0 0% 100%;
-    --destructive: 0 62% 40%;
+    --background: 224 30% 9%;
+    --foreground: 216 18% 88%;
+    --card: 224 26% 12%;
+    --card-foreground: 216 18% 88%;
+    --popover: 224 26% 12%;
+    --popover-foreground: 216 18% 88%;
+    --primary: 39 94% 55%;
+    --primary-foreground: 224 30% 13%;
+    --secondary: 224 22% 18%;
+    --secondary-foreground: 216 18% 84%;
+    --muted: 224 22% 16%;
+    --muted-foreground: 216 12% 58%;
+    --accent: 163 50% 40%;
+    --accent-foreground: 224 30% 13%;
+    --destructive: 5 62% 42%;
     --destructive-foreground: 0 0% 100%;
-    --border: 220 20% 20%;
-    --input: 220 20% 20%;
-    --ring: 220 72% 60%;
+    --border: 224 20% 20%;
+    --input: 224 20% 20%;
+    --ring: 39 94% 50%;
+    --warning: 44 96% 55%;
+    --warning-foreground: 224 30% 13%;
+    --info: 193 75% 42%;
+    --info-foreground: 0 0% 100%;
+
+    --sidebar-background: 224 34% 7%;
+    --sidebar-foreground: 216 14% 72%;
+    --sidebar-primary: 39 94% 55%;
+    --sidebar-primary-foreground: 224 30% 13%;
+    --sidebar-accent: 224 28% 12%;
+    --sidebar-accent-foreground: 216 18% 90%;
+    --sidebar-border: 224 24% 13%;
+    --sidebar-ring: 39 94% 50%;
   }
 }
 
 @layer base {
+  html {
+    color-scheme: light;
+  }
+
+  html.dark {
+    color-scheme: dark;
+  }
+
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground font-body antialiased;
   }
-  h1, h2, h3, h4, h5, h6 {
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     font-family: var(--font-heading);
+    letter-spacing: -0.015em;
+  }
+
+  ::selection {
+    background: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--sidebar-border));
+    border: 3px solid transparent;
+    border-radius: 9999px;
+    background-clip: padding-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--sidebar-primary));
+    border: 3px solid transparent;
+    border-radius: 9999px;
+    background-clip: padding-box;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
   }
 }
 
@@ -104,28 +178,28 @@
 
   /* Status badge system — 5 estados */
   .status-badge {
-    @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium border;
+    @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium border;
   }
   .status-pendiente {
-    @apply bg-warning/10 text-warning border-warning/20;
+    @apply bg-warning/10 text-warning border-warning/25;
   }
   .status-en_proceso {
-    @apply bg-info/10 text-info border-info/20;
+    @apply bg-info/10 text-info border-info/25;
   }
   .status-aprobado {
-    @apply bg-accent/10 text-accent border-accent/20;
+    @apply bg-accent/10 text-accent border-accent/25;
   }
   .status-rechazado {
-    @apply bg-destructive/10 text-destructive border-destructive/20;
+    @apply bg-destructive/10 text-destructive border-destructive/25;
   }
   .status-completado {
-    @apply bg-accent/10 text-accent border-accent/20;
+    @apply bg-accent/10 text-accent border-accent/25;
   }
   .status-enviado {
-    @apply bg-info/10 text-info border-info/20;
+    @apply bg-info/10 text-info border-info/25;
   }
   .status-visto {
-    @apply bg-accent/10 text-accent border-accent/20;
+    @apply bg-accent/10 text-accent border-accent/25;
   }
 
   .empty-state {

@@ -3,19 +3,31 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Taxi_Driver</title>
-    <meta name="description" content="Plataforma de gestión de flota para conductores y administradores" />
+    <meta name="theme-color" content="#F8A11E" />
+    <title>Control de flota · Santa Aurora</title>
+    <meta name="description" content="Operación diaria de la flota de taxis Santa Aurora: vehículos, conductores, documentos, solicitudes y kilometraje." />
     <meta name="author" content="Transportes Santa Aurora SpA" />
     <link rel="icon" type="image/svg+xml" href="/flotacontrol-icon.svg" />
 
+    <script>
+      (function () {
+        try {
+          var t = localStorage.getItem("santa-aurora-theme");
+          if (t === "dark" || (!t && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
+            document.documentElement.classList.add("dark");
+          }
+        } catch (e) {}
+      })();
+    </script>
+
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="Taxi_Driver" />
-    <meta property="og:description" content="Plataforma de gestión de flota para conductores y administradores" />
+    <meta property="og:title" content="Control de flota · Santa Aurora" />
+    <meta property="og:description" content="Operación diaria de la flota de taxis Santa Aurora." />
     <meta property="og:image" content="/flotacontrol-icon.svg" />
 
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Taxi_Driver" />
-    <meta name="twitter:description" content="Plataforma de gestión de flota para conductores y administradores" />
+    <meta name="twitter:title" content="Control de flota · Santa Aurora" />
+    <meta name="twitter:description" content="Operación diaria de la flota de taxis Santa Aurora." />
     <meta name="twitter:image" content="/flotacontrol-icon.svg" />
   </head>
 

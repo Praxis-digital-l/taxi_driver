@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import PageHeader from "@/components/PageHeader";
+import { Plate } from "@/components/ui/plate";
 import { Truck, Calendar, Palette } from "lucide-react";
 
 export default function ConductorVehicles() {
@@ -36,8 +37,8 @@ export default function ConductorVehicles() {
                     <Truck className="h-5 w-5" />
                   </div>
                   <div>
-                    <p className="font-heading font-bold text-lg tracking-wider">{v.license_plate}</p>
-                    <p className="text-xs text-muted-foreground">{v.status === "active" ? "Activo" : v.status}</p>
+                    <Plate licensePlate={v.license_plate} className="text-sm" />
+                    <p className="mt-1.5 text-xs text-muted-foreground">{v.status === "active" ? "Activo" : v.status}</p>
                   </div>
                 </div>
                 <CardContent className="p-5 space-y-2">

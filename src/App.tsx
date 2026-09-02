@@ -15,6 +15,7 @@ import ConductorMileage from "@/features/conductor/pages/ConductorMileage";
 import ConductorMessages from "@/features/conductor/pages/ConductorMessages";
 import ConductorLiquidaciones from "@/features/conductor/pages/ConductorLiquidaciones";
 import AdminDashboard from "@/features/admin/pages/AdminDashboard";
+import AdminBanco from "@/features/admin/pages/AdminBanco";
 import AdminDocuments from "@/features/admin/pages/AdminDocuments";
 import AdminSearch from "@/features/admin/pages/AdminSearch";
 import AdminVehicles from "@/features/admin/pages/AdminVehicles";
@@ -34,10 +35,10 @@ function RootRedirect() {
   
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+      <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="text-center">
           <div className="h-16 w-16 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto mb-4" />
-          <p className="text-gray-600 font-medium">Cargando aplicación...</p>
+          <p className="text-muted-foreground font-medium">Cargando aplicación...</p>
         </div>
       </div>
     );
@@ -49,10 +50,10 @@ function RootRedirect() {
 
   if (!profile) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+      <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="text-center">
           <div className="h-16 w-16 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto mb-4" />
-          <p className="text-gray-600 font-medium">Preparando perfil...</p>
+          <p className="text-muted-foreground font-medium">Preparando perfil...</p>
         </div>
       </div>
     );
@@ -83,6 +84,7 @@ const App = () => (
 
             {/* Rutas Admin */}
             <Route path="/admin" element={<ProtectedRoute requiredRole="admin"><AppLayout><AdminDashboard /></AppLayout></ProtectedRoute>} />
+            <Route path="/admin/banco" element={<ProtectedRoute requiredRole="admin"><AppLayout><AdminBanco /></AppLayout></ProtectedRoute>} />
             <Route path="/admin/documents" element={<ProtectedRoute requiredRole="admin"><AppLayout><AdminDocuments /></AppLayout></ProtectedRoute>} />
             <Route path="/admin/search" element={<ProtectedRoute requiredRole="admin"><AppLayout><AdminSearch /></AppLayout></ProtectedRoute>} />
             <Route path="/admin/vehicles" element={<ProtectedRoute requiredRole="admin"><AppLayout><AdminVehicles /></AppLayout></ProtectedRoute>} />

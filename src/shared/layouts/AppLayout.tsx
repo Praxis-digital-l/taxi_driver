@@ -3,15 +3,18 @@ import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { ConductorAvatar } from "@/components/ConductorAvatar";
+import { TaxiMark } from "@/components/ui/TaxiMark";
+import ThemeSwitch from "@/components/ThemeSwitch";
 import {
   Truck, LayoutDashboard, FileText, ClipboardList, Gauge, MessageSquare,
-  Search, LogOut, Menu, X, ChevronRight, Users, Calculator, Upload, Wallet
+  Search, LogOut, Menu, X, ChevronRight, Users, Calculator, Upload, Wallet, Landmark
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { logDevInteraction } from "@/shared/monitoring/devLogger";
 
 const baseAdminLinks = [
   { to: "/admin", icon: LayoutDashboard, label: "Dashboard" },
+  { to: "/admin/banco", icon: Landmark, label: "Banco" },
   { to: "/admin/search", icon: Search, label: "Buscar Patente" },
   { to: "/admin/documents", icon: FileText, label: "Documentos" },
   { to: "/admin/conductores", icon: Users, label: "Conductores" },
@@ -44,20 +47,24 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         <div className="fixed inset-0 z-40 bg-foreground/30 backdrop-blur-sm lg:hidden" onClick={() => setSidebarOpen(false)} />
       )}
 
-      {/* Sidebar con branding Transportes Santa Aurora */}
+      {/* Sidebar: el tablero de noche */}
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-50 flex w-64 flex-col bg-sidebar text-sidebar-foreground transition-transform duration-300 lg:relative lg:translate-x-0",
+          "fixed inset-y-0 left-0 z-50 flex w-64 flex-col bg-sidebar text-sidebar-foreground transition-transform duration-300 lg:relative lg:translate-x-0 border-r border-sidebar-border",
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
         <div className="flex h-16 items-center gap-3 border-b border-sidebar-border px-5">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-sidebar-primary shadow-lg shadow-sidebar-primary/20">
-            <Truck className="h-5 w-5 text-sidebar-primary-foreground" />
+          <div className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-sidebar-primary shadow-[0_0_16px_rgba(248,161,30,0.45)]">
+            <TaxiMark tone="night" className="h-5 w-5" />
           </div>
           <div className="flex-1 min-w-0">
-            <span className="font-heading text-sm font-bold text-sidebar-primary-foreground leading-tight block">Taxi_Driver</span>
-            <span className="text-[10px] text-sidebar-foreground/50 leading-tight block">Transportes Santa Aurora</span>
+            <span className="font-heading text-[15px] font-bold leading-tight block text-sidebar-accent-foreground tracking-wide">
+              Santa Aurora
+            </span>
+            <span className="font-data text-[9px] uppercase tracking-[0.28em] text-sidebar-foreground/55 leading-tight block">
+              Control de flota
+            </span>
           </div>
           <button className="lg:hidden text-sidebar-foreground/60 hover:text-sidebar-foreground" onClick={() => setSidebarOpen(false)}>
             <X className="h-5 w-5" />
@@ -65,8 +72,8 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         </div>
 
         <nav className="flex-1 overflow-y-auto p-3 space-y-1">
-          <p className="px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/40">
-            {isAdmin ? "Administración" : "Mi Panel"}
+          <p className="px-4 pt-2 pb-1 font-data text-[9px] uppercase tracking-[0.28em] text-sidebar-primary/80">
+            {isAdmin ? "Administración" : "Mi panel"}
           </p>
           {links.map(({ to, icon: Icon, label }) => {
             const active = location.pathname === to;
@@ -83,15 +90,21 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                   setSidebarOpen(false);
                 }}
                 className={cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150",
+                  "relative flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar",
                   active
-                    ? "bg-sidebar-primary/10 text-sidebar-primary shadow-sm"
-                    : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                    ? "bg-sidebar-accent text-sidebar-primary"
+                    : "text-sidebar-foreground hover:bg-sidebar-accent/70 hover:text-sidebar-accent-foreground"
                 )}
               >
+                {active && (
+                  <span
+                    className="absolute left-0 top-1/2 h-4 w-[3px] -translate-y-1/2 rounded-full bg-sidebar-primary shadow-[0_0_10px_rgba(248,161,30,0.8)]"
+                    aria-hidden="true"
+                  />
+                )}
                 <Icon className="h-4 w-4 shrink-0" />
                 <span className="truncate">{label}</span>
-                {active && <ChevronRight className="ml-auto h-3.5 w-3.5 opacity-60" />}
+                {active && <ChevronRight className="ml-auto h-3.5 w-3.5 text-sidebar-primary/70" />}
               </Link>
             );
           })}
@@ -102,12 +115,17 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             <ConductorAvatar fullName={profile?.full_name} photoUrl={profile?.photo_url} className="h-9 w-9" />
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium truncate">{profile?.full_name || "Usuario"}</p>
-              <p className="text-[11px] text-sidebar-foreground/50 capitalize">
+              <p className="font-data text-[9px] uppercase tracking-[0.2em] text-sidebar-foreground/50">
                 {profile?.role === "admin"
-                  ? "Administrador"
+                  ? "En turno"
                   : "Conductor"}
               </p>
             </div>
+            <span
+              className="h-2 w-2 shrink-0 rounded-full bg-sidebar-primary shadow-[0_0_8px_rgba(248,161,30,0.9)]"
+              title="Turno activo"
+              aria-hidden="true"
+            />
           </div>
           <Button
             variant="ghost"
@@ -124,15 +142,19 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         </div>
       </aside>
 
-      {/* Main content */}
+      {/* Main content: la luz del día */}
       <main className="flex-1 overflow-y-auto">
         <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-card/80 backdrop-blur-md px-4 lg:px-6">
           <button className="lg:hidden" onClick={() => setSidebarOpen(true)}>
             <Menu className="h-5 w-5 text-muted-foreground" />
           </button>
-          <h1 className="font-heading text-base font-semibold">
-            {links.find((l) => l.to === location.pathname)?.label || "Taxi_Driver"}
+          <span className="h-5 w-[3px] rounded-full bg-sidebar-primary" aria-hidden="true" />
+          <h1 className="font-heading text-base font-semibold tracking-wide">
+            {links.find((l) => l.to === location.pathname)?.label || "Control de flota"}
           </h1>
+          <div className="ml-auto flex items-center gap-3">
+            <ThemeSwitch />
+          </div>
         </header>
         <div className="page-container animate-fade-in">{children}</div>
       </main>

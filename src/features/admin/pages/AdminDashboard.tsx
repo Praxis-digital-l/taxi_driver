@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import StatusBadge from "@/components/StatusBadge";
 import RequestPriorityBadge from "@/components/RequestPriorityBadge";
+import { Plate } from "@/components/ui/plate";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/features/auth/context/AuthContext";
@@ -11,7 +12,6 @@ import {
   Users,
   ClipboardList,
   FileText,
-  AlertTriangle,
   Search,
   MessageSquare,
   ShieldCheck,
@@ -30,15 +30,6 @@ import {
 } from "@/features/admin/services/adminInsuranceService";
 import type { AdminRequest } from "@/features/admin/services/adminRequestsService";
 import { ConductorDelMesCard } from "@/components/ConductorDelMesCard";
-
-type MetricCardConfig = {
-  label: string;
-  value: string | number;
-  sub: string;
-  color: string;
-  icon: typeof Truck;
-  to: string;
-};
 
 const EMPTY_STATS: AdminDashboardStats = {
   vehicles: 0,
@@ -84,12 +75,24 @@ export default function AdminDashboard() {
 
   const hasPending = stats.pendingRequests > 0 || stats.expiringDocs > 0 || stats.unreadMessages > 0 || stats.expiringInsurances > 0;
 
+  const hoy = new Date().toLocaleDateString("es-CL", { weekday: "long", day: "numeric", month: "long" });
+
+  const boardTiles = [
+    { icon: Truck, label: "flota activa", value: `${stats.activeVehicles}/${stats.vehicles}`, to: "/admin/vehicles" },
+    { icon: Users, label: "conductores registrados", value: String(stats.conductors), to: "/admin/conductores" },
+    { icon: ClipboardList, label: "solicitudes activas", value: String(stats.pendingRequests + stats.inProcessRequests), to: "/admin/requests" },
+    { icon: FileText, label: "documentos por vencer", value: String(stats.expiringDocs), to: "/admin/documents" },
+    { icon: ShieldCheck, label: "seguros por vencer", value: String(stats.expiringInsurances), to: "/admin/search" },
+    { icon: MessageSquare, label: "mensajes sin respuesta", value: String(stats.unreadMessages), to: "/admin/messages" },
+  ];
+
   const pendingItems = useMemo(() => {
     const items: {
       id: string;
       type: "request" | "document" | "message" | "insurance";
       title: string;
       subtitle: string;
+      plate?: string | null;
       meta: string;
       priorityName?: string | null;
       status: string;
@@ -101,7 +104,8 @@ export default function AdminDashboard() {
         id: r.id,
         type: "request",
         title: r.request_types?.name ?? "Solicitud",
-        subtitle: `${r.profiles?.full_name ?? ""}${r.vehicles?.license_plate ? ` • ${r.vehicles.license_plate}` : ""}`,
+        subtitle: r.profiles?.full_name ?? "Sin conductor",
+        plate: r.vehicles?.license_plate ?? null,
         meta: `${getRequestWaitingDays(r.created_at)} día(s) en espera`,
         priorityName: r.request_types?.name,
         status: r.status,
@@ -115,7 +119,8 @@ export default function AdminDashboard() {
         id: d.id,
         type: "document",
         title: d.document_types?.name ?? "Documento",
-        subtitle: `${d.profiles?.full_name ?? ""}${d.vehicles?.license_plate ? ` • ${d.vehicles.license_plate}` : ""}`,
+        subtitle: d.profiles?.full_name ?? "Sin conductor",
+        plate: d.vehicles?.license_plate ?? null,
         meta: `${daysLeft} día(s)`,
         priorityName: null,
         status: daysLeft <= 7 ? "urgent" : "warning",
@@ -130,6 +135,7 @@ export default function AdminDashboard() {
         type: "message",
         title: `Mensaje de ${m.sender?.full_name ?? "desconocido"}`,
         subtitle: m.content.length > 80 ? `${m.content.slice(0, 80)}…` : m.content,
+        plate: null,
         meta: `hace ${daysAgo} día(s)`,
         priorityName: null,
         status: "pendiente",
@@ -143,7 +149,8 @@ export default function AdminDashboard() {
         id: ins.id,
         type: "insurance",
         title: `Seguro: ${INSURANCE_TYPE_LABEL[ins.insurance_type] ?? ins.insurance_type}`,
-        subtitle: `$ ${Number(ins.amount).toLocaleString("es-CL")}${ins.vehicles?.license_plate ? ` • ${ins.vehicles.license_plate}` : ""}`,
+        subtitle: `$ ${Number(ins.amount).toLocaleString("es-CL")}`,
+        plate: ins.vehicles?.license_plate ?? null,
         meta: `${daysLeft} día(s)`,
         priorityName: null,
         status: daysLeft <= 7 ? "urgent" : "warning",
@@ -156,87 +163,58 @@ export default function AdminDashboard() {
     return items;
   }, [recentRequests, expiringDocs, unreadMessages, expiringInsurances]);
 
-  const metricCards: MetricCardConfig[] = [
-    {
-      icon: Truck,
-      label: "Flota Total",
-      value: `${stats.activeVehicles}/${stats.vehicles}`,
-      sub: "activos",
-      color: "bg-primary/10 text-primary",
-      to: "/admin/vehicles",
-    },
-    {
-      icon: Users,
-      label: "Conductores",
-      value: stats.conductors,
-      sub: "registrados",
-      color: "bg-accent/10 text-accent",
-      to: "/admin/conductores",
-    },
-    {
-      icon: ClipboardList,
-      label: "Solicitudes",
-      value: stats.pendingRequests,
-      sub: "total",
-      color: "bg-warning/10 text-warning",
-      to: "/admin/requests",
-    },
-    {
-      icon: FileText,
-      label: "Documentos por vencer",
-      value: stats.expiringDocs,
-      sub: "en 30 días",
-      color: "bg-destructive/10 text-destructive",
-      to: "/admin/documents",
-    },
-    {
-      icon: ShieldCheck,
-      label: "Seguros por vencer",
-      value: stats.expiringInsurances,
-      sub: "en 60 días",
-      color: "bg-warning/10 text-warning",
-      to: "/admin/search",
-    },
-  ];
-
   return (
     <div className="space-y-6">
-      {hasPending && (
-        <div className="flex items-start gap-3 rounded-xl border border-warning/30 bg-warning/5 p-4 animate-fade-in">
-          <AlertTriangle className="h-5 w-5 text-warning shrink-0 mt-0.5" />
-          <div>
-            <p className="text-sm font-semibold">Existen tareas pendientes</p>
-            <p className="text-xs text-muted-foreground mt-1">
-              {stats.pendingRequests > 0 && `${stats.pendingRequests} solicitud(es) activa(s). `}
-              {stats.inProcessRequests > 0 && `${stats.inProcessRequests} en proceso. `}
-              {stats.expiringDocs > 0 && `${stats.expiringDocs} documento(s) por vencer. `}
-              {stats.expiringInsurances > 0 && `${stats.expiringInsurances} seguro(s) por vencer. `}
-              {stats.unreadMessages > 0 && `${stats.unreadMessages} mensaje(s) pendiente(s).`}
+      <section className="relative overflow-hidden rounded-xl bg-board text-board-foreground shadow-md animate-fade-in">
+        <span className="absolute inset-y-0 left-0 w-1 bg-board-primary" aria-hidden="true" />
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-board-primary/15 blur-3xl"
+        />
+
+        <div className="relative p-5 sm:p-6">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div className="space-y-1.5">
+              <p className="font-data text-[9px] uppercase tracking-[0.3em] text-board-primary">
+                Atención del turno
+              </p>
+              <h3 className="font-heading text-xl font-semibold tracking-wide text-board-accent-foreground">
+                Resumen del turno
+              </h3>
+              <p className="max-w-2xl text-sm text-board-foreground/70">
+                {hasPending
+                  ? "Lo que hoy necesita salir a tiempo: antes de abrir la calle, revisa lo que quedó en espera."
+                  : "Todo en orden para arrancar el turno; sin pendientes urgentes."}
+              </p>
+            </div>
+
+            <p className="font-data text-xs uppercase tracking-widest text-board-foreground/60 capitalize">
+              {hoy}
             </p>
           </div>
+
+          <div className="mt-6 grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3">
+            {boardTiles.map(({ icon: Icon, label, value, to }) => (
+              <Link
+                key={label}
+                to={to}
+                aria-label={`${label}: ${value}`}
+                className="group rounded-md border border-board-border bg-board-accent/70 px-4 py-3 transition-colors hover:border-board-primary/60 hover:bg-board-accent"
+              >
+                <span className="flex items-center gap-1.5 text-[13px] font-medium text-board-accent-foreground/90">
+                  <Icon className="h-3.5 w-3.5 text-board-foreground/50 group-hover:text-board-primary" />
+                  {label}
+                </span>
+                <p className="mt-2 font-data text-2xl font-medium leading-none tabular-nums text-board-primary">
+                  {value}
+                </p>
+              </Link>
+            ))}
+          </div>
         </div>
-      )}
+      </section>
 
       <ConductorDelMesCard editable />
-
-      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
-        {metricCards.map(({ icon: Icon, label, value, sub, color, to }) => (
-          <Link key={label} to={to} className="block group">
-            <Card className="stat-card transition-all group-hover:-translate-y-0.5 group-hover:shadow-md group-hover:border-primary/20">
-              <CardContent className="flex items-center gap-3 p-4 sm:p-5">
-                <div className={`flex h-10 w-10 items-center justify-center rounded-lg shrink-0 ${color}`}>
-                  <Icon className="h-5 w-5" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-xs text-muted-foreground">{label}</p>
-                  <p className="text-xl font-bold font-heading">{value}</p>
-                  <p className="text-[10px] text-muted-foreground">{sub}</p>
-                </div>
-              </CardContent>
-            </Card>
-          </Link>
-        ))}
-      </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
         <Card>
@@ -281,7 +259,7 @@ export default function AdminDashboard() {
                     className="flex items-center justify-between gap-3 rounded-lg border p-3 hover:bg-muted/30 transition-colors group"
                   >
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2 flex-wrap">
+                      <div className="flex items-center gap-2 flex-wrap gap-y-1">
                         {item.type === "request" && <ClipboardList className="h-4 w-4 text-warning shrink-0" />}
                         {item.type === "document" && <FileText className="h-4 w-4 text-destructive shrink-0" />}
                         {item.type === "insurance" && <ShieldCheck className="h-4 w-4 text-warning shrink-0" />}
@@ -291,8 +269,11 @@ export default function AdminDashboard() {
                           <RequestPriorityBadge requestTypeName={item.priorityName} className="text-[10px]" />
                         )}
                       </div>
-                      <p className="text-xs text-muted-foreground break-all whitespace-pre-wrap">{item.subtitle}</p>
-                      <p className="text-[10px] text-muted-foreground">{item.meta}</p>
+                      <p className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-2 text-xs text-muted-foreground">
+                        <span className="break-all">{item.subtitle}</span>
+                        {item.plate && <Plate licensePlate={item.plate} className="shrink-0" />}
+                      </p>
+                      <p className="mt-1 font-data text-[10px] text-muted-foreground">{item.meta}</p>
                     </div>
                     {item.type === "document" || item.type === "insurance" ? (
                       <span className={`shrink-0 text-xs font-medium ${item.status === "urgent" ? "text-destructive" : "text-warning"}`}>
