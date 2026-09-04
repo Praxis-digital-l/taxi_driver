@@ -64,7 +64,7 @@ export default function Auth() {
             <BrandMark className="h-8 w-8 animate-beacon" />
           </div>
 
-          <p className="font-data text-[10px] uppercase tracking-[0.34em] text-primary">Transportes Santa Aurora</p>
+          <p className="font-data text-[10px] uppercase tracking-[0.34em] text-primary">Transportes El Montañez</p>
           <h1 className="mt-1 font-heading text-3xl font-bold tracking-wide text-foreground">Control de flota</h1>
           <p className="mt-2 text-sm text-muted-foreground">Inicia tu turno para ver tu flota hoy.</p>
         </div>

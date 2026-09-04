@@ -60,7 +60,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           </div>
           <div className="flex-1 min-w-0">
             <span className="font-heading text-[15px] font-bold leading-tight block text-sidebar-accent-foreground tracking-wide">
-              Santa Aurora
+              Transportes El Montañez
             </span>
             <span className="font-data text-[9px] uppercase tracking-[0.28em] text-sidebar-foreground/55 leading-tight block">
               Control de flota
