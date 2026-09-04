@@ -1,11 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { Calculator, DollarSign, UserRound, Mail, Fingerprint } from "lucide-react";
+import { Calculator, Check, DollarSign, UserRound, Mail, Fingerprint, Plus, X } from "lucide-react";
 import {
   type DatosNomina,
   type DescuentosTAG,
@@ -34,17 +34,6 @@ const CAMPOS_SECUNDARIOS = [
   { id: "prestamo", label: "Préstamo", placeholder: "Ej: 50.000" },
 ] as const;
 
-const AUTOPISTAS = [
-  { key: "autopista1", label: "Autopista 1" },
-  { key: "autopista2", label: "Autopista 2" },
-  { key: "autopista3", label: "Autopista 3" },
-  { key: "autopista4", label: "Autopista 4" },
-  { key: "autopista5", label: "Autopista 5" },
-  { key: "autopista6", label: "Autopista 6" },
-  { key: "autopista7", label: "Autopista 7" },
-  { key: "autopista8", label: "Autopista 8" },
-] as const;
-
 function formatPesos(digits: string): string {
   if (!digits) return "";
   return `$ ${Number(digits).toLocaleString("es-CL")}`;
@@ -55,6 +44,10 @@ export default function NominaForm({ onCalcular }: NominaFormProps) {
   const [values, setValues] = useState<Record<string, string>>({});
   const [conductores, setConductores] = useState<ConductorRecord[]>([]);
   const [selectedConductor, setSelectedConductor] = useState<ConductorRecord | null>(null);
+  const [autopistas, setAutopistas] = useState<Array<{ key: string; label: string }>>([]);
+  const [agregando, setAgregando] = useState(false);
+  const [nuevaAutopistaNombre, setNuevaAutopistaNombre] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetchAdminConductores()
@@ -67,6 +60,39 @@ export default function NominaForm({ onCalcular }: NominaFormProps) {
     setValues((prev) => ({ ...prev, [id]: digits ? formatPesos(digits) : "" }));
   };
 
+  const iniciarAgregar = () => {
+    setNuevaAutopistaNombre("");
+    setAgregando(true);
+    setTimeout(() => inputRef.current?.focus(), 0);
+  };
+
+  const confirmarAgregar = () => {
+    const nombre = nuevaAutopistaNombre.trim();
+    if (!nombre) return;
+    if (autopistas.some((a) => a.label === nombre)) return;
+    const key = `autopista_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+    setAutopistas((prev) => [...prev, { key, label: nombre }]);
+    setNuevaAutopistaNombre("");
+    setAgregando(false);
+  };
+
+  const cancelarAgregar = () => {
+    setNuevaAutopistaNombre("");
+    setAgregando(false);
+  };
+
+  const eliminarAutopista = (key: string) => {
+    setAutopistas((prev) => prev.filter((a) => a.key !== key));
+    setValues((prev) => {
+      const { [key]: _, ...rest } = prev;
+      return rest;
+    });
+    setErrores((prev) => {
+      const { [`tag.${key}`]: _e, ...rest } = prev;
+      return rest;
+    });
+  };
+
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
@@ -77,7 +103,7 @@ export default function NominaForm({ onCalcular }: NominaFormProps) {
     };
 
     const tag = crearDescuentosTAG();
-    for (const { key } of AUTOPISTAS) {
+    for (const { key } of autopistas) {
       tag[key] = parseNum(key);
     }
 
@@ -214,26 +240,124 @@ export default function NominaForm({ onCalcular }: NominaFormProps) {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {AUTOPISTAS.map(({ key, label }) => (
-              <div key={key} className="space-y-1">
-                <Label htmlFor={key}>{label}</Label>
+          {autopistas.length === 0 ? (
+            agregando ? (
+              <div className="mx-auto max-w-sm space-y-1">
                 <Input
-                  id={key}
-                  name={key}
+                  ref={inputRef}
                   type="text"
-                  inputMode="numeric"
-                  value={values[key] || ""}
-                  onChange={(e) => handleCurrencyChange(key, e.target.value)}
-                  placeholder="0"
-                  className={`${SPINNER_HIDE} ${errores[`tag.${key}`] ? "border-destructive" : ""}`}
+                  autoFocus
+                  value={nuevaAutopistaNombre}
+                  onChange={(e) => setNuevaAutopistaNombre(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      confirmarAgregar();
+                    } else if (e.key === "Escape") {
+                      cancelarAgregar();
+                    }
+                  }}
+                  placeholder="Ej: Autopista Central"
+                  className="bg-muted/40 placeholder:text-muted-foreground/70"
                 />
-                {errores[`tag.${key}`] && (
-                  <p className="text-xs text-destructive">{errores[`tag.${key}`]}</p>
+                <div className="flex gap-2">
+                  <Button type="button" size="sm" className="gap-1" onClick={confirmarAgregar}>
+                    <Check className="h-4 w-4" />
+                    Confirmar
+                  </Button>
+                  <Button type="button" size="sm" variant="ghost" className="gap-1" onClick={cancelarAgregar}>
+                    <X className="h-4 w-4" />
+                    Cancelar
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed py-8 text-center">
+                <p className="text-sm text-muted-foreground">Aún no hay autopistas registradas</p>
+                <Button type="button" variant="outline" size="sm" className="gap-2" onClick={iniciarAgregar}>
+                  <Plus className="h-4 w-4" />
+                  Agregar autopista
+                </Button>
+              </div>
+            )
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {autopistas.map(({ key, label }) => (
+                <div key={key} className="space-y-1">
+                  <div className="flex items-center justify-between gap-2">
+                    <Label htmlFor={key} className="truncate">{label}</Label>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-5 w-5 text-muted-foreground hover:text-destructive"
+                      aria-label={`Eliminar ${label}`}
+                      onClick={() => eliminarAutopista(key)}
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                  <Input
+                    id={key}
+                    name={key}
+                    type="text"
+                    inputMode="numeric"
+                    value={values[key] || ""}
+                    onChange={(e) => handleCurrencyChange(key, e.target.value)}
+                    placeholder="0"
+                    className={`${SPINNER_HIDE} ${errores[`tag.${key}`] ? "border-destructive" : ""}`}
+                  />
+                  {errores[`tag.${key}`] && (
+                    <p className="text-xs text-destructive">{errores[`tag.${key}`]}</p>
+                  )}
+                </div>
+              ))}
+
+              <div className="flex items-end">
+                {agregando ? (
+                  <div className="w-full space-y-2">
+                    <Input
+                      ref={inputRef}
+                      type="text"
+                      autoFocus
+                      value={nuevaAutopistaNombre}
+                      onChange={(e) => setNuevaAutopistaNombre(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          confirmarAgregar();
+                        } else if (e.key === "Escape") {
+                          cancelarAgregar();
+                        }
+                      }}
+                      placeholder="Ej: Autopista Central"
+                      className="bg-muted/40 placeholder:text-muted-foreground/70"
+                    />
+                    <div className="flex gap-2">
+                      <Button type="button" size="sm" className="gap-1" onClick={confirmarAgregar}>
+                        <Check className="h-4 w-4" />
+                        Confirmar
+                      </Button>
+                      <Button type="button" size="sm" variant="ghost" className="gap-1" onClick={cancelarAgregar}>
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="w-full gap-2"
+                    onClick={iniciarAgregar}
+                  >
+                    <Plus className="h-4 w-4" />
+                    Agregar autopista
+                  </Button>
                 )}
               </div>
-            ))}
-          </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 

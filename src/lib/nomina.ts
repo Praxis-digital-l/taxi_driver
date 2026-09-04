@@ -1,13 +1,4 @@
-export type DescuentosTAG = {
-  autopista1: number;
-  autopista2: number;
-  autopista3: number;
-  autopista4: number;
-  autopista5: number;
-  autopista6: number;
-  autopista7: number;
-  autopista8: number;
-};
+export type DescuentosTAG = Record<string, number>;
 
 export type DatosNomina = {
   trabajadorId: string;
@@ -43,42 +34,21 @@ export type ResultadoNomina = {
   totalAPagar: number;
 };
 
-export const NOMBRES_AUTOPISTAS = [
-  "Autopista 1",
-  "Autopista 2",
-  "Autopista 3",
-  "Autopista 4",
-  "Autopista 5",
-  "Autopista 6",
-  "Autopista 7",
-  "Autopista 8",
-] as const;
-
 export function crearDescuentosTAG(): DescuentosTAG {
-  return {
-    autopista1: 0, autopista2: 0, autopista3: 0, autopista4: 0,
-    autopista5: 0, autopista6: 0, autopista7: 0, autopista8: 0,
-  };
+  return {};
 }
 
 function totalTAG(tag: DescuentosTAG): number {
-  return (
-    tag.autopista1 + tag.autopista2 + tag.autopista3 + tag.autopista4 +
-    tag.autopista5 + tag.autopista6 + tag.autopista7 + tag.autopista8
-  );
+  return Object.values(tag).reduce((sum, v) => sum + v, 0);
 }
 
 function desgloseTAG(tag: DescuentosTAG): DetalleDescuento[] {
-  return (Object.entries(tag) as [keyof DescuentosTAG, number][])
+  return Object.entries(tag)
     .filter(([, monto]) => monto > 0)
-    .map(([key, monto]) => {
-      const match = key.match(/\d+$/);
-      const idx = match ? parseInt(match[0], 10) - 1 : -1;
-      return {
-        concepto: `TAG - ${NOMBRES_AUTOPISTAS[idx] ?? key}`,
-        monto,
-      };
-    });
+    .map(([nombre, monto]) => ({
+      concepto: `TAG - ${nombre}`,
+      monto,
+    }));
 }
 
 function montoValido(valor: unknown): valor is number {

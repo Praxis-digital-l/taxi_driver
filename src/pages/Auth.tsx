@@ -86,7 +86,7 @@ export default function Auth() {
             <Truck className="h-7 w-7 text-primary-foreground" />
           </div>
           <h1 className="font-heading text-2xl font-bold">Taxi_Driver</h1>
-          <p className="text-sm text-muted-foreground mt-1">Transportes Santa Aurora SpA</p>
+          <p className="text-sm text-muted-foreground mt-1">Transportes El Montañez SpA</p>
         </div>
 
         <Card className="shadow-lg">

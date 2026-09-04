@@ -89,7 +89,7 @@ export default function NominaResult({ resultado }: NominaResultProps) {
 
       const asunto = encodeURIComponent(`Liquidación ${resultado.nombre} - ${mes}`);
       const cuerpo = encodeURIComponent(
-        `Estimado/a,\n\nAdjunto la liquidación de ${resultado.nombre} (${resultado.trabajadorId}) correspondiente al mes de ${mes}.\n\nSaludos,\nSanta Aurora`
+        `Estimado/a,\n\nAdjunto la liquidación de ${resultado.nombre} (${resultado.trabajadorId}) correspondiente al mes de ${mes}.\n\nSaludos,\nTransportes El Montañez`
       );
       window.open(`https://mail.google.com/mail/?view=cm&fs=1&to=&su=${asunto}&body=${cuerpo}`, "_blank");
     } catch {
@@ -174,7 +174,7 @@ export default function NominaResult({ resultado }: NominaResultProps) {
                 </div>
               </div>
               <div className="text-left sm:text-right text-xs text-muted-foreground space-y-0.5 shrink-0">
-                <p className="font-medium text-foreground">Santa Aurora</p>
+                <p className="font-medium text-foreground">Transportes El Montañez</p>
                 <p>77.777.777-7</p>
                 <p>{fecha}</p>
               </div>
