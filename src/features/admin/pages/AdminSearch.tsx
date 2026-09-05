@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import StatusBadge from "@/components/StatusBadge";
 import PageHeader from "@/components/PageHeader";
 import { Plate } from "@/components/ui/plate";
+import VehicleInspectionView from "@/features/vehicles/components/VehicleInspectionView";
 import {
   Search,
   Truck,
@@ -541,6 +542,17 @@ export default function AdminSearch() {
                   )}
                 </CardContent>
               </Card>
+            </div>
+
+            {/* Inspección interactiva del vehículo (Cuadro Verde) */}
+            <div className="mt-4">
+              <VehicleInspectionView
+                vehicleId={vehicle.id}
+                licensePlate={vehicle.license_plate}
+                make={vehicle.make}
+                model={vehicle.model}
+                year={vehicle.year}
+              />
             </div>
 
             <Card className="mt-4">

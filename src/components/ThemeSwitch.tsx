@@ -1,19 +1,21 @@
-import { Moon, Sun } from "lucide-react";
-import { Switch } from "@/components/ui/switch";
 import { useTheme } from "@/theme/theme-provider";
+import "./ThemeSwitch.css";
 
 export default function ThemeSwitch() {
   const { theme, toggleTheme } = useTheme();
 
   return (
-    <div className="relative inline-flex items-center">
-      <Switch
-        checked={theme === "light"}
-        onCheckedChange={toggleTheme}
-        aria-label={theme === "dark" ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
-      />
-      <Sun className="pointer-events-none absolute right-0.5 h-3.5 w-3.5 text-white transition-opacity" />
-      <Moon className="pointer-events-none absolute left-0.5 h-3.5 w-3.5 text-white transition-opacity" />
+    <div className="theme-switch-wrapper">
+      <label htmlFor="switch" className="switch">
+        <input 
+          id="switch" 
+          type="checkbox" 
+          checked={theme === 'light'}
+          onChange={toggleTheme}
+        />
+        <span className="slider" />
+        <span className="decoration" />
+      </label>
     </div>
   );
 }

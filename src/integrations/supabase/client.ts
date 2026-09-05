@@ -1,5 +1,4 @@
 import { createClient } from '@supabase/supabase-js';
-import { mockSupabase } from './mock';
 import type { Database } from './types';
 
 const FALLBACK_PROJECT_ID = 'ywcgtwlhievzgflmncsq';
@@ -15,30 +14,14 @@ const resolvedSupabaseUrl =
   envSupabaseUrl || (envProjectId ? `https://${envProjectId}.supabase.co` : FALLBACK_SUPABASE_URL);
 const resolvedPublishableKey = envPublishableKey || FALLBACK_PUBLISHABLE_KEY;
 
-const useMockSupabase = String(import.meta.env.VITE_USE_MOCK_SUPABASE ?? '').toLowerCase() === 'true';
-const hasValidConfig =
-  resolvedSupabaseUrl.startsWith('http') && resolvedSupabaseUrl.includes('supabase.co') && resolvedPublishableKey.length > 20;
-
 const supabaseRuntimeUrl = import.meta.env.DEV
   ? `${window.location.origin}/supabase`
   : resolvedSupabaseUrl;
 
-let supabase: any;
-
-if (useMockSupabase) {
-  console.warn('⚠️ Usando Supabase MOCK porque VITE_USE_MOCK_SUPABASE=true');
-  supabase = mockSupabase;
-} else if (hasValidConfig) {
-  supabase = createClient<Database>(supabaseRuntimeUrl, resolvedPublishableKey, {
-    auth: {
-      storage: localStorage,
-      persistSession: true,
-      autoRefreshToken: true,
-    },
-  });
-} else {
-  console.error('❌ Configuración de Supabase inválida. Activa VITE_USE_MOCK_SUPABASE=true para trabajar sin backend.');
-  supabase = mockSupabase;
-}
-
-export { supabase };
+export const supabase = createClient<Database>(supabaseRuntimeUrl, resolvedPublishableKey, {
+  auth: {
+    storage: localStorage,
+    persistSession: true,
+    autoRefreshToken: true,
+  },
+});

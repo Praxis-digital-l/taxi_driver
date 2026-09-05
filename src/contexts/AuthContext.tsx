@@ -35,20 +35,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       if (error) {
         console.warn("Error fetching profile:", error);
-        // En mock, crear perfil por defecto
-        if (user?.email === "admin@flota.cl") {
-          setProfile({
-            user_id: userId,
-            role: "admin",
-            full_name: "Administrador",
-          } as any);
-        } else if (user?.email === "conductor@flota.cl") {
-          setProfile({
-            user_id: userId,
-            role: "conductor",
-            full_name: "Conductor",
-          } as any);
-        }
       } else {
         setProfile(data);
       }
