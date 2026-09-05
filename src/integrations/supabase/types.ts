@@ -98,6 +98,66 @@ export type Database = {
           },
         ]
       }
+      conductor_vacations: {
+        Row: {
+          created_at: string
+          days_count: number
+          end_date: string
+          id: string
+          notes: string | null
+          profile_id: string
+          rent_postponed: boolean
+          start_date: string
+          status: string
+          surcharge_percentage: number
+          updated_at: string
+          vehicle_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          days_count: number
+          end_date: string
+          id?: string
+          notes?: string | null
+          profile_id: string
+          rent_postponed?: boolean
+          start_date: string
+          status?: string
+          surcharge_percentage?: number
+          updated_at?: string
+          vehicle_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          days_count?: number
+          end_date?: string
+          id?: string
+          notes?: string | null
+          profile_id?: string
+          rent_postponed?: boolean
+          start_date?: string
+          status?: string
+          surcharge_percentage?: number
+          updated_at?: string
+          vehicle_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conductor_vacations_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conductor_vacations_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       document_types: {
         Row: {
           id: string

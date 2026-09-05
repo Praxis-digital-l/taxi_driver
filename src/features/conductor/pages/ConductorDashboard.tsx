@@ -7,6 +7,7 @@ import { Truck, FileText, ClipboardList, AlertTriangle, Gauge, Star, MessageSqua
 import { Link, useNavigate } from "react-router-dom";
 import { PhotoUploadCard } from "@/features/conductor/components/PhotoUploadCard";
 import { ConductorDelMesCard } from "@/components/ConductorDelMesCard";
+import ConductorVacationsCard from "@/features/conductor/components/ConductorVacationsCard";
 
 export default function ConductorDashboard() {
   const { profile } = useAuth();
@@ -107,60 +108,69 @@ export default function ConductorDashboard() {
         })}
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        {/* Solicitudes recientes */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-3">
-            <CardTitle className="font-heading text-base">Solicitudes Recientes</CardTitle>
-            <Link to="/conductor/requests" className="text-xs text-primary hover:underline flex items-center gap-1">
-              Ver todas <ArrowRight className="h-3 w-3" />
-            </Link>
-          </CardHeader>
-          <CardContent>
-            {recentRequests.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-4 text-center">No hay solicitudes aún.</p>
-            ) : (
-              <div className="space-y-2">
-                {recentRequests.map((req: any) => (
-                  <div key={req.id} onClick={() => navigate("/conductor/requests", { state: { openRequestId: req.id } })} className="flex items-center justify-between rounded-lg border p-3 hover:bg-muted/50 transition-colors cursor-pointer">
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium">{req.request_types?.name}</p>
-                      <p className="text-xs text-muted-foreground">{new Date(req.created_at).toLocaleDateString("es-CL")}</p>
+      <div className="grid gap-6 lg:grid-cols-2 items-start">
+        {/* Columna Izquierda */}
+        <div className="space-y-6">
+          {/* Solicitudes recientes */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-3">
+              <CardTitle className="font-heading text-base">Solicitudes Recientes</CardTitle>
+              <Link to="/conductor/requests" className="text-xs text-primary hover:underline flex items-center gap-1">
+                Ver todas <ArrowRight className="h-3 w-3" />
+              </Link>
+            </CardHeader>
+            <CardContent>
+              {recentRequests.length === 0 ? (
+                <p className="text-sm text-muted-foreground py-4 text-center">No hay solicitudes aún.</p>
+              ) : (
+                <div className="space-y-2">
+                  {recentRequests.map((req: any) => (
+                    <div key={req.id} onClick={() => navigate("/conductor/requests", { state: { openRequestId: req.id } })} className="flex items-center justify-between rounded-lg border p-3 hover:bg-muted/50 transition-colors cursor-pointer">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium">{req.request_types?.name}</p>
+                        <p className="text-xs text-muted-foreground">{new Date(req.created_at).toLocaleDateString("es-CL")}</p>
+                      </div>
+                      <StatusBadge status={req.status} />
                     </div>
-                    <StatusBadge status={req.status} />
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
-        {/* Últimos mensajes */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-3">
-            <CardTitle className="font-heading text-base">Últimos Mensajes</CardTitle>
-            <Link to="/conductor/messages" className="text-xs text-primary hover:underline flex items-center gap-1">
-              Ver todos <ArrowRight className="h-3 w-3" />
-            </Link>
-          </CardHeader>
-          <CardContent>
-            {recentMessages.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-4 text-center">No hay mensajes.</p>
-            ) : (
-              <div className="space-y-2">
-                {recentMessages.map((msg: any) => (
-                  <div key={msg.id} onClick={() => navigate("/conductor/messages", { state: { openMessageId: msg.id } })} className="flex items-start justify-between gap-3 rounded-lg border p-3 hover:bg-muted/50 transition-colors cursor-pointer">
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs text-muted-foreground">De: {msg.sender?.full_name || "Admin"}</p>
-                      <p className="text-sm mt-0.5 line-clamp-2 break-all">{msg.content}</p>
+          {/* Registro de Vacaciones y Postergación de Arriendo (Cuadro Rojo de la Imagen) */}
+          <ConductorVacationsCard />
+        </div>
+
+        {/* Columna Derecha */}
+        <div className="space-y-6">
+          {/* Últimos mensajes */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-3">
+              <CardTitle className="font-heading text-base">Últimos Mensajes</CardTitle>
+              <Link to="/conductor/messages" className="text-xs text-primary hover:underline flex items-center gap-1">
+                Ver todos <ArrowRight className="h-3 w-3" />
+              </Link>
+            </CardHeader>
+            <CardContent>
+              {recentMessages.length === 0 ? (
+                <p className="text-sm text-muted-foreground py-4 text-center">No hay mensajes.</p>
+              ) : (
+                <div className="space-y-2">
+                  {recentMessages.map((msg: any) => (
+                    <div key={msg.id} onClick={() => navigate("/conductor/messages", { state: { openMessageId: msg.id } })} className="flex items-start justify-between gap-3 rounded-lg border p-3 hover:bg-muted/50 transition-colors cursor-pointer">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs text-muted-foreground">De: {msg.sender?.full_name || "Admin"}</p>
+                        <p className="text-sm mt-0.5 line-clamp-2 break-all">{msg.content}</p>
+                      </div>
+                      <StatusBadge status={msg.status === "enviado" ? "pendiente" : "visto"} />
                     </div>
-                    <StatusBadge status={msg.status === "enviado" ? "pendiente" : "visto"} />
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );
