@@ -61,10 +61,23 @@ export async function fetchAdminVehiclesData() {
 }
 
 export async function createVehicle(payload: CreateVehiclePayload) {
+  const normalizedPlate = payload.licensePlate.trim().toUpperCase();
+
+  const { data: existing, error: existingError } = await supabase
+    .from("vehicles")
+    .select("id")
+    .eq("license_plate", normalizedPlate)
+    .maybeSingle();
+
+  assertNoError(existingError);
+  if (existing) {
+    throw new Error("Patente existente");
+  }
+
   const { data, error } = await supabase
     .from("vehicles")
     .insert({
-      license_plate: payload.licensePlate.trim().toUpperCase(),
+      license_plate: normalizedPlate,
       make: payload.make.trim(),
       model: payload.model.trim(),
       year: payload.year,
@@ -72,6 +85,10 @@ export async function createVehicle(payload: CreateVehiclePayload) {
     })
     .select("id")
     .single();
+
+  if (error?.code === "23505") {
+    throw new Error("Patente existente");
+  }
 
   assertNoError(error);
   const createdId = Array.isArray(data) ? (data[0] as { id: string } | undefined)?.id : (data as { id: string } | undefined)?.id;

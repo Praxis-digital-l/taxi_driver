@@ -75,28 +75,16 @@ export default function NominaResult({ resultado }: NominaResultProps) {
     }
   };
 
-  const handleEnviarCorreo = async () => {
-    setDescargando(true);
-    try {
-      const blob = await generarPDF();
-      if (!blob) return;
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `liquidacion-${resultado.trabajadorId}-${now.toISOString().slice(0, 10)}.pdf`;
-      a.click();
-      URL.revokeObjectURL(url);
-
-      const asunto = encodeURIComponent(`Liquidación ${resultado.nombre} - ${mes}`);
-      const cuerpo = encodeURIComponent(
-        `Estimado/a,\n\nAdjunto la liquidación de ${resultado.nombre} (${resultado.trabajadorId}) correspondiente al mes de ${mes}.\n\nSaludos,\nTransportes El Montañez`
-      );
-      window.open(`https://mail.google.com/mail/?view=cm&fs=1&to=&su=${asunto}&body=${cuerpo}`, "_blank");
-    } catch {
-      // Silencioso
-    } finally {
-      setDescargando(false);
-    }
+  const handleEnviarCorreo = () => {
+    const asunto = encodeURIComponent(`Liquidación ${resultado.nombre} - ${mes}`);
+    const destinatario = encodeURIComponent(resultado.email);
+    const cuerpo = encodeURIComponent(
+      `Estimado/a,\n\nAdjunto la liquidación de ${resultado.nombre} (${resultado.trabajadorId}) correspondiente al mes de ${mes}.\n\nSaludos,\nTransportes El Montañez`
+    );
+    window.open(
+      `https://mail.google.com/mail/?view=cm&fs=1&to=${destinatario}&su=${asunto}&body=${cuerpo}`,
+      "_blank"
+    );
   };
 
   const handleEnviarLiquidacion = async () => {
