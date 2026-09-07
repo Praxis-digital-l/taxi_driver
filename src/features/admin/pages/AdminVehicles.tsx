@@ -246,7 +246,7 @@ export default function AdminVehicles() {
               <div className="grid grid-cols-1 min-[400px]:grid-cols-2 gap-3">
                 <div className="space-y-2">
                   <Label>Año</Label>
-                  <Input name="year" type="number" min={2000} max={2030} placeholder="2023" />
+                  <Input name="year" type="number" min={2000} max={2030} placeholder="2023" className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
                 </div>
                 <div className="space-y-2">
                   <Label>Color</Label>

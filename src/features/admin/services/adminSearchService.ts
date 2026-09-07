@@ -87,6 +87,26 @@ function assertNoError(error: { message: string } | null) {
   }
 }
 
+export async function fetchVehicleMileageByMonth(
+  vehicleId: string,
+  year: number,
+  month: number,
+): Promise<AdminSearchMileage[]> {
+  const isoStart = new Date(year, month - 1, 1).toISOString();
+  const isoEnd = new Date(year, month, 1).toISOString();
+
+  const { data, error } = await supabase
+    .from("mileage_records")
+    .select("id, kilometers, recorded_date, notes, profiles(full_name)")
+    .eq("vehicle_id", vehicleId)
+    .gte("recorded_date", isoStart)
+    .lt("recorded_date", isoEnd)
+    .order("recorded_date", { ascending: true });
+
+  assertNoError(error);
+  return (data ?? []) as AdminSearchMileage[];
+}
+
 export async function fetchVehiclePlateSuggestions(): Promise<VehicleSearchOption[]> {
   const { data, error } = await supabase
     .from("vehicles")

@@ -9,6 +9,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import StatusBadge from "@/components/StatusBadge";
 import PageHeader from "@/components/PageHeader";
@@ -27,6 +35,7 @@ import {
   Plus,
   AlertCircle,
   Download,
+  CalendarRange,
   Eye,
   CheckCircle2,
   PencilLine,
@@ -35,6 +44,7 @@ import {
   createAdminNote,
   deleteAdminNote,
   fetchAdminVehicleSearchByPlate,
+  fetchVehicleMileageByMonth,
   fetchVehicleNotes,
   fetchVehiclePlateSuggestions,
   sendMessageToConductor,
@@ -60,6 +70,11 @@ import {
   type InsuranceType,
 } from "@/features/admin/services/adminInsuranceService";
 import { downloadDocumentFile } from "@/shared/utils/storageFiles";
+import { flushSync } from "react-dom";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
+import MileageReceiptCard from "@/features/admin/components/MileageReceiptCard";
+import MileageMonthReportCard from "@/features/admin/components/MileageMonthReportCard";
 import DocumentPreviewDialog from "@/features/admin/components/DocumentPreviewDialog";
 
 export default function AdminSearch() {
@@ -94,6 +109,20 @@ export default function AdminSearch() {
   const [found, setFound] = useState(false);
 
   const initialSearchDone = useRef(false);
+
+  const [mileageToDownload, setMileageToDownload] = useState<AdminSearchMileage | null>(null);
+  const [mileageDownloading, setMileageDownloading] = useState(false);
+  const mileageReceiptRef = useRef<HTMLDivElement>(null);
+
+  const [monthDialogOpen, setMonthDialogOpen] = useState(false);
+  const [monthValue, setMonthValue] = useState<string>(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  });
+  const [monthGenerating, setMonthGenerating] = useState(false);
+  const [monthRecords, setMonthRecords] = useState<AdminSearchMileage[]>([]);
+  const [monthLabel, setMonthLabel] = useState("");
+  const monthReportRef = useRef<HTMLDivElement>(null);
 
   const [previewKey, setPreviewKey] = useState<string | null>(null);
   const [previewFileName, setPreviewFileName] = useState("");
@@ -285,6 +314,117 @@ export default function AdminSearch() {
   const getDefaultFileName = (fileKey: string) => {
     const segments = fileKey.split("/");
     return segments[segments.length - 1] || "archivo";
+  };
+
+  const handleDownloadMileage = async (record: AdminSearchMileage) => {
+    if (!vehicle || mileageDownloading) {
+      return;
+    }
+
+    setMileageToDownload(record);
+    setMileageDownloading(true);
+    try {
+      flushSync(() => setMileageToDownload(record));
+
+      if (!mileageReceiptRef.current) {
+        throw new Error("No se pudo generar el documento");
+      }
+
+      const canvas = await html2canvas(mileageReceiptRef.current, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: "#ffffff",
+      });
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF("p", "mm", "a4");
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+
+      const safePlate = (vehicle.license_plate ?? "vehiculo").replace(/[^a-zA-Z0-9-]/g, "_");
+      pdf.save(`kilometraje-${safePlate}-${record.recorded_date}.pdf`);
+
+      toast({
+        title: "Kilometraje descargado",
+        description: `${record.kilometers.toLocaleString("es-CL")} km solicitados exitosamente`,
+      });
+    } catch (error) {
+      toast({
+        title: "No se pudo descargar",
+        description: error instanceof Error ? error.message : "Error generando el documento",
+        variant: "destructive",
+      });
+    } finally {
+      setMileageToDownload(null);
+      setMileageDownloading(false);
+    }
+  };
+
+  const openMonthDownload = () => {
+    setMonthRecords([]);
+    setMonthDialogOpen(true);
+  };
+
+  const handleDownloadMonth = async () => {
+    if (!vehicle || !monthValue || monthGenerating) {
+      return;
+    }
+
+    const [yearStr, monthStr] = monthValue.split("-");
+    const year = Number(yearStr);
+    const month = Number(monthStr);
+    const label = new Intl.DateTimeFormat("es-CL", { month: "long", year: "numeric" }).format(new Date(year, month - 1, 1));
+    const capitalizedLabel = label.charAt(0).toUpperCase() + label.slice(1);
+
+    setMonthGenerating(true);
+    try {
+      const records = await fetchVehicleMileageByMonth(vehicle.id, year, month);
+
+      if (records.length === 0) {
+        toast({
+          title: "Sin registros",
+          description: `No hay kilometrajes para ${label}.`,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      flushSync(() => {
+        setMonthRecords(records);
+        setMonthLabel(capitalizedLabel);
+      });
+
+      if (!monthReportRef.current) {
+        throw new Error("No se pudo generar la imagen");
+      }
+
+      const canvas = await html2canvas(monthReportRef.current, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: "#ffffff",
+      });
+
+      const safePlate = (vehicle.license_plate ?? "vehiculo").replace(/[^a-zA-Z0-9-]/g, "_");
+      const link = document.createElement("a");
+      link.download = `kilometraje-${safePlate}-${year}-${String(month).padStart(2, "0")}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+
+      setMonthDialogOpen(false);
+      setMonthRecords([]);
+      toast({
+        title: "Informe descargado",
+        description: `${records.length} registros de kilometraje de ${capitalizedLabel}.`,
+      });
+    } catch (error) {
+      toast({
+        title: "No se pudo descargar",
+        description: error instanceof Error ? error.message : "Error generando la imagen",
+        variant: "destructive",
+      });
+    } finally {
+      setMonthGenerating(false);
+    }
   };
 
   const openPreview = (fileKey: string, documentType: string) => {
@@ -833,6 +973,15 @@ export default function AdminSearch() {
           </TabsContent>
 
           <TabsContent value="mileage" className="mt-4 space-y-2">
+            <div className="rounded-lg border bg-muted/20 p-3 mb-2 flex items-center justify-between gap-3 flex-wrap">
+              <div className="text-xs text-muted-foreground">
+                <p className="font-medium text-foreground">Registros de kilometraje ({mileage.length})</p>
+                <p>Descarga cada registro o todos los de un mes como imagen.</p>
+              </div>
+              <Button variant="outline" size="sm" className="h-8 text-xs shrink-0" onClick={openMonthDownload}>
+                <CalendarRange className="h-3.5 w-3.5 mr-1" />Descargar mes
+              </Button>
+            </div>
             {mileage.length === 0 ? (
               <p className="text-sm text-muted-foreground py-6 text-center">Sin registros de kilometraje.</p>
             ) : (
@@ -860,6 +1009,16 @@ export default function AdminSearch() {
                         <p className="text-xs text-muted-foreground">{record.profiles?.full_name} • {new Date(record.recorded_date).toLocaleDateString("es-CL")}</p>
                         {record.notes && <p className="text-xs text-muted-foreground break-all whitespace-pre-wrap">{record.notes}</p>}
                       </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 shrink-0"
+                        onClick={() => handleDownloadMileage(record)}
+                        disabled={mileageDownloading}
+                        title={`Descargar kilometraje (${record.kilometers.toLocaleString("es-CL")} km)`}
+                      >
+                        <Download className="h-4 w-4" />
+                      </Button>
                     </CardContent>
                   </Card>
                 );
@@ -918,6 +1077,53 @@ export default function AdminSearch() {
         fileName={previewFileName}
         documentType={previewDocumentType}
       />
+
+      <div className="pointer-events-none fixed -left-[9999px] top-0 z-[-1]">
+        {vehicle && mileageToDownload && (
+          <div ref={mileageReceiptRef} className="w-[620px] bg-white">
+            <MileageReceiptCard vehicle={vehicle} record={mileageToDownload} />
+          </div>
+        )}
+        {vehicle && monthRecords.length > 0 && (
+          <div ref={monthReportRef} className="w-[900px] bg-white">
+            <MileageMonthReportCard
+              vehicle={vehicle}
+              records={monthRecords}
+              year={Number(monthValue.split("-")[0])}
+              month={Number(monthValue.split("-")[1])}
+              monthLabel={monthLabel}
+            />
+          </div>
+        )}
+      </div>
+
+      <Dialog open={monthDialogOpen} onOpenChange={setMonthDialogOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="font-heading">Descargar kilometraje mensual</DialogTitle>
+            <DialogDescription>
+              Elige el mes y año para descargar una imagen con todos los registros de kilometraje del vehículo.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label className="text-xs">Mes y año</Label>
+            <Input
+              type="month"
+              value={monthValue}
+              max={`${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}`}
+              onChange={(event) => setMonthValue(event.target.value)}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setMonthDialogOpen(false)} disabled={monthGenerating}>
+              Cancelar
+            </Button>
+            <Button onClick={handleDownloadMonth} disabled={monthGenerating || !monthValue}>
+              {monthGenerating ? "Generando..." : "Descargar imagen"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
