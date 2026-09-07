@@ -7,7 +7,7 @@ import { BrandMark } from "@/components/ui/BrandMark";
 import ThemeSwitch from "@/components/ThemeSwitch";
 import {
   Truck, LayoutDashboard, FileText, ClipboardList, Gauge, MessageSquare,
-  Search, LogOut, Menu, X, ChevronRight, Users, Calculator, Upload, Wallet, Landmark
+  Search, LogOut, Menu, X, ChevronRight, Users, Calculator, Upload, Wallet, Landmark, ArrowLeftRight
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { logDevInteraction } from "@/shared/monitoring/devLogger";
@@ -23,6 +23,7 @@ const baseAdminLinks = [
   { to: "/admin/requests", icon: ClipboardList, label: "Solicitudes" },
   { to: "/admin/messages", icon: MessageSquare, label: "Mensajes" },
   { to: "/admin/bulk-upload", icon: Upload, label: "Carga Masiva" },
+  { to: "/admin/finanzas", icon: ArrowLeftRight, label: "Ingresos y Egresos" },
 ];
 
 const conductorLinks = [
