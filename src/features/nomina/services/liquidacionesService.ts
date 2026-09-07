@@ -147,3 +147,148 @@ export async function fetchLiquidacionesByProfile(profileId: string) {
   assertNoError(error);
   return ((data ?? []) as Record<string, unknown>[]).map(toRecord);
 }
+
+export async function fetchAllLiquidaciones(): Promise<LiquidacionRecord[]> {
+  try {
+    const { data, error } = await supabase
+      .from("liquidaciones")
+      .select(LIQUIDACION_COLUMNS)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.warn("Error consultando todas las liquidaciones:", error.message);
+      return [];
+    }
+
+    return ((data ?? []) as Record<string, unknown>[]).map(toRecord);
+  } catch (error) {
+    console.warn("Excepción al consultar liquidaciones:", error);
+    return [];
+  }
+}
+
+export async function deleteLiquidacion(id: string): Promise<void> {
+  const { error } = await supabase
+    .from("liquidaciones")
+    .delete()
+    .eq("id", id);
+
+  assertNoError(error);
+}
+
+export type FinancialSummary = {
+  // Egreso (Salida de dinero)
+  totalAPagar: number;
+
+  // Ingresos y Recuperaciones
+  totalFacturado: number;
+
+  // Recuperación de gastos (Diesel, Seguro, Mantención, Gasto operacional)
+  recuperacionGastos: {
+    diesel: number;
+    seguro: number;
+    mantencion: number;
+    gastoOperacional: number;
+    tag: number;
+    total: number;
+  };
+
+  // Recuperación de deudas (Anticipo, Préstamo)
+  recuperacionDeudas: {
+    anticipo: number;
+    prestamo: number;
+    total: number;
+  };
+
+  // Ingreso interno (Arriendo)
+  ingresoInterno: {
+    arriendo: number;
+    total: number;
+  };
+
+  // Totales
+  totalRecuperaciones: number; // Gastos + Deudas
+  totalIngresoMasRecuperaciones: number; // Facturado + Recuperaciones + Arriendo
+  cantidadLiquidaciones: number;
+};
+
+export function calcularResumenFinanciero(liquidaciones: LiquidacionRecord[]): FinancialSummary {
+  let totalFacturado = 0;
+  let totalAPagar = 0;
+
+  let diesel = 0;
+  let seguro = 0;
+  let mantencion = 0;
+  let gastoOperacional = 0;
+  let tag = 0;
+
+  let anticipo = 0;
+  let prestamo = 0;
+
+  let arriendo = 0;
+
+  for (const liq of liquidaciones) {
+    totalFacturado += liq.total_facturado || 0;
+    totalAPagar += liq.total_a_pagar || 0;
+
+    // Descuentos primarios
+    for (const d of liq.descuentos_primarios || []) {
+      const c = (d.concepto || "").toLowerCase();
+      const m = Number(d.monto) || 0;
+      if (c.includes("diesel")) {
+        diesel += m;
+      } else if (c.includes("seguro")) {
+        seguro += m;
+      } else if (c.includes("gasto operacional")) {
+        gastoOperacional += m;
+      } else if (c.includes("arriendo")) {
+        arriendo += m;
+      } else if (c.includes("tag")) {
+        tag += m;
+      }
+    }
+
+    // Descuentos secundarios
+    for (const d of liq.descuentos_secundarios || []) {
+      const c = (d.concepto || "").toLowerCase();
+      const m = Number(d.monto) || 0;
+      if (c.includes("mantenci")) {
+        mantencion += m;
+      } else if (c.includes("anticipo")) {
+        anticipo += m;
+      } else if (c.includes("prestamo") || c.includes("préstamo")) {
+        prestamo += m;
+      }
+    }
+  }
+
+  const totalGastos = diesel + seguro + mantencion + gastoOperacional + tag;
+  const totalDeudas = anticipo + prestamo;
+  const totalArriendo = arriendo;
+
+  return {
+    totalAPagar,
+    totalFacturado,
+    recuperacionGastos: {
+      diesel,
+      seguro,
+      mantencion,
+      gastoOperacional,
+      tag,
+      total: totalGastos,
+    },
+    recuperacionDeudas: {
+      anticipo,
+      prestamo,
+      total: totalDeudas,
+    },
+    ingresoInterno: {
+      arriendo,
+      total: totalArriendo,
+    },
+    totalRecuperaciones: totalGastos + totalDeudas,
+    totalIngresoMasRecuperaciones: totalFacturado,
+    cantidadLiquidaciones: liquidaciones.length,
+  };
+}
+
