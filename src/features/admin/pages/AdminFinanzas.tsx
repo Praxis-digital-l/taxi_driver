@@ -80,14 +80,10 @@ export default function AdminFinanzas() {
     loadData();
   }, []);
 
-  // Lista de meses únicos para el selector
-  const mesesDisponibles = useMemo(() => {
-    const set = new Set<string>();
-    for (const liq of liquidaciones) {
-      if (liq.mes) set.add(liq.mes);
-    }
-    return Array.from(set);
-  }, [liquidaciones]);
+  const mesesDisponibles = [
+    "enero", "febrero", "marzo", "abril", "mayo", "junio",
+    "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"
+  ];
 
   // Filtrado por mes y texto de búsqueda
   const liquidacionesFiltradas = useMemo(() => {

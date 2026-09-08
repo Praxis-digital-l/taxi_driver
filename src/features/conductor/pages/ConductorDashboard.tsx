@@ -8,6 +8,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { PhotoUploadCard } from "@/features/conductor/components/PhotoUploadCard";
 import { ConductorDelMesCard } from "@/components/ConductorDelMesCard";
 import ConductorVacationsCard from "@/features/conductor/components/ConductorVacationsCard";
+import { resolveRequestTypeName } from "@/lib/requestPriority";
 
 export default function ConductorDashboard() {
   const { profile } = useAuth();
@@ -18,7 +19,6 @@ export default function ConductorDashboard() {
     expiringDocs: 0,
   });
   const [recentRequests, setRecentRequests] = useState<any[]>([]);
-  const [recentMessages, setRecentMessages] = useState<any[]>([]);
   const [hasPending, setHasPending] = useState(false);
 
   useEffect(() => {
@@ -27,19 +27,17 @@ export default function ConductorDashboard() {
       const now = new Date();
       const thirtyDays = new Date(now.getTime() + 30 * 86400000).toISOString().slice(0, 10);
 
-      const [vRes, dRes, rRes, mRes, msgRes, expRes, msgListRes] = await Promise.all([
+      const [vRes, dRes, rRes, mRes, msgRes, expRes] = await Promise.all([
         supabase.from("vehicle_assignments").select("id", { count: "exact" }).eq("profile_id", profile.id),
         supabase.from("documents").select("id", { count: "exact" }).eq("profile_id", profile.id),
         supabase.from("requests").select("*, request_types(name)").eq("profile_id", profile.id).order("created_at", { ascending: false }).limit(5),
         supabase.from("mileage_records").select("kilometers").eq("profile_id", profile.id).order("recorded_date", { ascending: false }).order("created_at", { ascending: false }).limit(1),
-        supabase.from("messages").select("id", { count: "exact" }).eq("receiver_id", profile.id).eq("status", "pendiente"),
+        supabase.from("messages").select("id", { count: "exact" }).eq("receiver_id", profile.id).eq("status", "enviado").is("read_at", null),
         supabase.from("documents").select("id", { count: "exact" }).eq("profile_id", profile.id).lte("expiration_date", thirtyDays).gte("expiration_date", now.toISOString().slice(0, 10)),
-        supabase.from("messages").select("*, sender:profiles!messages_sender_id_fkey(full_name)").eq("receiver_id", profile.id).order("created_at", { ascending: false }).limit(3),
       ]);
 
       const pendingReqs = (rRes.data || []).filter((r: any) => r.status === "pendiente" || r.status === "en_proceso");
       setRecentRequests(rRes.data || []);
-      setRecentMessages(msgListRes.data || []);
       setHasPending(pendingReqs.length > 0 || (msgRes.count || 0) > 0 || (expRes.count || 0) > 0);
       setStats({
         vehicles: vRes.count || 0,
@@ -54,27 +52,40 @@ export default function ConductorDashboard() {
     load();
   }, [profile]);
 
+  const userName = profile?.full_name || [profile?.nombres, profile?.apellido_paterno].filter(Boolean).join(" ") || "Conductor";
+
   return (
     <div className="space-y-6">
+      {/* Saludo principal */}
+      <div className="flex flex-col gap-1">
+        <h2 className="text-2xl font-bold tracking-tight text-foreground font-heading">
+          Hola de nuevo, {userName}
+        </h2>
+        <p className="text-muted-foreground text-sm">
+          Este es el resumen de tu cuenta y estado operativo.
+        </p>
+      </div>
+
       {/* Alerta principal de tareas pendientes */}
       {hasPending && (
-        <div className="flex items-start gap-3 rounded-xl border border-warning/30 bg-warning/5 p-4">
+        <div className="flex items-start gap-3 rounded-xl border border-warning/30 bg-warning/5 p-4 shadow-sm">
           <AlertTriangle className="h-5 w-5 text-warning shrink-0 mt-0.5" />
           <div>
             <p className="text-sm font-semibold">Existen tareas pendientes</p>
             <p className="text-xs text-muted-foreground mt-1">
               {stats.pendingRequests > 0 && `${stats.pendingRequests} solicitud(es) sin cerrar. `}
-              {stats.pendingMessages > 0 && `${stats.pendingMessages} mensaje(s) pendiente(s). `}
+              {stats.pendingMessages > 0 && `${stats.pendingMessages} mensaje(s) no leídos. `}
               {stats.expiringDocs > 0 && `${stats.expiringDocs} documento(s) por vencer en 30 días.`}
             </p>
           </div>
         </div>
       )}
 
-      <div className="grid gap-4 lg:grid-cols-3">
-        <PhotoUploadCard />
+      {/* Fila superior: Perfil de conductor + Conductor del Mes */}
+      <div className="grid gap-4 lg:grid-cols-3 items-stretch">
+        <PhotoUploadCard className="h-full" />
         <div className="lg:col-span-2">
-          <ConductorDelMesCard />
+          <ConductorDelMesCard className="h-full" />
         </div>
       </div>
 
@@ -108,27 +119,34 @@ export default function ConductorDashboard() {
         })}
       </div>
 
+      {/* Reorganización: Columna izquierda (Solicitudes Recientes) y Columna derecha (Registro de Vacaciones) */}
       <div className="grid gap-6 lg:grid-cols-2 items-start">
-        {/* Columna Izquierda */}
+        {/* Columna Izquierda: Solicitudes recientes */}
         <div className="space-y-6">
-          {/* Solicitudes recientes */}
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-3">
-              <CardTitle className="font-heading text-base">Solicitudes Recientes</CardTitle>
-              <Link to="/conductor/requests" className="text-xs text-primary hover:underline flex items-center gap-1">
+          <Card className="border shadow-sm">
+            <CardHeader className="flex flex-row items-center justify-between pb-3 bg-muted/20 border-b">
+              <div className="flex items-center gap-2">
+                <ClipboardList className="h-4 w-4 text-primary" />
+                <CardTitle className="font-heading text-base">Solicitudes Recientes</CardTitle>
+              </div>
+              <Link to="/conductor/requests" className="text-xs text-primary hover:underline flex items-center gap-1 font-medium">
                 Ver todas <ArrowRight className="h-3 w-3" />
               </Link>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-4 sm:p-5">
               {recentRequests.length === 0 ? (
-                <p className="text-sm text-muted-foreground py-4 text-center">No hay solicitudes aún.</p>
+                <p className="text-sm text-muted-foreground py-6 text-center">No hay solicitudes aún.</p>
               ) : (
-                <div className="space-y-2">
+                <div className="space-y-2.5">
                   {recentRequests.map((req: any) => (
-                    <div key={req.id} onClick={() => navigate("/conductor/requests", { state: { openRequestId: req.id } })} className="flex items-center justify-between rounded-lg border p-3 hover:bg-muted/50 transition-colors cursor-pointer">
+                    <div
+                      key={req.id}
+                      onClick={() => navigate("/conductor/requests", { state: { openRequestId: req.id } })}
+                      className="flex items-center justify-between gap-3 rounded-lg border p-3 hover:bg-muted/50 transition-colors cursor-pointer"
+                    >
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium">{req.request_types?.name}</p>
-                        <p className="text-xs text-muted-foreground">{new Date(req.created_at).toLocaleDateString("es-CL")}</p>
+                        <p className="text-sm font-medium text-foreground">{resolveRequestTypeName(req)}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">{new Date(req.created_at).toLocaleDateString("es-CL")}</p>
                       </div>
                       <StatusBadge status={req.status} />
                     </div>
@@ -137,39 +155,11 @@ export default function ConductorDashboard() {
               )}
             </CardContent>
           </Card>
-
-          {/* Registro de Vacaciones y Postergación de Arriendo (Cuadro Rojo de la Imagen) */}
-          <ConductorVacationsCard />
         </div>
 
-        {/* Columna Derecha */}
+        {/* Columna Derecha: Registro de Vacaciones (reemplaza Últimos Mensajes) */}
         <div className="space-y-6">
-          {/* Últimos mensajes */}
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-3">
-              <CardTitle className="font-heading text-base">Últimos Mensajes</CardTitle>
-              <Link to="/conductor/messages" className="text-xs text-primary hover:underline flex items-center gap-1">
-                Ver todos <ArrowRight className="h-3 w-3" />
-              </Link>
-            </CardHeader>
-            <CardContent>
-              {recentMessages.length === 0 ? (
-                <p className="text-sm text-muted-foreground py-4 text-center">No hay mensajes.</p>
-              ) : (
-                <div className="space-y-2">
-                  {recentMessages.map((msg: any) => (
-                    <div key={msg.id} onClick={() => navigate("/conductor/messages", { state: { openMessageId: msg.id } })} className="flex items-start justify-between gap-3 rounded-lg border p-3 hover:bg-muted/50 transition-colors cursor-pointer">
-                      <div className="min-w-0 flex-1">
-                        <p className="text-xs text-muted-foreground">De: {msg.sender?.full_name || "Admin"}</p>
-                        <p className="text-sm mt-0.5 line-clamp-2 break-all">{msg.content}</p>
-                      </div>
-                      <StatusBadge status={msg.status === "enviado" ? "pendiente" : "visto"} />
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          <ConductorVacationsCard />
         </div>
       </div>
     </div>

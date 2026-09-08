@@ -7,7 +7,7 @@ import { BrandMark } from "@/components/ui/BrandMark";
 import ThemeSwitch from "@/components/ThemeSwitch";
 import {
   Truck, LayoutDashboard, FileText, ClipboardList, Gauge, MessageSquare,
-  Search, LogOut, Menu, X, ChevronRight, Users, Calculator, Upload, Wallet, Landmark, ArrowLeftRight
+  LogOut, Menu, X, ChevronRight, Users, Calculator, Upload, Wallet, Landmark, ArrowLeftRight, Clock
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { logDevInteraction } from "@/shared/monitoring/devLogger";
@@ -15,7 +15,6 @@ import { logDevInteraction } from "@/shared/monitoring/devLogger";
 const baseAdminLinks = [
   { to: "/admin", icon: LayoutDashboard, label: "Dashboard" },
   { to: "/admin/banco", icon: Landmark, label: "Banco" },
-  { to: "/admin/search", icon: Search, label: "Buscar Patente" },
   { to: "/admin/documents", icon: FileText, label: "Documentos" },
   { to: "/admin/conductores", icon: Users, label: "Conductores" },
   { to: "/admin/nomina", icon: Calculator, label: "Nómina" },
@@ -23,6 +22,7 @@ const baseAdminLinks = [
   { to: "/admin/requests", icon: ClipboardList, label: "Solicitudes" },
   { to: "/admin/messages", icon: MessageSquare, label: "Mensajes" },
   { to: "/admin/bulk-upload", icon: Upload, label: "Carga Masiva" },
+  { to: "/admin/pendientes", icon: Clock, label: "Pendientes" },
   { to: "/admin/finanzas", icon: ArrowLeftRight, label: "Ingresos y Egresos" },
 ];
 
@@ -113,13 +113,17 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 
         <div className="border-t border-sidebar-border p-3 space-y-2">
           <div className="flex items-center gap-3 rounded-lg px-3 py-2">
-            <ConductorAvatar fullName={profile?.full_name} photoUrl={profile?.photo_url} className="h-9 w-9" />
+            <ConductorAvatar fullName={profile?.full_name || profile?.nombres} photoUrl={profile?.photo_url} className="h-9 w-9" />
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">{profile?.full_name || "Usuario"}</p>
+              <p className="text-sm font-medium truncate">
+                {profile?.full_name || [profile?.nombres, profile?.apellido_paterno].filter(Boolean).join(" ") || "Usuario"}
+              </p>
               <p className="font-data text-[9px] uppercase tracking-[0.2em] text-sidebar-foreground/50">
-                {profile?.role === "admin"
-                  ? "En turno"
-                  : "Conductor"}
+                {profile?.role === "super_admin" 
+                  ? "Super Admin" 
+                  : profile?.role === "admin" 
+                    ? "Admin" 
+                    : "Conductor"}
               </p>
             </div>
             <span

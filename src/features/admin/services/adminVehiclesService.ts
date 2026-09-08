@@ -140,3 +140,12 @@ export async function deleteVehicleById(vehicleId: string) {
 
   assertNoError(firstAttempt.error);
 }
+
+export async function updateVehicleStatus(vehicleId: string, status: "active" | "inactive" | "maintenance") {
+  const { error } = await supabase
+    .from("vehicles")
+    .update({ status })
+    .eq("id", vehicleId);
+
+  assertNoError(error);
+}

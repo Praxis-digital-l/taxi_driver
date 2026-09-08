@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
+import VehicleDetailView from "@/features/vehicles/components/VehicleDetailView";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,6 +28,7 @@ import {
   deleteVehicleById,
   fetchAdminVehiclesData,
   removeVehicleAssignment,
+  updateVehicleStatus,
   type ConductorRecord,
   type VehicleAssignmentRecord,
   type VehicleRecord,
@@ -43,6 +45,10 @@ export default function AdminVehicles() {
   const [selectedVehicle, setSelectedVehicle] = useState<VehicleRecord | null>(null);
   const [loading, setLoading] = useState(false);
   const [filter, setFilter] = useState("all");
+
+  const [searchParams, setSearchParams] = useSearchParams();
+  const selectedPlate = searchParams.get("plate");
+  const selectedTab = searchParams.get("tab") || "info";
 
   const load = useCallback(async () => {
     try {
@@ -196,6 +202,21 @@ export default function AdminVehicles() {
     return "bg-muted text-muted-foreground";
   };
 
+  if (selectedPlate) {
+    return (
+      <VehicleDetailView
+        plate={selectedPlate}
+        initialTab={selectedTab}
+        onBack={() => {
+          const next = new URLSearchParams(searchParams);
+          next.delete("plate");
+          next.delete("tab");
+          setSearchParams(next);
+        }}
+      />
+    );
+  }
+
   return (
     <div>
       <PageHeader title="Gestión de Vehículos" description={`${vehicles.length} vehículos en flota`}>
@@ -273,9 +294,14 @@ export default function AdminVehicles() {
 
           return (
             <Card key={vehicle.id} className="stat-card overflow-hidden">
-              <Link
-                to={`/admin/search?plate=${vehicle.license_plate}`}
-                className="bg-muted/50 border-b px-5 py-3 flex items-center justify-between gap-2 hover:bg-muted/70 transition-colors"
+              <button
+                type="button"
+                onClick={() => {
+                  const next = new URLSearchParams(searchParams);
+                  next.set("plate", vehicle.license_plate);
+                  setSearchParams(next);
+                }}
+                className="w-full text-left bg-muted/50 border-b px-5 py-3 flex items-center justify-between gap-2 hover:bg-muted/70 transition-colors cursor-pointer"
               >
                 <div className="flex items-center gap-3 min-w-0">
                   <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
@@ -289,7 +315,7 @@ export default function AdminVehicles() {
                 <Badge variant="outline" className={`text-[10px] ${statusColor(vehicle.status)}`}>
                   {vehicle.status === "active" ? "Activo" : vehicle.status === "maintenance" ? "Mantención" : "Inactivo"}
                 </Badge>
-              </Link>
+              </button>
 
               <CardContent className="p-4 space-y-3">
                 <div>
@@ -315,6 +341,38 @@ export default function AdminVehicles() {
                       ))}
                     </div>
                   )}
+                </div>
+
+                <div className="flex items-center justify-between gap-2 pt-2 border-t">
+                  <span className="text-xs text-muted-foreground font-medium">Estado:</span>
+                  <Select
+                    value={vehicle.status || "active"}
+                    onValueChange={async (newStatus: "active" | "inactive" | "maintenance") => {
+                      try {
+                        await updateVehicleStatus(vehicle.id, newStatus);
+                        setVehicles((prev) =>
+                          prev.map((v) => (v.id === vehicle.id ? { ...v, status: newStatus } : v))
+                        );
+                        toast({
+                          title: "Estado actualizado",
+                          description: `${vehicle.license_plate} ahora está ${
+                            newStatus === "active" ? "Activo" : newStatus === "inactive" ? "Inactivo" : "En mantención"
+                          }`,
+                        });
+                      } catch (error: any) {
+                        toast({ title: "Error al actualizar estado", description: error.message, variant: "destructive" });
+                      }
+                    }}
+                  >
+                    <SelectTrigger className="h-7 text-xs w-[125px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="active">Activo</SelectItem>
+                      <SelectItem value="inactive">Inactivo</SelectItem>
+                      <SelectItem value="maintenance">Mantención</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div className="grid grid-cols-2 gap-2">

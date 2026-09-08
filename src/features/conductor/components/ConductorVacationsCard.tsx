@@ -93,7 +93,12 @@ export default function ConductorVacationsCard({ className = "" }: ConductorVaca
     loadData();
   }, [profile]);
 
-  // Vacaciones activas o programadas vigentes
+  // Solicitud pendiente de aprobación por el admin
+  const pendingVacation = useMemo(() => {
+    return vacations.find((v) => v.status === "pendiente");
+  }, [vacations]);
+
+  // Vacaciones activas o programadas vigentes (aprobadas)
   const activeVacation = useMemo(() => {
     const today = new Date().toISOString().slice(0, 10);
     return vacations.find(
@@ -107,10 +112,24 @@ export default function ConductorVacationsCard({ className = "" }: ConductorVaca
     return differenceInCalendarDays(dateRange.to, dateRange.from) + 1;
   }, [dateRange]);
 
-  // Total de días tomados o solicitados
+  // Validar si las fechas seleccionadas colisionan con vacaciones existentes
+  const isOverlapping = useMemo(() => {
+    if (!dateRange?.from || !dateRange?.to) return false;
+    const fromStr = format(dateRange.from, "yyyy-MM-dd");
+    const toStr = format(dateRange.to, "yyyy-MM-dd");
+    return vacations.some(
+      (v) =>
+        v.status !== "cancelada" &&
+        v.status !== "rechazado" &&
+        fromStr <= v.end_date &&
+        toStr >= v.start_date,
+    );
+  }, [dateRange, vacations]);
+
+  // Total de días aprobados o tomados
   const totalDaysRegistered = useMemo(() => {
     return vacations
-      .filter((v) => v.status !== "cancelada")
+      .filter((v) => v.status === "programada" || v.status === "en_curso" || v.status === "finalizada")
       .reduce((acc, curr) => acc + (curr.days_count || 0), 0);
   }, [vacations]);
 
@@ -136,13 +155,13 @@ export default function ConductorVacationsCard({ className = "" }: ConductorVaca
       setActiveTab("historial");
 
       toast({
-        title: "Vacaciones registradas con éxito",
-        description: `Postergación de pago activada del ${format(dateRange.from, "dd/MM/yyyy")} al ${format(dateRange.to, "dd/MM/yyyy")}. Recargo del 10% al retorno.`,
+        title: "Solicitud enviada a la administración",
+        description: `Tu solicitud del ${format(dateRange.from, "dd/MM/yyyy")} al ${format(dateRange.to, "dd/MM/yyyy")} quedó en revisión por el Administrador.`,
       });
     } catch (error) {
       toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "No se pudieron registrar las vacaciones",
+        title: "No se pudo enviar la solicitud",
+        description: error instanceof Error ? error.message : "Ocurrió un error al registrar las vacaciones",
         variant: "destructive",
       });
     } finally {
@@ -158,8 +177,8 @@ export default function ConductorVacationsCard({ className = "" }: ConductorVaca
       setVacationToCancel(null);
       await loadData();
       toast({
-        title: "Vacaciones canceladas",
-        description: "Se anuló el período y la postergación de pago asociada.",
+        title: "Solicitud cancelada",
+        description: "Se anuló el período y no se aplicará ninguna postergación de pago.",
       });
     } catch (error) {
       toast({
@@ -194,19 +213,34 @@ export default function ConductorVacationsCard({ className = "" }: ConductorVaca
 
   const renderStatusBadge = (status: ConductorVacation["status"]) => {
     switch (status) {
+      case "pendiente":
+        return (
+          <Badge
+            variant="outline"
+            className="border-amber-500/40 text-amber-600 dark:text-amber-400 bg-amber-500/10 gap-1 text-[11px] font-semibold"
+          >
+            <Clock className="h-3 w-3" /> En revisión (Admin)
+          </Badge>
+        );
       case "en_curso":
         return (
-          <Badge className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1 text-[11px] shadow-sm">
-            <Clock className="h-3 w-3" /> En curso
+          <Badge className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1 text-[11px] shadow-sm font-semibold">
+            <CheckCircle2 className="h-3 w-3" /> En curso
           </Badge>
         );
       case "programada":
         return (
           <Badge
             variant="outline"
-            className="border-blue-500/40 text-blue-600 dark:text-blue-400 bg-blue-500/10 gap-1 text-[11px]"
+            className="border-blue-500/40 text-blue-600 dark:text-blue-400 bg-blue-500/10 gap-1 text-[11px] font-semibold"
           >
-            <CalendarRange className="h-3 w-3" /> Programada
+            <CalendarRange className="h-3 w-3" /> Aprobada
+          </Badge>
+        );
+      case "rechazado":
+        return (
+          <Badge variant="destructive" className="gap-1 text-[11px] font-semibold">
+            <XCircle className="h-3 w-3" /> Rechazada
           </Badge>
         );
       case "finalizada":
@@ -217,7 +251,7 @@ export default function ConductorVacationsCard({ className = "" }: ConductorVaca
         );
       case "cancelada":
         return (
-          <Badge variant="destructive" className="gap-1 text-[11px] opacity-90">
+          <Badge variant="secondary" className="gap-1 text-[11px] opacity-75">
             <XCircle className="h-3 w-3" /> Cancelada
           </Badge>
         );
@@ -289,175 +323,253 @@ export default function ConductorVacationsCard({ className = "" }: ConductorVaca
 
           {/* ===================== TAB 1: REGISTRAR VACACIONES ===================== */}
           <TabsContent value="solicitar" className="mt-0 space-y-4">
-            {/* Si ya hay vacaciones vigentes o programadas, mostrar aviso destacado */}
-            {activeVacation && (
-              <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 space-y-3">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="h-5 w-5 text-primary shrink-0" />
-                    <div>
-                      <h4 className="font-semibold text-sm">
-                        {activeVacation.status === "en_curso"
-                          ? "¡Estás en período de vacaciones!"
-                          : "Tienes Vacaciones Programadas"}
-                      </h4>
-                      <p className="text-xs text-muted-foreground">
-                        Período: {formatSafeDate(activeVacation.start_date)} al {formatSafeDate(activeVacation.end_date)} ({activeVacation.days_count} días)
-                      </p>
-                    </div>
+            {/* Si ya hay una solicitud en revisión por el Admin, BLOQUEAR y avisar */}
+            {pendingVacation ? (
+              <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-5 space-y-4">
+                <div className="flex items-start gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/20 text-amber-600 dark:text-amber-400 shrink-0">
+                    <Clock className="h-5 w-5" />
                   </div>
-                  {renderStatusBadge(activeVacation.status)}
+                  <div className="space-y-1 flex-1">
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <h4 className="font-semibold text-sm text-foreground">
+                        Solicitud de Vacaciones en Revisión
+                      </h4>
+                      <Badge variant="outline" className="border-amber-500/40 text-amber-700 dark:text-amber-300 bg-amber-500/20 text-xs font-semibold">
+                        Pendiente de Aprobación
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      Ya has enviado una solicitud que está siendo evaluada por el Administrador. Solo se permite solicitar un período a la vez.
+                    </p>
+                  </div>
                 </div>
 
-                {/* Aviso informativo de la postergación y recargo */}
-                <div className="rounded-lg bg-background/80 border p-3 text-xs space-y-1 text-muted-foreground">
-                  <p className="font-semibold text-foreground flex items-center gap-1.5">
-                    <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
-                    Condición de Postergación Activa:
-                  </p>
-                  <p>
-                    Durante este período, el pago de arriendo de tu vehículo asignado se encuentra{" "}
-                    <span className="font-medium text-foreground">postergado</span>.
-                  </p>
-                  <p className="text-amber-600 dark:text-amber-400 font-medium">
-                    Al regresar de tus vacaciones, se reactivará el cobro con el recargo del 10% acordado.
-                  </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs bg-card/80 rounded-lg p-3 border">
+                  <div>
+                    <span className="text-[11px] text-muted-foreground">Período Solicitado:</span>
+                    <p className="font-bold text-foreground mt-0.5">
+                      {formatSafeDate(pendingVacation.start_date)} al {formatSafeDate(pendingVacation.end_date)}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-[11px] text-muted-foreground">Duración y Condición:</span>
+                    <p className="font-bold text-foreground mt-0.5">
+                      {pendingVacation.days_count} día{pendingVacation.days_count > 1 ? "s" : ""} · Recargo 10% al retorno
+                    </p>
+                  </div>
                 </div>
 
-                <div className="flex items-center justify-between pt-1 flex-wrap gap-2">
+                <div className="flex items-center justify-between pt-1 gap-2 flex-wrap">
                   <Button
                     variant="link"
                     size="sm"
                     className="text-xs p-0 h-auto text-primary gap-1"
                     onClick={() => setActiveTab("historial")}
                   >
-                    <History className="h-3.5 w-3.5" /> Ver en historial completo
+                    <History className="h-3.5 w-3.5" /> Ver en tu historial de vacaciones
                   </Button>
 
-                  {activeVacation.status === "programada" && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="text-xs text-destructive hover:text-destructive gap-1.5 h-8"
-                      onClick={() => setVacationToCancel(activeVacation.id)}
-                    >
-                      <XCircle className="h-3.5 w-3.5" />
-                      Cancelar Vacaciones Programadas
-                    </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-xs text-destructive hover:text-destructive gap-1.5 h-8"
+                    onClick={() => setVacationToCancel(pendingVacation.id)}
+                  >
+                    <XCircle className="h-3.5 w-3.5" /> Cancelar Solicitud Pendiente
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <>
+                {/* Si ya hay vacaciones vigentes o programadas aprobadas, mostrar aviso destacado */}
+                {activeVacation && (
+                  <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 space-y-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <CheckCircle2 className="h-5 w-5 text-primary shrink-0" />
+                        <div>
+                          <h4 className="font-semibold text-sm">
+                            {activeVacation.status === "en_curso"
+                              ? "¡Estás en período de vacaciones!"
+                              : "Tienes Vacaciones Programadas"}
+                          </h4>
+                          <p className="text-xs text-muted-foreground">
+                            Período: {formatSafeDate(activeVacation.start_date)} al {formatSafeDate(activeVacation.end_date)} ({activeVacation.days_count} días)
+                          </p>
+                        </div>
+                      </div>
+                      {renderStatusBadge(activeVacation.status)}
+                    </div>
+
+                    {/* Aviso informativo de la postergación y recargo */}
+                    <div className="rounded-lg bg-background/80 border p-3 text-xs space-y-1 text-muted-foreground">
+                      <p className="font-semibold text-foreground flex items-center gap-1.5">
+                        <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
+                        Condición de Postergación Activa:
+                      </p>
+                      <p>
+                        Durante este período, el pago de arriendo de tu vehículo asignado se encuentra{" "}
+                        <span className="font-medium text-foreground">postergado</span>.
+                      </p>
+                      <p className="text-amber-600 dark:text-amber-400 font-medium">
+                        Al regresar de tus vacaciones, se reactivará el cobro con el recargo del 10% acordado.
+                      </p>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-1 flex-wrap gap-2">
+                      <Button
+                        variant="link"
+                        size="sm"
+                        className="text-xs p-0 h-auto text-primary gap-1"
+                        onClick={() => setActiveTab("historial")}
+                      >
+                        <History className="h-3.5 w-3.5" /> Ver en historial completo
+                      </Button>
+
+                      {activeVacation.status === "programada" && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-xs text-destructive hover:text-destructive gap-1.5 h-8"
+                          onClick={() => setVacationToCancel(activeVacation.id)}
+                        >
+                          <XCircle className="h-3.5 w-3.5" />
+                          Cancelar Vacaciones Programadas
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Formulario con Calendario para seleccionar salida y regreso */}
+                <div className="space-y-4">
+                  {activeVacation && (
+                    <div className="flex items-center gap-2 pt-1">
+                      <Separator className="flex-1" />
+                      <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
+                        Solicitar Nuevo Período
+                      </span>
+                      <Separator className="flex-1" />
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-1 md:grid-cols-12 gap-5 items-start">
+                    {/* Calendario react-day-picker modo range */}
+                    <div className="md:col-span-6 flex flex-col items-center justify-center p-1 rounded-xl border bg-muted/10">
+                      <Calendar
+                        mode="range"
+                        selected={dateRange}
+                        onSelect={setDateRange}
+                        disabled={{ before: startOfToday() }}
+                        locale={es}
+                        className="rounded-md"
+                      />
+                      <p className="text-[11px] text-muted-foreground mt-1 mb-2 font-mono text-center">
+                        💡 Haz clic en la fecha de salida y luego en la fecha de regreso
+                      </p>
+                    </div>
+
+                    {/* Resumen de selección y confirmación */}
+                    <div className="md:col-span-6 space-y-3.5">
+                      <div className="rounded-xl border bg-muted/20 p-3.5 space-y-2.5">
+                        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                          Resumen de Fechas
+                        </p>
+
+                        <div className="grid grid-cols-2 gap-2 text-xs">
+                          <div className="rounded-lg border bg-background p-2.5">
+                            <p className="text-[11px] text-muted-foreground flex items-center gap-1">
+                              🛫 Fecha de Salida
+                            </p>
+                            <p className="font-bold text-sm mt-0.5">
+                              {dateRange?.from ? format(dateRange.from, "dd/MM/yyyy") : "—"}
+                            </p>
+                          </div>
+
+                          <div className="rounded-lg border bg-background p-2.5">
+                            <p className="text-[11px] text-muted-foreground flex items-center gap-1">
+                              🛬 Fecha de Regreso
+                            </p>
+                            <p className="font-bold text-sm mt-0.5">
+                              {dateRange?.to ? format(dateRange.to, "dd/MM/yyyy") : "—"}
+                            </p>
+                          </div>
+                        </div>
+
+                        {daysCount > 0 && (
+                          <div className="flex items-center justify-between text-xs pt-1 px-1">
+                            <span className="text-muted-foreground">Duración total:</span>
+                            <span className="font-bold font-mono bg-primary/10 text-primary px-2 py-0.5 rounded">
+                              {daysCount} día{daysCount > 1 ? "s" : ""}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Alerta de superposición */}
+                      {isOverlapping && (
+                        <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive space-y-1">
+                          <p className="font-bold flex items-center gap-1.5">
+                            <AlertTriangle className="h-4 w-4" /> Fechas no disponibles
+                          </p>
+                          <p className="text-[11px] leading-relaxed">
+                            Las fechas seleccionadas coinciden o se superponen con unas vacaciones ya aprobadas o en revisión. Por favor elige otro período.
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Cuadro de advertencia obligatorio del recargo */}
+                      <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-3.5 text-xs text-amber-900 dark:text-amber-200 space-y-1.5">
+                        <div className="flex items-center gap-1.5 font-bold text-amber-700 dark:text-amber-300">
+                          <AlertTriangle className="h-4 w-4 shrink-0" />
+                          Condiciones de la Solicitud
+                        </div>
+                        <p className="leading-relaxed text-[11px]">
+                          Tu solicitud será enviada al <strong>Administrador</strong> para su aprobación.
+                        </p>
+                        <p className="leading-relaxed text-[11px] font-semibold text-amber-800 dark:text-amber-100">
+                          ⚠️ Una vez aprobada, se activará la postergación del arriendo con un recargo del 10% al retorno.
+                        </p>
+                      </div>
+
+                      {/* Botón de Confirmación */}
+                      <Button
+                        className="w-full text-xs h-10 gap-1.5 shadow-sm font-semibold"
+                        disabled={
+                          !dateRange?.from ||
+                          !dateRange?.to ||
+                          daysCount < 1 ||
+                          submitting ||
+                          isOverlapping
+                        }
+                        onClick={() => setConfirmOpen(true)}
+                      >
+                        <CalendarRange className="h-4 w-4" />
+                        Enviar Solicitud al Administrador (Recargo 10%)
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Acceso directo al historial si existen registros */}
+                  {vacations.length > 0 && (
+                    <div className="flex items-center justify-between pt-2 border-t text-xs text-muted-foreground">
+                      <span>
+                        Tienes <strong>{vacations.length}</strong> registro(s) en tu historial de vacaciones.
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-xs h-7 gap-1 text-primary hover:text-primary"
+                        onClick={() => setActiveTab("historial")}
+                      >
+                        Ver historial completo <ArrowRight className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
                   )}
                 </div>
-              </div>
+              </>
             )}
-
-            {/* Formulario con Calendario para seleccionar salida y regreso */}
-            <div className="space-y-4">
-              {activeVacation && (
-                <div className="flex items-center gap-2 pt-1">
-                  <Separator className="flex-1" />
-                  <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
-                    Programar Nuevo Período
-                  </span>
-                  <Separator className="flex-1" />
-                </div>
-              )}
-
-              <div className="grid grid-cols-1 md:grid-cols-12 gap-5 items-start">
-                {/* Calendario react-day-picker modo range */}
-                <div className="md:col-span-6 flex flex-col items-center justify-center p-1 rounded-xl border bg-muted/10">
-                  <Calendar
-                    mode="range"
-                    selected={dateRange}
-                    onSelect={setDateRange}
-                    disabled={{ before: startOfToday() }}
-                    locale={es}
-                    className="rounded-md"
-                  />
-                  <p className="text-[11px] text-muted-foreground mt-1 mb-2 font-mono text-center">
-                    💡 Haz clic en la fecha de salida y luego en la fecha de regreso
-                  </p>
-                </div>
-
-                {/* Resumen de selección y confirmación */}
-                <div className="md:col-span-6 space-y-3.5">
-                  <div className="rounded-xl border bg-muted/20 p-3.5 space-y-2.5">
-                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                      Resumen de Fechas
-                    </p>
-
-                    <div className="grid grid-cols-2 gap-2 text-xs">
-                      <div className="rounded-lg border bg-background p-2.5">
-                        <p className="text-[11px] text-muted-foreground flex items-center gap-1">
-                          🛫 Fecha de Salida
-                        </p>
-                        <p className="font-bold text-sm mt-0.5">
-                          {dateRange?.from ? format(dateRange.from, "dd/MM/yyyy") : "—"}
-                        </p>
-                      </div>
-
-                      <div className="rounded-lg border bg-background p-2.5">
-                        <p className="text-[11px] text-muted-foreground flex items-center gap-1">
-                          🛬 Fecha de Regreso
-                        </p>
-                        <p className="font-bold text-sm mt-0.5">
-                          {dateRange?.to ? format(dateRange.to, "dd/MM/yyyy") : "—"}
-                        </p>
-                      </div>
-                    </div>
-
-                    {daysCount > 0 && (
-                      <div className="flex items-center justify-between text-xs pt-1 px-1">
-                        <span className="text-muted-foreground">Duración total:</span>
-                        <span className="font-bold font-mono bg-primary/10 text-primary px-2 py-0.5 rounded">
-                          {daysCount} día{daysCount > 1 ? "s" : ""}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Cuadro de advertencia obligatorio del recargo */}
-                  <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-3.5 text-xs text-amber-900 dark:text-amber-200 space-y-1.5">
-                    <div className="flex items-center gap-1.5 font-bold text-amber-700 dark:text-amber-300">
-                      <AlertTriangle className="h-4 w-4 shrink-0" />
-                      Condiciones de la Postergación
-                    </div>
-                    <p className="leading-relaxed text-[11px]">
-                      Al registrar tus vacaciones, se activará la{" "}
-                      <strong>postergación del pago de arriendo</strong> del vehículo asignado.
-                    </p>
-                    <p className="leading-relaxed text-[11px] font-semibold text-amber-800 dark:text-amber-100">
-                      ⚠️ Al regresar de vacaciones, el pago de arriendo se reanudará con un recargo del 10%.
-                    </p>
-                  </div>
-
-                  {/* Botón de Confirmación */}
-                  <Button
-                    className="w-full text-xs h-10 gap-1.5 shadow-sm font-semibold"
-                    disabled={!dateRange?.from || !dateRange?.to || daysCount < 1 || submitting}
-                    onClick={() => setConfirmOpen(true)}
-                  >
-                    <CalendarRange className="h-4 w-4" />
-                    Confirmar Vacaciones y Postergación (Recargo 10%)
-                  </Button>
-                </div>
-              </div>
-
-              {/* Acceso directo al historial si existen registros */}
-              {vacations.length > 0 && (
-                <div className="flex items-center justify-between pt-2 border-t text-xs text-muted-foreground">
-                  <span>
-                    Tienes <strong>{vacations.length}</strong> registro(s) en tu historial de vacaciones.
-                  </span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-xs h-7 gap-1 text-primary hover:text-primary"
-                    onClick={() => setActiveTab("historial")}
-                  >
-                    Ver historial completo <ArrowRight className="h-3.5 w-3.5" />
-                  </Button>
-                </div>
-              )}
-            </div>
           </TabsContent>
 
           {/* ===================== TAB 2: HISTORIAL DE VACACIONES ===================== */}
@@ -550,14 +662,48 @@ export default function ConductorVacationsCard({ className = "" }: ConductorVaca
                         </div>
                       </div>
 
+                      {/* Aviso específico de rechazo si aplica */}
+                      {vac.status === "rechazado" && (
+                        <div className="rounded-lg bg-destructive/10 border border-destructive/20 p-2.5 text-xs text-destructive flex items-start gap-2">
+                          <XCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                          <div className="min-w-0 flex-1">
+                            <p className="font-semibold text-[11px]">
+                              Solicitud rechazada por administración
+                            </p>
+                            {vac.notes && vac.notes.includes("MOTIVO DEL RECHAZO") && (
+                              <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">
+                                {vac.notes.split("--- MOTIVO DEL RECHAZO")[1]?.replace(/^.*?\n/, "") || vac.notes}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Aviso específico de pendiente si aplica */}
+                      {vac.status === "pendiente" && (
+                        <div className="rounded-lg bg-amber-500/10 border border-amber-500/20 p-2.5 text-xs text-amber-900 dark:text-amber-200 flex items-start gap-2">
+                          <Clock className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+                          <div className="min-w-0 flex-1">
+                            <p className="font-semibold text-[11px] text-amber-800 dark:text-amber-200">
+                              En revisión por administración
+                            </p>
+                            <p className="text-[11px] text-muted-foreground mt-0.5">
+                              Tu solicitud fue enviada y está a la espera de aprobación por el administrador.
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
                       {/* Condiciones del arriendo e información del vehículo */}
                       <div className="rounded-lg bg-background/80 border p-2.5 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                         <div className="space-y-0.5">
                           <p className="flex items-center gap-1 text-muted-foreground text-[11px]">
                             <AlertTriangle className="h-3 w-3 text-amber-500 shrink-0" />
                             <span className="font-medium text-foreground">Condición de pago:</span>{" "}
-                            {vac.status === "cancelada"
-                              ? "Solicitud cancelada (cobro regular)"
+                            {vac.status === "cancelada" || vac.status === "rechazado"
+                              ? "Sin postergación (cobro regular)"
+                              : vac.status === "pendiente"
+                              ? "Postergación sujeta a aprobación"
                               : "Arriendo postergado durante el período"}
                           </p>
                           <p className="text-[11px] text-amber-600 dark:text-amber-400 font-medium">
@@ -579,14 +725,15 @@ export default function ConductorVacationsCard({ className = "" }: ConductorVaca
                           {createdStr ? `Registrado: ${createdStr}` : `Registro ID: ${vac.id.slice(0, 8)}`}
                         </span>
 
-                        {vac.status === "programada" && (
+                        {(vac.status === "programada" || vac.status === "pendiente") && (
                           <Button
                             variant="ghost"
                             size="sm"
                             className="text-xs h-7 text-destructive hover:text-destructive hover:bg-destructive/10 gap-1 px-2"
                             onClick={() => setVacationToCancel(vac.id)}
                           >
-                            <XCircle className="h-3 w-3" /> Cancelar Vacaciones
+                            <XCircle className="h-3 w-3" />
+                            {vac.status === "pendiente" ? "Cancelar Solicitud" : "Cancelar Vacaciones"}
                           </Button>
                         )}
                       </div>
@@ -605,7 +752,7 @@ export default function ConductorVacationsCard({ className = "" }: ConductorVaca
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2 font-heading text-base">
               <Palmtree className="h-5 w-5 text-primary" />
-              ¿Confirmar registro de vacaciones?
+              ¿Enviar solicitud de vacaciones al Administrador?
             </AlertDialogTitle>
             <AlertDialogDescription className="space-y-3 text-xs text-muted-foreground pt-2">
               <p>
@@ -624,8 +771,9 @@ export default function ConductorVacationsCard({ className = "" }: ConductorVaca
                   ⚠️ Importante:
                 </p>
                 <p className="text-[11px] mt-1">
-                  Se activará la <strong>postergación del pago de arriendo</strong> de tu vehículo durante todo el
-                  período de vacaciones. Al regresar, el pago se reanudará con un <strong>recargo del 10%</strong>.
+                  Tu solicitud será evaluada por el Administrador. Al ser aprobada, se activará la{" "}
+                  <strong>postergación del pago de arriendo</strong> de tu vehículo durante todo el
+                  período, con un <strong>recargo del 10%</strong> al retorno.
                 </p>
               </div>
             </AlertDialogDescription>
@@ -637,7 +785,7 @@ export default function ConductorVacationsCard({ className = "" }: ConductorVaca
               onClick={handleConfirmVacations}
               disabled={submitting}
             >
-              {submitting ? "Registrando..." : "Sí, confirmar vacaciones y postergación"}
+              {submitting ? "Enviando..." : "Sí, enviar solicitud al Administrador"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -649,10 +797,10 @@ export default function ConductorVacationsCard({ className = "" }: ConductorVaca
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2 font-heading text-base text-destructive">
               <XCircle className="h-5 w-5" />
-              ¿Cancelar este período de vacaciones?
+              ¿Cancelar esta solicitud de vacaciones?
             </AlertDialogTitle>
             <AlertDialogDescription className="text-xs text-muted-foreground pt-1">
-              Esta acción anulará el período de vacaciones programado y desactivará la postergación del arriendo asociada. El cobro del arriendo continuará de forma habitual.
+              Esta acción anulará el período de vacaciones y no se aplicará ninguna postergación de arriendo. El cobro regular continuará de forma habitual.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

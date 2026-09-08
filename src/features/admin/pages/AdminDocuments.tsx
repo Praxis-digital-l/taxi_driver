@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import StatusBadge from "@/components/StatusBadge";
 import PageHeader from "@/components/PageHeader";
 import { FileText, Download, Eye, AlertCircle, Search } from "lucide-react";
 import { fetchAllDocuments, fetchDocumentTypes, type AdminDocument } from "@/features/admin/services/adminDocumentsService";
@@ -18,7 +17,6 @@ export default function AdminDocuments() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState("all");
-  const [filterStatus, setFilterStatus] = useState("all");
 
   const [previewKey, setPreviewKey] = useState<string | null>(null);
   const [previewFileName, setPreviewFileName] = useState("");
@@ -51,7 +49,6 @@ export default function AdminDocuments() {
     const q = search.toLowerCase().trim();
     return documents.filter((doc) => {
       if (filterType !== "all" && doc.document_types?.name !== filterType) return false;
-      if (filterStatus !== "all" && doc.status !== filterStatus) return false;
       if (!q) return true;
       return (
         doc.document_types?.name?.toLowerCase().includes(q) ||
@@ -60,7 +57,7 @@ export default function AdminDocuments() {
         doc.description?.toLowerCase().includes(q)
       );
     });
-  }, [documents, search, filterType, filterStatus]);
+  }, [documents, search, filterType]);
 
   const isExpiringSoon = (date: string | null) => {
     if (!date) return false;
@@ -115,17 +112,6 @@ export default function AdminDocuments() {
               ))}
             </SelectContent>
           </Select>
-          <Select value={filterStatus} onValueChange={setFilterStatus}>
-            <SelectTrigger className="h-9 w-full sm:w-40 text-sm">
-              <SelectValue placeholder="Estado" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos los estados</SelectItem>
-              <SelectItem value="pendiente">Pendiente</SelectItem>
-              <SelectItem value="aprobado">Aprobado</SelectItem>
-              <SelectItem value="rechazado">Rechazado</SelectItem>
-            </SelectContent>
-          </Select>
         </div>
       </PageHeader>
 
@@ -172,7 +158,6 @@ export default function AdminDocuments() {
                     </p>
                   )}
                 </div>
-                <StatusBadge status={document.status} />
                 <div className="flex items-center gap-1">
                   <Button
                     variant="ghost"

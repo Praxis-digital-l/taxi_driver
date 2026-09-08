@@ -2,7 +2,6 @@ import { supabase } from "@/integrations/supabase/client";
 
 export type AdminDocument = {
   id: string;
-  status: string;
   description: string | null;
   file_url: string;
   file_key: string;
@@ -27,7 +26,7 @@ function assertNoError(error: { message: string } | null) {
 export async function fetchAllDocuments(): Promise<AdminDocument[]> {
   const { data, error } = await supabase
     .from("documents")
-    .select("id, status, description, file_url, file_key, expiration_date, created_at, document_types(name), profiles(full_name), vehicles(license_plate)")
+    .select("id, description, file_url, file_key, expiration_date, created_at, document_types(name), profiles(full_name), vehicles(license_plate)")
     .order("created_at", { ascending: false });
 
   assertNoError(error);

@@ -8,6 +8,7 @@ export type ConductorDelMes = {
     id: string;
     full_name: string | null;
     photo_url: string | null;
+    worker_id?: string | null;
   } | null;
 };
 
@@ -24,16 +25,35 @@ function assertNoError(error: { message: string } | null) {
   }
 }
 
-export async function fetchConductorDelMes(month: number, year: number): Promise<ConductorDelMes | null> {
-  const { data, error } = await supabase
+export async function fetchConductorDelMes(month?: number, year?: number): Promise<ConductorDelMes | null> {
+  // 1. Intentar con mes y año específicos si se indicaron
+  if (month && year) {
+    const { data, error } = await supabase
+      .from("conductor_del_mes")
+      .select("id, month, year, conductor:profiles!conductor_del_mes_conductor_id_fkey(id, full_name, photo_url, worker_id)")
+      .eq("month", month)
+      .eq("year", year)
+      .maybeSingle();
+
+    if (!error && data && data.conductor) {
+      return data as unknown as ConductorDelMes;
+    }
+  }
+
+  // 2. Si no hay para el mes actual, buscar la última elección guardada por el administrador
+  const { data: latest, error: latestError } = await supabase
     .from("conductor_del_mes")
-    .select("id, month, year, conductor:profiles!conductor_del_mes_conductor_id_fkey(id, full_name, photo_url)")
-    .eq("month", month)
-    .eq("year", year)
+    .select("id, month, year, conductor:profiles!conductor_del_mes_conductor_id_fkey(id, full_name, photo_url, worker_id)")
+    .order("year", { ascending: false })
+    .order("month", { ascending: false })
+    .limit(1)
     .maybeSingle();
 
-  assertNoError(error);
-  return (data as ConductorDelMes | null) ?? null;
+  if (!latestError && latest && latest.conductor) {
+    return latest as unknown as ConductorDelMes;
+  }
+
+  return null;
 }
 
 export async function fetchConductorCandidates(): Promise<ConductorCandidate[]> {

@@ -43,9 +43,48 @@ export async function fetchAdminRequests(statusFilter: string) {
   );
 }
 
+async function syncVacationStatus(requestId: string, status: string, reason?: string) {
+  try {
+    const { data: req } = await supabase
+      .from("requests")
+      .select("profile_id, details")
+      .eq("id", requestId)
+      .single();
+
+    if (!req?.details || (!req.details.includes("[VACACIONES") && !req.details.includes("[SOLICITUD DE VACACIONES"))) {
+      return;
+    }
+
+    const matchDates = req.details.match(/Salida:\s*(\d{4}-\d{2}-\d{2})\s*·\s*Retorno:\s*(\d{4}-\d{2}-\d{2})/);
+    const startDate = matchDates ? matchDates[1] : null;
+    const endDate = matchDates ? matchDates[2] : null;
+
+    let targetVacationQuery = supabase
+      .from("conductor_vacations")
+      .update({
+        status: status === "aprobado" ? "programada" : "cancelada",
+        notes:
+          status === "rechazado"
+            ? `Rechazado por administración: ${reason || "Sin motivo especificado"}`
+            : "Aprobado por administración.",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("profile_id", req.profile_id);
+
+    if (startDate && endDate) {
+      targetVacationQuery = targetVacationQuery.eq("start_date", startDate).eq("end_date", endDate);
+    }
+
+    await targetVacationQuery;
+  } catch (err) {
+    console.warn("No se pudo sincronizar conductor_vacations:", err);
+  }
+}
+
 export async function updateAdminRequestStatus(requestId: string, status: string) {
   const { error } = await supabase.from("requests").update({ status }).eq("id", requestId);
   assertNoError(error);
+  await syncVacationStatus(requestId, status);
 }
 
 export async function resolveRequest(requestId: string, status: string, reason?: string) {
@@ -67,6 +106,7 @@ export async function resolveRequest(requestId: string, status: string, reason?:
     .update({ status, details: newDetails })
     .eq("id", requestId);
   assertNoError(error);
+  await syncVacationStatus(requestId, status, reason);
 }
 
 export async function updateRequest(requestId: string, updates: {

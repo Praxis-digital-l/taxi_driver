@@ -54,13 +54,13 @@
     --sidebar-border: 220 18% 84%;
     --sidebar-ring: 39 94% 50%;
 
-    --board-background: 224 33% 12%;
-    --board-foreground: 216 14% 75%;
-    --board-primary: 39 94% 55%;
-    --board-primary-foreground: 224 30% 13%;
-    --board-accent: 224 28% 17%;
-    --board-accent-foreground: 216 18% 90%;
-    --board-border: 224 26% 19%;
+    --board-background: 0 0% 100%;
+    --board-foreground: 224 30% 13%;
+    --board-primary: 39 94% 50%;
+    --board-primary-foreground: 0 0% 100%;
+    --board-accent: 210 40% 96%;
+    --board-accent-foreground: 224 30% 13%;
+    --board-border: 214 32% 91%;
 
     --font-heading: 'Saira Semi Condensed', sans-serif;
     --font-body: 'Public Sans', sans-serif;
@@ -100,6 +100,14 @@
     --sidebar-accent-foreground: 216 18% 90%;
     --sidebar-border: 224 24% 13%;
     --sidebar-ring: 39 94% 50%;
+
+    --board-background: 224 33% 12%;
+    --board-foreground: 216 14% 75%;
+    --board-primary: 39 94% 55%;
+    --board-primary-foreground: 224 30% 13%;
+    --board-accent: 224 28% 17%;
+    --board-accent-foreground: 216 18% 90%;
+    --board-border: 224 26% 19%;
   }
 }
 

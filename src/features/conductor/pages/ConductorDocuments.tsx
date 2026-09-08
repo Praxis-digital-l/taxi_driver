@@ -8,7 +8,6 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import StatusBadge from "@/components/StatusBadge";
 import PageHeader from "@/components/PageHeader";
 import { Plus, FileText, Trash2, Download, Eye, AlertCircle } from "lucide-react";
 import { DOCUMENT_ACCEPT_ATTR, isAllowedDocumentFile } from "@/shared/utils/fileValidation";
@@ -24,7 +23,6 @@ export default function ConductorDocuments() {
   const [open, setOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [filterType, setFilterType] = useState("all");
-  const [filterStatus, setFilterStatus] = useState("all");
 
   const [preview, setPreview] = useState<{ fileKey: string; name: string; type: string } | null>(null);
 
@@ -129,7 +127,6 @@ export default function ConductorDocuments() {
 
   const filtered = documents.filter((d: any) => {
     if (filterType !== "all" && d.document_types?.name !== filterType) return false;
-    if (filterStatus !== "all" && d.status !== filterStatus) return false;
     return true;
   });
 
@@ -193,19 +190,10 @@ export default function ConductorDocuments() {
       {/* Filtros */}
       <div className="flex gap-2 flex-wrap mb-4">
         <Select value={filterType} onValueChange={setFilterType}>
-          <SelectTrigger className="w-[180px] h-8 text-xs"><SelectValue placeholder="Tipo" /></SelectTrigger>
+          <SelectTrigger className="w-[180px] h-8 text-xs"><SelectValue placeholder="Tipo de Documento" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos los tipos</SelectItem>
             {docTypes.map((t) => <SelectItem key={t.id} value={t.name}>{t.name}</SelectItem>)}
-          </SelectContent>
-        </Select>
-        <Select value={filterStatus} onValueChange={setFilterStatus}>
-          <SelectTrigger className="w-[140px] h-8 text-xs"><SelectValue placeholder="Estado" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todos</SelectItem>
-            <SelectItem value="pendiente">Pendiente</SelectItem>
-            <SelectItem value="aprobado">Aprobado</SelectItem>
-            <SelectItem value="rechazado">Rechazado</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -240,7 +228,6 @@ export default function ConductorDocuments() {
                     <span>{new Date(doc.created_at).toLocaleDateString("es-CL")}</span>
                   </div>
                 </div>
-                <StatusBadge status={doc.status} />
                 <div className="flex gap-1 shrink-0">
                   <Button
                     variant="ghost"
