@@ -11,10 +11,11 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useToast } from "@/hooks/use-toast";
 import StatusBadge from "@/components/StatusBadge";
 import RequestPriorityBadge from "@/components/RequestPriorityBadge";
+import RequestTypeIcon from "@/components/RequestTypeIcon";
 import PageHeader from "@/components/PageHeader";
 import { buildRequestPriorityBreakdown, getRequestWaitingDays, resolveRequestTypeName } from "@/lib/requestPriority";
 import { supabase } from "@/integrations/supabase/client";
-import { CheckCircle2, ClipboardList, Pencil, ThumbsDown, Trash2, XCircle } from "lucide-react";
+import { Car, CheckCircle2, ClipboardList, Pencil, Trash2, Wallet, XCircle } from "lucide-react";
 import {
   fetchAdminRequests,
   type AdminRequest,
@@ -37,6 +38,10 @@ function formatDateFull(value: string | null | undefined) {
   const d = new Date(value);
   return isNaN(d.getTime()) ? null : d.toLocaleString("es-CL");
 }
+function formatAmount(value: number | null | undefined) {
+  if (value == null) return null;
+  return `$${Number(value).toLocaleString("es-CL")}`;
+}
 
 export default function AdminRequests() {
   const { toast } = useToast();
@@ -52,6 +57,9 @@ export default function AdminRequests() {
   const [editReq, setEditReq] = useState<AdminRequest | null>(null);
   const [editOpen, setEditOpen] = useState(false);
   const [editLoading, setEditLoading] = useState(false);
+  const [editTypeId, setEditTypeId] = useState("");
+  const [editAmount, setEditAmount] = useState("");
+  const [editDetails, setEditDetails] = useState("");
 
   const [deleteReq, setDeleteReq] = useState<AdminRequest | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -192,23 +200,31 @@ export default function AdminRequests() {
 
   const openEdit = (req: AdminRequest) => {
     setEditReq(req);
+    setEditTypeId(req.request_type_id ?? "");
+    setEditAmount(req.amount != null ? String(req.amount) : "");
+    setEditDetails((req.details ?? "").replace(/\n\n--- MOTIVO DEL RECHAZO .*/s, ""));
     setEditOpen(true);
   };
 
   const handleEdit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!editReq) return;
+    if (!editTypeId) {
+      toast({ title: "Error", description: "Selecciona un tipo de solicitud.", variant: "destructive" });
+      return;
+    }
     setEditLoading(true);
-    const form = new FormData(e.currentTarget);
-    const amount = parseFloat(form.get("amount") as string);
+    const amount = parseFloat(editAmount);
     try {
       await updateRequest(editReq.id, {
-        request_type_id: form.get("request_type_id") as string,
+        request_type_id: editTypeId,
         amount: isNaN(amount) ? null : amount,
-        details: (form.get("details") as string).trim(),
+        details: editDetails.trim(),
+        updated_at: new Date().toISOString(),
       });
       toast({ title: "Solicitud actualizada exitosamente" });
       setEditOpen(false);
+      setEditReq(null);
       load();
     } catch (error) {
       toast({
@@ -233,6 +249,7 @@ export default function AdminRequests() {
       toast({ title: "Solicitud eliminada" });
       setDeleteOpen(false);
       if (detailReq?.id === deleteReq.id) setDetailOpen(false);
+      setDeleteReq(null);
       load();
     } catch (error) {
       toast({
@@ -296,27 +313,43 @@ export default function AdminRequests() {
           {requests.map((request) => {
             const waitingDays = getRequestWaitingDays(request.created_at);
             const typeName = resolveRequestTypeName(request);
+            const canEdit = !isTerminal(request.status);
 
             return (
-              <Card key={request.id} className="stat-card overflow-hidden cursor-pointer" onClick={() => openDetail(request)}>
+              <Card key={request.id} className="stat-card cursor-pointer overflow-hidden transition-colors hover:border-primary/40 hover:bg-muted/40" onClick={() => openDetail(request)}>
                 <CardContent className="p-4">
-                  <div className="flex items-start justify-between gap-3 max-w-full overflow-hidden">
-                    <div className="flex-1 min-w-0 max-w-full space-y-1">
+                  <div className="flex items-start gap-3">
+                    <RequestTypeIcon typeName={typeName} />
+                    <div className="flex-1 min-w-0 space-y-1.5">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <p className="font-medium text-sm truncate">
-                          {request.profiles?.full_name ?? "Desconocido"}
-                        </p>
-                        <span className="text-xs text-muted-foreground shrink-0">·</span>
-                        <span className="text-sm truncate font-semibold">{typeName}</span>
+                        <p className="font-semibold text-sm truncate max-w-[60%]">{request.profiles?.full_name ?? "Desconocido"}</p>
+                        <StatusBadge status={request.status} />
+                        {waitingDays > 0 && (
+                          <span className="text-xs text-muted-foreground">{waitingDays} día(s)</span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {request.profiles?.rut && <span className="text-xs text-muted-foreground">{request.profiles.rut}</span>}
+                        <span className="text-xs text-muted-foreground">·</span>
+                        <span className="text-sm font-semibold truncate">{typeName}</span>
                         <RequestPriorityBadge requestTypeName={typeName} />
                       </div>
-                      <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                        <StatusBadge status={request.status} />
-                        {request.vehicles?.license_plate && <span>{request.vehicles.license_plate}</span>}
-                        {request.amount && <span>$ {Number(request.amount).toLocaleString("es-CL")}</span>}
+                      <p className="text-xs text-muted-foreground line-clamp-1">{request.details?.replace(/\n\n--- MOTIVO DEL RECHAZO .*/s, "") || "Sin detalles"}</p>
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                        {request.amount != null && <span className="inline-flex items-center gap-1"><Wallet className="h-3 w-3" />{formatAmount(request.amount)}</span>}
+                        {request.vehicles?.license_plate && <span className="inline-flex items-center gap-1"><Car className="h-3 w-3" />{request.vehicles.license_plate}</span>}
                         <span>{new Date(request.created_at).toLocaleDateString("es-CL")}</span>
-                        <span>{waitingDays} día(s)</span>
                       </div>
+                    </div>
+                    <div className="flex items-center gap-0.5 shrink-0" onClick={(e) => e.stopPropagation()}>
+                      {canEdit && (
+                        <Button variant="ghost" size="icon" className="h-8 w-8" title="Editar solicitud" onClick={() => { setDetailOpen(false); openEdit(request); }}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      )}
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" title="Eliminar solicitud" onClick={() => { setDetailOpen(false); confirmDelete(request); }}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
                   </div>
                 </CardContent>
@@ -329,15 +362,19 @@ export default function AdminRequests() {
       {/* Detail Dialog */}
       <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
         <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
-          <DialogHeader className="flex flex-row items-center justify-between">
+          <DialogHeader className="flex flex-row items-center justify-between gap-3">
             <DialogTitle className="font-heading">Detalle de Solicitud</DialogTitle>
             <div className="flex items-center gap-1">
               {detailReq && (
                 <>
                   {!isTerminal(detailReq.status) && (
-                    <button onClick={() => { setDetailOpen(false); openEdit(detailReq); }} className="p-1.5 rounded-md hover:bg-muted transition-colors"><Pencil className="h-4 w-4" /></button>
+                    <Button variant="ghost" size="icon" className="h-8 w-8" title="Editar solicitud" onClick={() => { setDetailOpen(false); openEdit(detailReq); }}>
+                      <Pencil className="h-4 w-4" />
+                    </Button>
                   )}
-                  <button onClick={() => { setDetailOpen(false); confirmDelete(detailReq); }} className="p-1.5 rounded-md hover:bg-destructive/10 transition-colors"><Trash2 className="h-4 w-4 text-destructive" /></button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" title="Eliminar solicitud" onClick={() => { setDetailOpen(false); confirmDelete(detailReq); }}>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
                 </>
               )}
             </div>
@@ -350,7 +387,7 @@ export default function AdminRequests() {
                 <div className="min-w-0"><span className="text-muted-foreground">RUT:</span><p className="font-medium truncate">{detailReq.profiles?.rut ?? "—"}</p></div>
                 <div className="min-w-0"><span className="text-muted-foreground">Teléfono:</span><p className="font-medium truncate">{detailReq.profiles?.phone ?? "—"}</p></div>
                 <div className="min-w-0"><span className="text-muted-foreground">Patente:</span><p className="font-medium truncate">{detailReq.vehicles?.license_plate ?? "Sin vehículo"}</p></div>
-                <div className="min-w-0"><span className="text-muted-foreground">Monto:</span><p className="font-medium truncate">{detailReq.amount ? `$${Number(detailReq.amount).toLocaleString("es-CL")}` : "—"}</p></div>
+                <div className="min-w-0"><span className="text-muted-foreground">Monto:</span><p className="font-medium truncate">{detailReq.amount ? formatAmount(detailReq.amount) : "—"}</p></div>
                 <div className="min-w-0"><span className="text-muted-foreground">Estado:</span><p className="flex items-center gap-2"><StatusBadge status={detailReq.status} />{detailReq.status === "aprobado" && (() => { const d = formatDateOnly(detailReq.updated_at); return d ? <span className="text-xs text-muted-foreground">· {d}</span> : null; })()}</p></div>
                 <div className="min-w-0"><span className="text-muted-foreground">Creado:</span><p className="font-medium truncate">{formatDateFull(detailReq.created_at)}</p></div>
                 {detailReq.status !== "pendiente" && (
@@ -420,8 +457,8 @@ export default function AdminRequests() {
           {editReq && (
             <form onSubmit={handleEdit} className="space-y-4">
               <div className="space-y-2">
-                <Label>Tipo de solicitud</Label>
-                <Select name="request_type_id" defaultValue={editReq.request_type_id}>
+                <Label>Tipo de solicitud *</Label>
+                <Select value={editTypeId} onValueChange={setEditTypeId} required>
                   <SelectTrigger><SelectValue placeholder="Seleccionar tipo" /></SelectTrigger>
                   <SelectContent>
                     {reqTypes.map((t) => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
@@ -430,11 +467,12 @@ export default function AdminRequests() {
               </div>
               <div className="space-y-2">
                 <Label>Monto estimado (CLP)</Label>
-                <Input name="amount" type="number" step="1" min="0" placeholder="Ej: 150000" defaultValue={editReq.amount ?? ""} />
+                <Input type="number" step="1" min="0" placeholder="Ej: 150000" value={editAmount} onChange={(e) => setEditAmount(e.target.value)} />
               </div>
               <div className="space-y-2">
-                <Label>Detalles</Label>
-                <Textarea name="details" required placeholder="Describe tu solicitud..." maxLength={500} defaultValue={editReq.details?.replace(/\n\n--- MOTIVO DEL RECHAZO .*/s, "") ?? ""} className="resize-none" />
+                <Label>Detalles *</Label>
+                <Textarea required placeholder="Describe tu solicitud..." maxLength={500} value={editDetails} onChange={(e) => setEditDetails(e.target.value)} className="resize-none" />
+                <p className="text-xs text-muted-foreground text-right">{editDetails.length}/500</p>
               </div>
               <div className="flex gap-2 justify-end">
                 <Button type="button" variant="outline" onClick={() => setEditOpen(false)}>Cancelar</Button>

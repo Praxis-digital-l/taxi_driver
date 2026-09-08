@@ -108,3 +108,69 @@ CREATE POLICY avatares_own_delete
   ON storage.objects
   FOR DELETE
   USING (bucket_id = 'Avatares' AND (storage.foldername(name))[1] = auth.uid()::text);
+
+-- 6. Función que devuelve el Conductor del Mes con sus datos de perfil.
+--    SECURITY DEFINER (patrón mark_message_read / is_app_admin): expone
+--    únicamente el reconocimiento, sin depender del RLS de profiles que
+--    impide a un conductor leer los datos de otro conductor.
+--    Si no existe el mes solicitado, devuelve la última selección del admin.
+CREATE OR REPLACE FUNCTION public.get_conductor_del_mes(p_month integer DEFAULT NULL, p_year integer DEFAULT NULL)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = 'public'
+STABLE
+AS $$
+DECLARE
+  result jsonb;
+BEGIN
+  IF p_month IS NOT NULL AND p_year IS NOT NULL THEN
+    SELECT jsonb_build_object(
+      'id', cdm.id,
+      'month', cdm.month,
+      'year', cdm.year,
+      'conductor', CASE
+        WHEN p.id IS NOT NULL THEN jsonb_build_object(
+          'id', p.id,
+          'full_name', p.full_name,
+          'photo_url', p.photo_url,
+          'worker_id', p.worker_id
+        )
+        ELSE NULL
+      END
+    )
+    INTO result
+    FROM public.conductor_del_mes cdm
+    LEFT JOIN public.profiles p ON p.id = cdm.conductor_id
+    WHERE cdm.month = p_month AND cdm.year = p_year;
+
+    IF result IS NOT NULL THEN
+      RETURN result;
+    END IF;
+  END IF;
+
+  SELECT jsonb_build_object(
+    'id', cdm.id,
+    'month', cdm.month,
+    'year', cdm.year,
+    'conductor', CASE
+      WHEN p.id IS NOT NULL THEN jsonb_build_object(
+        'id', p.id,
+        'full_name', p.full_name,
+        'photo_url', p.photo_url,
+        'worker_id', p.worker_id
+      )
+      ELSE NULL
+    END
+  )
+  INTO result
+  FROM public.conductor_del_mes cdm
+  LEFT JOIN public.profiles p ON p.id = cdm.conductor_id
+  ORDER BY cdm.year DESC, cdm.month DESC
+  LIMIT 1;
+
+  RETURN result;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.get_conductor_del_mes(integer, integer) TO authenticated;

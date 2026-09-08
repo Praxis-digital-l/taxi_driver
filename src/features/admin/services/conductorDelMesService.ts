@@ -26,21 +26,32 @@ function assertNoError(error: { message: string } | null) {
 }
 
 export async function fetchConductorDelMes(month?: number, year?: number): Promise<ConductorDelMes | null> {
-  // 1. Intentar con mes y año específicos si se indicaron
+  // 1. Intentar con la función SECURITY DEFINER (no depende del RLS de profiles,
+  //    por lo que el conductor también puede ver el reconocimiento)
+  const { data, error } = await supabase.rpc<
+    "get_conductor_del_mes",
+    { p_month: number | null; p_year: number | null },
+    ConductorDelMes | null
+  >("get_conductor_del_mes", { p_month: month ?? null, p_year: year ?? null });
+
+  if (!error && data && typeof data === "object") {
+    return data;
+  }
+
+  // 2. Fallback: consulta directa si la función aún no existe en la base de datos
   if (month && year) {
-    const { data, error } = await supabase
+    const { data: direct, error: directError } = await supabase
       .from("conductor_del_mes")
       .select("id, month, year, conductor:profiles!conductor_del_mes_conductor_id_fkey(id, full_name, photo_url, worker_id)")
       .eq("month", month)
       .eq("year", year)
       .maybeSingle();
 
-    if (!error && data && data.conductor) {
-      return data as unknown as ConductorDelMes;
+    if (!directError && direct && direct.conductor) {
+      return direct as unknown as ConductorDelMes;
     }
   }
 
-  // 2. Si no hay para el mes actual, buscar la última elección guardada por el administrador
   const { data: latest, error: latestError } = await supabase
     .from("conductor_del_mes")
     .select("id, month, year, conductor:profiles!conductor_del_mes_conductor_id_fkey(id, full_name, photo_url, worker_id)")

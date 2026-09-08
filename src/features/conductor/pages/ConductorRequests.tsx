@@ -12,9 +12,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import StatusBadge from "@/components/StatusBadge";
+import RequestPriorityBadge from "@/components/RequestPriorityBadge";
+import RequestTypeIcon from "@/components/RequestTypeIcon";
 import PageHeader from "@/components/PageHeader";
 import { resolveRequestTypeName } from "@/lib/requestPriority";
-import { Plus, ClipboardList, Pencil, Trash2, XCircle, CheckCircle2 } from "lucide-react";
+import { Car, ClipboardList, Pencil, Plus, Trash2, Wallet, XCircle, CheckCircle2 } from "lucide-react";
 
 const TERMINAL_STATUSES = ["aprobado", "rechazado", "completado"];
 const FILTER_STATUSES = ["pendiente", "aprobado", "rechazado"];
@@ -41,6 +43,10 @@ function formatDateFull(value: string | null | undefined) {
   const d = new Date(value);
   return isNaN(d.getTime()) ? null : d.toLocaleString("es-CL");
 }
+function formatAmount(value: number | null | undefined) {
+  if (value == null) return null;
+  return `$${Number(value).toLocaleString("es-CL")}`;
+}
 
 export default function ConductorRequests() {
   const { profile } = useAuth();
@@ -52,6 +58,8 @@ export default function ConductorRequests() {
   const [loading, setLoading] = useState(false);
   const [filterStatus, setFilterStatus] = useState("all");
   const [newDetails, setNewDetails] = useState("");
+  const [newTypeId, setNewTypeId] = useState("");
+  const [newVehicleId, setNewVehicleId] = useState("none");
 
   const [detailReq, setDetailReq] = useState<any>(null);
   const [detailOpen, setDetailOpen] = useState(false);
@@ -59,6 +67,10 @@ export default function ConductorRequests() {
   const [editReq, setEditReq] = useState<any>(null);
   const [editOpen, setEditOpen] = useState(false);
   const [editLoading, setEditLoading] = useState(false);
+  const [editTypeId, setEditTypeId] = useState("");
+  const [editVehicleId, setEditVehicleId] = useState("none");
+  const [editAmount, setEditAmount] = useState("");
+  const [editDetails, setEditDetails] = useState("");
 
   const [deleteReq, setDeleteReq] = useState<any>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -93,18 +105,28 @@ export default function ConductorRequests() {
     }
   }, [location.state, requests]);
 
+  const openNewRequest = () => {
+    setNewTypeId("");
+    setNewVehicleId("none");
+    setNewDetails("");
+    setOpen(true);
+  };
+
   const handleCreate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!profile) return;
+    if (!newTypeId) {
+      toast({ title: "Error", description: "Selecciona un tipo de solicitud.", variant: "destructive" });
+      return;
+    }
     setLoading(true);
     const form = new FormData(e.currentTarget);
-    const vehicleId = form.get("vehicle_id") as string;
     const amount = parseFloat(form.get("amount") as string);
 
     const { error } = await supabase.from("requests").insert({
       profile_id: profile.id,
-      request_type_id: form.get("request_type_id") as string,
-      vehicle_id: vehicleId === "none" ? null : vehicleId,
+      request_type_id: newTypeId,
+      vehicle_id: newVehicleId === "none" ? null : newVehicleId,
       details: newDetails.trim(),
       amount: isNaN(amount) ? null : amount,
     });
@@ -112,49 +134,87 @@ export default function ConductorRequests() {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
       toast({ title: "Solicitud creada exitosamente" });
-      setNewDetails("");
       setOpen(false);
       load();
     }
     setLoading(false);
   };
 
+  const openEdit = (req: { id: string; request_type_id: string; vehicle_id: string | null; amount: number | null; details: string | null }) => {
+    setEditReq(req);
+    setEditTypeId(req.request_type_id ?? "");
+    setEditVehicleId(req.vehicle_id ?? "none");
+    setEditAmount(req.amount != null ? String(req.amount) : "");
+    setEditDetails(stripResolution(req.details));
+    setEditOpen(true);
+  };
+
   const handleEdit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!editReq) return;
+    if (!editTypeId) {
+      toast({ title: "Error", description: "Selecciona un tipo de solicitud.", variant: "destructive" });
+      return;
+    }
     setEditLoading(true);
-    const form = new FormData(e.currentTarget);
-    const amount = parseFloat(form.get("amount") as string);
-    const vehicleId = form.get("vehicle_id") as string;
+    const amount = parseFloat(editAmount);
+    try {
+      const { data, error } = await supabase
+        .from("requests")
+        .update({
+          request_type_id: editTypeId,
+          vehicle_id: editVehicleId === "none" ? null : editVehicleId,
+          amount: isNaN(amount) ? null : amount,
+          details: editDetails.trim(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", editReq.id)
+        .select();
 
-    const { error } = await supabase.from("requests").update({
-      request_type_id: form.get("request_type_id") as string,
-      vehicle_id: vehicleId === "none" ? null : vehicleId,
-      amount: isNaN(amount) ? null : amount,
-      details: stripResolution(form.get("details") as string),
-    }).eq("id", editReq.id);
+      if (error) throw new Error(error.message);
+      if (!data || data.length === 0) {
+        throw new Error("No se pudo guardar la solicitud. Verifica que exista o que tengas permisos para editarla.");
+      }
 
-    if (error) {
-      toast({ title: "Error al actualizar", description: error.message, variant: "destructive" });
-    } else {
       toast({ title: "Solicitud actualizada exitosamente" });
       setEditOpen(false);
+      setEditReq(null);
       load();
+    } catch (err) {
+      toast({
+        title: "Error al actualizar",
+        description: err instanceof Error ? err.message : "Ocurrió un error",
+        variant: "destructive",
+      });
     }
     setEditLoading(false);
+  };
+
+  const requestDelete = (req: { id: string; request_types?: { name: string | null } | null }) => {
+    setDeleteReq(req);
+    setDeleteOpen(true);
   };
 
   const handleDelete = async () => {
     if (!deleteReq) return;
     setDeleteLoading(true);
-    const { error } = await supabase.from("requests").delete().eq("id", deleteReq.id);
-    if (error) {
-      toast({ title: "Error al eliminar", description: error.message, variant: "destructive" });
-    } else {
+    try {
+      const { data, error } = await supabase.from("requests").delete().eq("id", deleteReq.id).select();
+      if (error) throw new Error(error.message);
+      if (!data || data.length === 0) {
+        throw new Error("No se pudo eliminar la solicitud. Verifica que exista o que tengas permisos.");
+      }
       toast({ title: "Solicitud eliminada" });
       setDeleteOpen(false);
       if (detailReq?.id === deleteReq.id) setDetailOpen(false);
+      setDeleteReq(null);
       load();
+    } catch (err) {
+      toast({
+        title: "Error al eliminar",
+        description: err instanceof Error ? err.message : "Ocurrió un error",
+        variant: "destructive",
+      });
     }
     setDeleteLoading(false);
   };
@@ -173,14 +233,14 @@ export default function ConductorRequests() {
         </Select>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button size="sm"><Plus className="mr-1.5 h-4 w-4" />Nueva Solicitud</Button>
+            <Button size="sm" onClick={openNewRequest}><Plus className="mr-1.5 h-4 w-4" />Nueva Solicitud</Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-md">
             <DialogHeader><DialogTitle className="font-heading">Crear Solicitud</DialogTitle></DialogHeader>
             <form onSubmit={handleCreate} className="space-y-4">
               <div className="space-y-2">
                 <Label>Tipo de solicitud *</Label>
-                <Select name="request_type_id" required>
+                <Select value={newTypeId} onValueChange={setNewTypeId} required>
                   <SelectTrigger><SelectValue placeholder="Seleccionar tipo" /></SelectTrigger>
                   <SelectContent>
                     {reqTypes.map((t) => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
@@ -189,7 +249,7 @@ export default function ConductorRequests() {
               </div>
               <div className="space-y-2">
                 <Label>Vehículo asociado</Label>
-                <Select name="vehicle_id" defaultValue="none">
+                <Select value={newVehicleId} onValueChange={setNewVehicleId}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">Sin vehículo</SelectItem>
@@ -219,18 +279,37 @@ export default function ConductorRequests() {
       ) : (
         <div className="grid gap-3">
           {filtered.map((req: any) => {
+            const typeName = resolveRequestTypeName(req);
+            const canManage = !TERMINAL_STATUSES.includes(req.status);
             return (
-              <Card key={req.id} className="stat-card cursor-pointer" onClick={() => { setDetailReq(req); setDetailOpen(true); }}>
+              <Card key={req.id} className="stat-card cursor-pointer overflow-hidden transition-colors hover:border-primary/40 hover:bg-muted/40" onClick={() => { setDetailReq(req); setDetailOpen(true); }}>
                 <CardContent className="p-4">
-                  <div className="flex items-start justify-between gap-3 max-w-full overflow-hidden">
-                    <div className="flex-1 min-w-0 max-w-full space-y-1">
-                      <p className="font-medium text-sm truncate">{req.request_types?.name}</p>
-                      <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                  <div className="flex items-start gap-3">
+                    <RequestTypeIcon typeName={typeName} />
+                    <div className="flex-1 min-w-0 space-y-1.5">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="font-semibold text-sm truncate">{typeName}</p>
                         <StatusBadge status={req.status} />
-                        {req.amount && <span>$ {Number(req.amount).toLocaleString("es-CL")}</span>}
-                        {req.vehicles?.license_plate && <span>{req.vehicles.license_plate}</span>}
+                        <RequestPriorityBadge requestTypeName={typeName} />
+                      </div>
+                      <p className="text-xs text-muted-foreground line-clamp-1">{stripResolution(req.details) || "Sin detalles"}</p>
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                        {req.amount != null && <span className="inline-flex items-center gap-1"><Wallet className="h-3 w-3" />{formatAmount(req.amount)}</span>}
+                        {req.vehicles?.license_plate && <span className="inline-flex items-center gap-1"><Car className="h-3 w-3" />{req.vehicles.license_plate}</span>}
                         <span>{new Date(req.created_at).toLocaleDateString("es-CL")}</span>
                       </div>
+                    </div>
+                    <div className="flex items-center gap-0.5 shrink-0" onClick={(e) => e.stopPropagation()}>
+                      {canManage && (
+                        <>
+                          <Button variant="ghost" size="icon" className="h-8 w-8" title="Editar solicitud" onClick={() => { setDetailOpen(false); openEdit(req); }}>
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" title="Eliminar solicitud" onClick={() => { setDetailOpen(false); requestDelete(req); }}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </>
+                      )}
                     </div>
                   </div>
                 </CardContent>
@@ -243,13 +322,17 @@ export default function ConductorRequests() {
       {/* Detail Dialog */}
       <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
         <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
-          <DialogHeader className="flex flex-row items-center justify-between">
+          <DialogHeader className="flex flex-row items-center justify-between gap-3">
             <DialogTitle className="font-heading">Detalle de Solicitud</DialogTitle>
             <div className="flex items-center gap-1">
               {detailReq && !TERMINAL_STATUSES.includes(detailReq.status) && (
                 <>
-                  <button onClick={() => { setDetailOpen(false); setEditReq(detailReq); setEditOpen(true); }} className="p-1.5 rounded-md hover:bg-muted transition-colors"><Pencil className="h-4 w-4" /></button>
-                  <button onClick={() => { setDetailOpen(false); setDeleteReq(detailReq); setDeleteOpen(true); }} className="p-1.5 rounded-md hover:bg-destructive/10 transition-colors"><Trash2 className="h-4 w-4 text-destructive" /></button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8" title="Editar solicitud" onClick={() => { setDetailOpen(false); openEdit(detailReq); }}>
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" title="Eliminar solicitud" onClick={() => { setDetailOpen(false); requestDelete(detailReq); }}>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
                 </>
               )}
             </div>
@@ -258,11 +341,11 @@ export default function ConductorRequests() {
             <div className="space-y-3 text-sm min-w-0">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="min-w-0"><span className="text-muted-foreground">Conductor:</span><p className="font-medium truncate">{profile?.full_name ?? "—"}</p></div>
-                <div className="min-w-0"><span className="text-muted-foreground">Tipo:</span><p className="font-medium truncate">{detailReq.request_types?.name ?? "—"}</p></div>
+                <div className="min-w-0"><span className="text-muted-foreground">Tipo:</span><p className="font-medium truncate">{resolveRequestTypeName(detailReq)}</p></div>
                 <div className="min-w-0"><span className="text-muted-foreground">RUT:</span><p className="font-medium truncate">{profile?.rut ?? "—"}</p></div>
                 <div className="min-w-0"><span className="text-muted-foreground">Teléfono:</span><p className="font-medium truncate">{profile?.phone ?? "—"}</p></div>
                 <div className="min-w-0"><span className="text-muted-foreground">Patente:</span><p className="font-medium truncate">{detailReq.vehicles?.license_plate ?? "Sin vehículo"}</p></div>
-                <div className="min-w-0"><span className="text-muted-foreground">Monto:</span><p className="font-medium truncate">{detailReq.amount ? `$${Number(detailReq.amount).toLocaleString("es-CL")}` : "—"}</p></div>
+                <div className="min-w-0"><span className="text-muted-foreground">Monto:</span><p className="font-medium truncate">{detailReq.amount ? formatAmount(detailReq.amount) : "—"}</p></div>
                 <div className="min-w-0"><span className="text-muted-foreground">Estado:</span><p className="flex items-center gap-2"><StatusBadge status={detailReq.status} />{detailReq.status === "aprobado" && (() => { const d = formatDateOnly(detailReq.updated_at); return d ? <span className="text-xs text-muted-foreground">· {d}</span> : null; })()}</p></div>
                 <div className="min-w-0"><span className="text-muted-foreground">Creado:</span><p className="font-medium truncate">{formatDateFull(detailReq.created_at)}</p></div>
                 {detailReq.status !== "pendiente" && (
@@ -328,8 +411,8 @@ export default function ConductorRequests() {
           {editReq && (
             <form onSubmit={handleEdit} className="space-y-4">
               <div className="space-y-2">
-                <Label>Tipo de solicitud</Label>
-                <Select name="request_type_id" defaultValue={editReq.request_type_id}>
+                <Label>Tipo de solicitud *</Label>
+                <Select value={editTypeId} onValueChange={setEditTypeId} required>
                   <SelectTrigger><SelectValue placeholder="Seleccionar tipo" /></SelectTrigger>
                   <SelectContent>
                     {reqTypes.map((t) => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
@@ -338,7 +421,7 @@ export default function ConductorRequests() {
               </div>
               <div className="space-y-2">
                 <Label>Vehículo asociado</Label>
-                <Select name="vehicle_id" defaultValue={editReq.vehicle_id ?? "none"}>
+                <Select value={editVehicleId} onValueChange={setEditVehicleId}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">Sin vehículo</SelectItem>
@@ -348,11 +431,12 @@ export default function ConductorRequests() {
               </div>
               <div className="space-y-2">
                 <Label>Monto estimado (CLP)</Label>
-                <Input name="amount" type="number" step="1" min="0" placeholder="Ej: 150000" defaultValue={editReq.amount ?? ""} />
+                <Input type="number" step="1" min="0" placeholder="Ej: 150000" value={editAmount} onChange={(e) => setEditAmount(e.target.value)} />
               </div>
               <div className="space-y-2">
-                <Label>Detalles</Label>
-                <Textarea name="details" required placeholder="Describe tu solicitud..." maxLength={500} defaultValue={stripResolution(editReq.details)} className="resize-none" />
+                <Label>Detalles *</Label>
+                <Textarea required placeholder="Describe tu solicitud..." maxLength={500} value={editDetails} onChange={(e) => setEditDetails(e.target.value)} className="resize-none" />
+                <p className="text-xs text-muted-foreground text-right">{editDetails.length}/500</p>
               </div>
               <div className="flex gap-2 justify-end">
                 <Button type="button" variant="outline" onClick={() => setEditOpen(false)}>Cancelar</Button>
