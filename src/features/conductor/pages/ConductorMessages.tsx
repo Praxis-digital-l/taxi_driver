@@ -3,11 +3,21 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import StatusBadge from "@/components/StatusBadge";
 import PageHeader from "@/components/PageHeader";
+import { cn } from "@/lib/utils";
 import { MessageSquare } from "lucide-react";
 import { useLocation } from "react-router-dom";
+
+const getInitials = (name?: string | null) =>
+  (name || "A")
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("");
 
 export default function ConductorMessages() {
   const { profile } = useAuth();
@@ -26,10 +36,12 @@ export default function ConductorMessages() {
   const [detailOpen, setDetailOpen] = useState(false);
 
   const OLD_STATUSES = ["pendiente", "en_proceso", "completado"];
-  const statusForConductor = (s: string) => s === "enviado" ? "pendiente" : "visto";
 
   const formatDateTime = (iso: string) =>
     new Date(iso).toLocaleString("es-CL", { dateStyle: "medium", timeStyle: "short" });
+
+  const formatTime = (iso: string) =>
+    new Date(iso).toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" });
 
   const markAsVisto = async (msg: any) => {
     if (msg.status === "visto") return msg;
@@ -102,27 +114,48 @@ export default function ConductorMessages() {
         <Card><CardContent className="empty-state"><MessageSquare /><p>No tienes mensajes.</p></CardContent></Card>
       ) : (
         <div className="grid gap-3">
-          {messages.map((msg) => (
-            <Card key={msg.id} className="stat-card overflow-hidden cursor-pointer" onClick={() => openDetail(msg)}>
-              <CardContent className="p-4">
-                <div className="flex items-start justify-between gap-3 max-w-full overflow-hidden">
-                  <div className="flex-1 min-w-0 max-w-full">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <p className="text-xs font-medium text-muted-foreground break-all">De: {msg.sender?.full_name || "Administrador"}</p>
-                      <StatusBadge status={statusForConductor(msg.status)} />
+          {messages.map((msg) => {
+            const unread = msg.status !== "visto";
+            return (
+              <Card
+                key={msg.id}
+                className={cn(
+                  "stat-card cursor-pointer overflow-hidden transition-colors hover:border-primary/40 hover:bg-muted/40",
+                  unread && "border-l-4 border-l-info",
+                )}
+                onClick={() => openDetail(msg)}
+              >
+                <CardContent className="p-4">
+                  <div className="flex items-start gap-3">
+                    <Avatar className="h-10 w-10 shrink-0">
+                      <AvatarFallback className="bg-primary/10 text-primary text-sm font-semibold">
+                        {getInitials(msg.sender?.full_name)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0 space-y-1">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className={cn("text-sm truncate", unread ? "font-semibold text-foreground" : "font-medium text-muted-foreground")}>
+                          {msg.sender?.full_name || "Administrador"}
+                        </p>
+                        <span className="text-xs text-muted-foreground shrink-0">{formatTime(msg.created_at)}</span>
+                      </div>
+                      <p className={cn("text-sm leading-relaxed break-all whitespace-pre-wrap line-clamp-2", unread ? "text-foreground" : "text-muted-foreground")}>
+                        {msg.content}
+                      </p>
+                      <div className="flex items-center gap-2 pt-0.5">
+                        <StatusBadge status={msg.status} />
+                        {unread && (
+                          <span className="inline-flex items-center gap-1 text-xs font-medium text-info">
+                            <span className="h-1.5 w-1.5 rounded-full bg-info" />Nuevo
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    <p className="text-sm mt-2 leading-relaxed break-all whitespace-pre-wrap line-clamp-2">{msg.content}</p>
-                    <p className="text-xs text-muted-foreground mt-2">
-                      {formatDateTime(msg.created_at)}
-                    </p>
-                    {msg.status === "visto" && (
-                      <p className="text-xs text-accent mt-1">Visto</p>
-                    )}
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       )}
 
@@ -133,18 +166,31 @@ export default function ConductorMessages() {
             <DialogTitle className="font-heading">Detalle del Mensaje</DialogTitle>
           </DialogHeader>
           {detailMsg && (
-            <div className="space-y-3 text-sm min-w-0">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="min-w-0"><span className="text-muted-foreground">De:</span><p className="font-medium truncate">{detailMsg.sender?.full_name ?? "Administrador"}</p></div>
-                <div className="min-w-0"><span className="text-muted-foreground">Estado:</span><p><StatusBadge status={statusForConductor(detailMsg.status)} /></p></div>
-                <div className="min-w-0"><span className="text-muted-foreground">Fecha:</span><p className="font-medium truncate">{new Date(detailMsg.created_at).toLocaleString("es-CL")}</p></div>
-                <div className="min-w-0"><span className="text-muted-foreground">Visto:</span><p className="font-medium truncate">{detailMsg.read_at ? new Date(detailMsg.read_at).toLocaleString("es-CL") : "—"}</p></div>
+            <div className="space-y-4 text-sm min-w-0">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <Avatar className="h-10 w-10 shrink-0">
+                    <AvatarFallback className="bg-primary/10 text-primary text-sm font-semibold">
+                      {getInitials(detailMsg.sender?.full_name)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="min-w-0">
+                    <p className="font-semibold truncate">{detailMsg.sender?.full_name ?? "Administrador"}</p>
+                    <p className="text-xs text-muted-foreground">{formatDateTime(detailMsg.created_at)}</p>
+                  </div>
+                </div>
+                <StatusBadge status={detailMsg.status} className="shrink-0" />
               </div>
+
               <div className="min-w-0">
-                <span className="text-muted-foreground block mb-1">Mensaje:</span>
-                <div className="rounded-lg border bg-muted/30 p-3 text-sm max-h-96 overflow-y-auto whitespace-pre-wrap break-all">
+                <div className="rounded-2xl rounded-tl-sm border bg-muted/40 p-4 text-sm max-h-72 overflow-y-auto whitespace-pre-wrap break-all leading-relaxed">
                   {detailMsg.content || "Sin contenido"}
                 </div>
+              </div>
+
+              <div className="flex flex-wrap gap-x-6 gap-y-1 text-xs text-muted-foreground pt-2 border-t">
+                <span>Recibido: {new Date(detailMsg.created_at).toLocaleString("es-CL")}</span>
+                {detailMsg.read_at && <span>Leído: {new Date(detailMsg.read_at).toLocaleString("es-CL")}</span>}
               </div>
             </div>
           )}

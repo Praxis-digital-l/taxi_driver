@@ -115,13 +115,19 @@ export async function updateRequest(requestId: string, updates: {
   amount?: number | null;
   details?: string;
 }) {
-  const { error } = await supabase.from("requests").update(updates).eq("id", requestId);
+  const { data, error } = await supabase.from("requests").update(updates).eq("id", requestId).select();
   assertNoError(error);
+  if (!data || data.length === 0) {
+    throw new Error("No se pudo guardar la solicitud. Verifica que exista o que tengas permisos para editarla.");
+  }
 }
 
 export async function deleteRequest(requestId: string) {
-  const { error } = await supabase.from("requests").delete().eq("id", requestId);
+  const { data, error } = await supabase.from("requests").delete().eq("id", requestId).select();
   assertNoError(error);
+  if (!data || data.length === 0) {
+    throw new Error("No se pudo eliminar la solicitud. Verifica que exista o que tengas permisos.");
+  }
 }
 
 export function sortActiveRequestsByPriority(requests: AdminRequest[]) {

@@ -5,6 +5,7 @@ import RequestPriorityBadge from "@/components/RequestPriorityBadge";
 import { Plate } from "@/components/ui/plate";
 import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/features/auth/context/AuthContext";
 import { getRequestWaitingDays, resolveRequestTypeName } from "@/lib/requestPriority";
 import {
   Truck,
