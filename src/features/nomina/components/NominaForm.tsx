@@ -32,6 +32,7 @@ const CAMPOS_SECUNDARIOS = [
   { id: "mantencion", label: "Mantención", placeholder: "Ej: 80.000" },
   { id: "anticipo", label: "Anticipo", placeholder: "Ej: 100.000" },
   { id: "prestamo", label: "Préstamo", placeholder: "Ej: 50.000" },
+  { id: "efectivoMonto", label: "Efectivo", placeholder: "Ej: 30.000" },
 ] as const;
 
 function formatPesos(digits: string): string {
@@ -121,6 +122,9 @@ export default function NominaForm({ onCalcular }: NominaFormProps) {
       mantencion: parseNum("mantencion"),
       anticipo: parseNum("anticipo"),
       prestamo: parseNum("prestamo"),
+      otroDescuentoDescripcion: (values.otroDescuentoDescripcion || "").trim(),
+      otroDescuentoMonto: parseNum("otroDescuentoMonto"),
+      efectivoMonto: parseNum("efectivoMonto"),
     };
 
     const validationErrors = validarDatosNomina(data);
@@ -229,6 +233,31 @@ export default function NominaForm({ onCalcular }: NominaFormProps) {
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-2">
           {CAMPOS_BASE.map(renderCurrencyInput)}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <DollarSign className="h-5 w-5 text-primary" />
+            Otros descuentos
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-1">
+            <Label htmlFor="otroDescuentoDescripcion">Descripción</Label>
+            <Input
+              id="otroDescuentoDescripcion"
+              name="otroDescuentoDescripcion"
+              type="text"
+              value={values.otroDescuentoDescripcion || ""}
+              onChange={(e) =>
+                setValues((prev) => ({ ...prev, otroDescuentoDescripcion: e.target.value }))
+              }
+              placeholder="Ej: Multa, cobro administrativo"
+            />
+          </div>
+          {renderCurrencyInput({ id: "otroDescuentoMonto", label: "Monto", placeholder: "Ej: 20.000" })}
         </CardContent>
       </Card>
 
