@@ -115,8 +115,8 @@ export default function ConductorMessages() {
                     <p className="text-xs text-muted-foreground mt-2">
                       {formatDateTime(msg.created_at)}
                     </p>
-                    {msg.status === "visto" && msg.read_at && (
-                      <p className="text-xs text-accent mt-1">Visto el {formatDateTime(msg.read_at)}</p>
+                    {msg.status === "visto" && (
+                      <p className="text-xs text-accent mt-1">Visto</p>
                     )}
                   </div>
                 </div>

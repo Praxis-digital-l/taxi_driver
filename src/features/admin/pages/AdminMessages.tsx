@@ -177,13 +177,9 @@ export default function AdminMessages() {
                       {formatDateTime(msg.created_at)}
                     </p>
                     {msg.status === "visto" ? (
-                      msg.read_at ? (
-                        <p className="text-xs text-accent mt-1">Visto el {formatDateTime(msg.read_at)}</p>
-                      ) : (
-                        <p className="text-xs text-muted-foreground mt-1">Visto (sin registro de fecha)</p>
-                      )
+                      <p className="text-xs text-accent mt-1">Visto</p>
                     ) : (
-                      <p className="text-xs text-warning mt-1">Pendiente</p>
+                      <p className="text-xs text-warning mt-1">Enviado</p>
                     )}
                   </div>
                   <div className="flex items-center gap-2 shrink-0" onClick={(e) => e.stopPropagation()}>

@@ -6,7 +6,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { ConductorAvatar } from "@/components/ConductorAvatar";
-import { Loader2, Trophy } from "lucide-react";
+import { Trophy, Sparkles, Medal, Award, Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import {
   fetchConductorDelMes,
   fetchConductorCandidates,
@@ -22,9 +23,10 @@ const MONTH_NAMES = [
 
 type ConductorDelMesCardProps = {
   editable?: boolean;
+  className?: string;
 };
 
-export function ConductorDelMesCard({ editable = false }: ConductorDelMesCardProps) {
+export function ConductorDelMesCard({ editable = false, className }: ConductorDelMesCardProps) {
   const { profile } = useAuth();
   const { toast } = useToast();
   const now = new Date();
@@ -91,88 +93,127 @@ export function ConductorDelMesCard({ editable = false }: ConductorDelMesCardPro
     }
   };
 
-  const monthLabel = `${MONTH_NAMES[month - 1]} ${year}`;
+  const activeMonth = conductor?.month ?? month;
+  const activeYear = conductor?.year ?? year;
+  const monthLabel = `${MONTH_NAMES[activeMonth - 1]} ${activeYear}`;
 
   const selectedCandidate = candidates.find((c) => c.id === selectedId) ?? null;
   const displayDriver =
     editable && selectedCandidate
-      ? { full_name: selectedCandidate.full_name, photo_url: selectedCandidate.photo_url }
+      ? { full_name: selectedCandidate.full_name, photo_url: selectedCandidate.photo_url, worker_id: selectedCandidate.worker_id }
       : conductor?.conductor;
 
   return (
-    <Card className="overflow-hidden">
-      <CardContent className="relative p-4 sm:p-5">
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-accent/15 via-transparent to-primary/10" />
-        <div className="relative">
-          <div className="flex items-center gap-2">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/15 text-accent">
-              <Trophy className="h-4 w-4" />
-            </span>
-            <p className="font-heading text-sm font-semibold">Conductor del Mes</p>
-            <Badge variant="secondary" className="ml-auto">{monthLabel}</Badge>
-          </div>
+    <Card className={cn("relative overflow-hidden border border-border/80 shadow-sm bg-card hover:shadow-md transition-all flex flex-col justify-between", className)}>
+      {/* Decorative ambient gradients */}
+      <div className="pointer-events-none absolute -right-12 -top-12 h-44 w-44 rounded-full bg-amber-500/10 dark:bg-amber-400/10 blur-2xl" />
+      <div className="pointer-events-none absolute -left-12 -bottom-12 h-36 w-36 rounded-full bg-primary/10 blur-2xl" />
 
-          {loading ? (
-            <div className="flex items-center gap-3 py-4">
-              <div className="h-14 w-14 rounded-full bg-muted animate-pulse" />
-              <div className="space-y-2">
-                <div className="h-4 w-40 rounded bg-muted animate-pulse" />
-                <div className="h-3 w-24 rounded bg-muted animate-pulse" />
-              </div>
+      <CardContent className="relative p-5 flex flex-col justify-between h-full gap-4">
+        {/* Header */}
+        <div className="flex items-center justify-between pb-3 border-b border-border/50 shrink-0">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-amber-400 via-amber-500 to-amber-600 text-white shadow-md shadow-amber-500/25">
+              <Trophy className="h-4 w-4" />
             </div>
-          ) : displayDriver ? (
-            <div className="mt-4 flex items-center gap-4">
+            <div>
+              <h4 className="font-heading text-sm font-bold tracking-tight text-foreground">Conductor del Mes</h4>
+              <p className="text-[11px] text-muted-foreground leading-none">Reconocimiento destacado</p>
+            </div>
+          </div>
+          <Badge variant="outline" className="text-[11px] font-medium border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300">
+            {monthLabel}
+          </Badge>
+        </div>
+
+        {/* Centerpiece Spotlight */}
+        {loading ? (
+          <div className="my-auto py-6 flex flex-col items-center gap-3">
+            <div className="h-20 w-20 rounded-full bg-muted animate-pulse" />
+            <div className="space-y-1.5 flex flex-col items-center">
+              <div className="h-4 w-36 rounded bg-muted animate-pulse" />
+              <div className="h-3 w-24 rounded bg-muted animate-pulse" />
+            </div>
+          </div>
+        ) : displayDriver ? (
+          <div className="my-auto py-3 flex flex-col items-center text-center">
+            <div className="relative mb-3 group">
+              <div className="absolute -inset-1 rounded-full bg-gradient-to-r from-amber-400 to-amber-600 opacity-30 blur group-hover:opacity-50 transition-opacity" />
               <ConductorAvatar
                 fullName={displayDriver.full_name}
                 photoUrl={displayDriver.photo_url}
-                className="h-16 w-16 ring-2 ring-accent ring-offset-2"
+                className="relative h-20 w-20 ring-4 ring-amber-500/40 shadow-lg shadow-amber-500/20"
               />
-              <div className="min-w-0">
-                <p className="text-lg font-bold font-heading leading-tight">
-                  {displayDriver.full_name ?? "Conductor"}
-                </p>
-                <p className="text-xs text-muted-foreground">Destacado de {monthLabel}</p>
+              <div className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-tr from-amber-500 to-yellow-400 text-white shadow-md ring-2 ring-card">
+                <Sparkles className="h-3.5 w-3.5" />
               </div>
             </div>
-          ) : (
-            <div className="mt-4 flex items-center gap-4">
-              <span className="flex h-16 w-16 items-center justify-center rounded-full bg-muted text-muted-foreground ring-2 ring-border ring-offset-2">
-                <Trophy className="h-7 w-7" />
-              </span>
-              <div className="min-w-0">
-                <p className="text-sm font-medium">Aún no se ha elegido el conductor del mes</p>
-                <p className="text-xs text-muted-foreground">El administrador puede destacar a un conductor.</p>
-              </div>
-            </div>
-          )}
 
-          {editable && (
-            <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/25 mb-1.5 shadow-sm">
+              <Medal className="h-3 w-3 text-amber-500" />
+              Destacado de {MONTH_NAMES[activeMonth - 1]}
+            </div>
+
+            <h3 className="text-base font-bold font-heading text-foreground tracking-tight max-w-full px-2">
+              {displayDriver.full_name ?? "Conductor"}
+            </h3>
+            
+            {displayDriver.worker_id && (
+              <p className="text-[11px] text-muted-foreground font-data mt-0.5">
+                Código: {displayDriver.worker_id}
+              </p>
+            )}
+
+            <p className="text-xs text-muted-foreground mt-2 max-w-[240px] leading-relaxed">
+              Reconocido por su compromiso, puntualidad y excelencia en el servicio.
+            </p>
+          </div>
+        ) : (
+          <div className="my-auto py-6 flex flex-col items-center text-center">
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-dashed border-amber-500/30 mb-3 shadow-sm">
+              <Trophy className="h-7 w-7 opacity-80" />
+            </div>
+            <p className="text-sm font-semibold text-foreground">Sin conductor seleccionado</p>
+            <p className="text-xs text-muted-foreground mt-1 max-w-[220px] leading-relaxed">
+              {editable
+                ? "Elige al conductor destacado para otorgarle el reconocimiento de este mes."
+                : "Aún no se ha asignado el conductor destacado para este mes."}
+            </p>
+          </div>
+        )}
+
+        {/* Editable form footer */}
+        {editable && (
+          <div className="pt-3 border-t border-border/50 space-y-2 shrink-0">
+            <p className="text-[11px] font-medium text-muted-foreground">
+              {displayDriver ? "Cambiar conductor del mes:" : "Asignar conductor del mes:"}
+            </p>
+            <div className="flex items-center gap-2">
               <Select value={selectedId} onValueChange={setSelectedId}>
-                <SelectTrigger className="w-full sm:max-w-xs">
-                  <SelectValue placeholder="Seleccionar conductor…" />
+                <SelectTrigger className="h-8 text-xs flex-1">
+                  <SelectValue placeholder="Elegir conductor…" />
                 </SelectTrigger>
                 <SelectContent>
                   {candidates.length === 0 ? (
-                    <div className="px-2 py-1.5 text-sm text-muted-foreground">No hay conductores disponibles</div>
+                    <div className="px-2 py-1.5 text-xs text-muted-foreground">No hay conductores disponibles</div>
                   ) : (
                     candidates.map((candidate) => (
-                      <SelectItem key={candidate.id} value={candidate.id}>
+                      <SelectItem key={candidate.id} value={candidate.id} className="text-xs">
                         {`${candidate.full_name ?? "Sin nombre"}${
-                          candidate.worker_id ? ` — ${candidate.worker_id}` : ""
+                          candidate.worker_id ? ` (${candidate.worker_id})` : ""
                         }`}
                       </SelectItem>
                     ))
                   )}
                 </SelectContent>
               </Select>
-              <Button size="sm" onClick={handleSave} disabled={saving || !selectedId}>
-                {saving && <Loader2 className="h-4 w-4 animate-spin" />}
+              <Button size="sm" className="h-8 px-3 text-xs gap-1.5 shrink-0 bg-primary hover:bg-primary/90 text-primary-foreground font-medium" onClick={handleSave} disabled={saving || !selectedId}>
+                {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Award className="h-3.5 w-3.5" />}
                 Guardar
               </Button>
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

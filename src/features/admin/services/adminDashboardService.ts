@@ -59,15 +59,15 @@ export async function fetchAdminDashboardData() {
     supabase.from("vehicles").select("id", { count: "exact", head: true }),
     supabase.from("vehicles").select("id", { count: "exact", head: true }).eq("status", "active"),
     supabase.from("profiles").select("id", { count: "exact", head: true }).eq("role", "conductor"),
-    supabase.from("requests").select("id", { count: "exact", head: true }).neq("status", "completado"),
+    supabase.from("requests").select("id", { count: "exact", head: true }).eq("status", "pendiente"),
     supabase.from("requests").select("id", { count: "exact", head: true }).eq("status", "en_proceso"),
     supabase.from("documents").select("id", { count: "exact", head: true }).lte("expiration_date", thirtyDays).gte("expiration_date", today),
     supabase.from("documents").select("id", { count: "exact", head: true }),
-    supabase.from("messages").select("id", { count: "exact", head: true }).eq("status", "pendiente"),
+    supabase.from("messages").select("id", { count: "exact", head: true }).eq("status", "enviado").is("read_at", null),
     supabase
       .from("requests")
       .select("id, status, details, amount, created_at, request_types(name), profiles(full_name), vehicles(license_plate)")
-      .neq("status", "completado")
+      .in("status", ["pendiente", "en_proceso"])
       .limit(50),
     supabase
       .from("documents")
@@ -79,7 +79,8 @@ export async function fetchAdminDashboardData() {
     supabase
       .from("messages")
       .select("id, content, created_at, sender:profiles!messages_sender_id_fkey(full_name)")
-      .eq("status", "pendiente")
+      .eq("status", "enviado")
+      .is("read_at", null)
       .order("created_at", { ascending: false })
       .limit(5),
     supabase

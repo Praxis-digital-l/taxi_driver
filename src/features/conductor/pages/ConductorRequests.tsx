@@ -13,6 +13,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useToast } from "@/hooks/use-toast";
 import StatusBadge from "@/components/StatusBadge";
 import PageHeader from "@/components/PageHeader";
+import { resolveRequestTypeName } from "@/lib/requestPriority";
 import { Plus, ClipboardList, Pencil, Trash2, XCircle, CheckCircle2 } from "lucide-react";
 
 const TERMINAL_STATUSES = ["aprobado", "rechazado", "completado"];

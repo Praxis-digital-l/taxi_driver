@@ -70,9 +70,24 @@ const REQUEST_TYPE_PRIORITY_MAP: Record<string, RequestPriorityKey> = {
   combustible: "urgent",
   repuestos: "high",
   mantencion: "medium_high",
+  vacaciones: "medium_high",
   prestamo: "low",
   anticipo: "very_low",
 };
+
+export function resolveRequestTypeName(request?: {
+  details?: string | null;
+  request_types?: { name: string | null } | null;
+} | null): string {
+  if (!request) return "Solicitud";
+  if (
+    request.details?.includes("[VACACIONES") ||
+    request.details?.includes("[SOLICITUD DE VACACIONES")
+  ) {
+    return "Vacaciones";
+  }
+  return request.request_types?.name || "Solicitud";
+}
 
 const PRIORITY_ORDER: RequestPriorityKey[] = [
   "urgent",

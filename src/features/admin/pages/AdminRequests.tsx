@@ -12,7 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import StatusBadge from "@/components/StatusBadge";
 import RequestPriorityBadge from "@/components/RequestPriorityBadge";
 import PageHeader from "@/components/PageHeader";
-import { buildRequestPriorityBreakdown, getRequestWaitingDays } from "@/lib/requestPriority";
+import { buildRequestPriorityBreakdown, getRequestWaitingDays, resolveRequestTypeName } from "@/lib/requestPriority";
 import { supabase } from "@/integrations/supabase/client";
 import { CheckCircle2, ClipboardList, Pencil, ThumbsDown, Trash2, XCircle } from "lucide-react";
 import {
@@ -98,7 +98,46 @@ export default function AdminRequests() {
   }, [requests, searchParams, setSearchParams]);
 
   useEffect(() => {
-    supabase.from("request_types").select("*").order("name").then(({ data }) => setReqTypes(data || []));
+    const initRequestTypes = async () => {
+      try {
+        const { data } = await supabase.from("request_types").select("*").order("name");
+        const list = [...(data || [])];
+        const vacType = list.find((rt) => rt.name?.toLowerCase().includes("vacacion"));
+
+        if (!vacType) {
+          const { data: created } = await supabase
+            .from("request_types")
+            .insert({ name: "Vacaciones" })
+            .select()
+            .single();
+
+          if (created) {
+            list.push(created);
+            list.sort((a, b) => a.name.localeCompare(b.name));
+            // Actualizar solicitudes existentes que tengan detalles de vacaciones
+            await supabase
+              .from("requests")
+              .update({ request_type_id: created.id })
+              .or("details.ilike.%[VACACIONES]%,details.ilike.%[SOLICITUD DE VACACIONES]%");
+            load();
+          }
+        } else {
+          // Si ya existe, asegurar que solicitudes previas con préstamo se corrijan a Vacaciones
+          const { error: updErr } = await supabase
+            .from("requests")
+            .update({ request_type_id: vacType.id })
+            .neq("request_type_id", vacType.id)
+            .or("details.ilike.%[VACACIONES]%,details.ilike.%[SOLICITUD DE VACACIONES]%");
+          if (!updErr) {
+            load();
+          }
+        }
+        setReqTypes(list);
+      } catch (err) {
+        console.warn("Error inicializando tipos de solicitudes:", err);
+      }
+    };
+    initRequestTypes();
   }, []);
 
   const isTerminal = (status: string) => TERMINAL_STATUSES.includes(status);
@@ -206,7 +245,7 @@ export default function AdminRequests() {
   };
 
   const prioritySummary = useMemo(
-    () => buildRequestPriorityBreakdown(requests, (request) => request.request_types?.name),
+    () => buildRequestPriorityBreakdown(requests, (request) => resolveRequestTypeName(request)),
     [requests],
   );
 
@@ -256,6 +295,7 @@ export default function AdminRequests() {
         <div className="grid gap-3">
           {requests.map((request) => {
             const waitingDays = getRequestWaitingDays(request.created_at);
+            const typeName = resolveRequestTypeName(request);
 
             return (
               <Card key={request.id} className="stat-card overflow-hidden cursor-pointer" onClick={() => openDetail(request)}>
@@ -267,8 +307,8 @@ export default function AdminRequests() {
                           {request.profiles?.full_name ?? "Desconocido"}
                         </p>
                         <span className="text-xs text-muted-foreground shrink-0">·</span>
-                        <span className="text-sm truncate">{request.request_types?.name ?? "Sin tipo"}</span>
-                        <RequestPriorityBadge requestTypeName={request.request_types?.name} />
+                        <span className="text-sm truncate font-semibold">{typeName}</span>
+                        <RequestPriorityBadge requestTypeName={typeName} />
                       </div>
                       <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
                         <StatusBadge status={request.status} />
@@ -306,7 +346,7 @@ export default function AdminRequests() {
             <div className="space-y-3 text-sm min-w-0">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="min-w-0"><span className="text-muted-foreground">Conductor:</span><p className="font-medium truncate">{detailReq.profiles?.full_name ?? "—"}</p></div>
-                <div className="min-w-0"><span className="text-muted-foreground">Tipo:</span><p className="font-medium truncate">{detailReq.request_types?.name ?? "—"}</p></div>
+                <div className="min-w-0"><span className="text-muted-foreground">Tipo:</span><p className="font-medium truncate text-primary font-semibold">{resolveRequestTypeName(detailReq)}</p></div>
                 <div className="min-w-0"><span className="text-muted-foreground">RUT:</span><p className="font-medium truncate">{detailReq.profiles?.rut ?? "—"}</p></div>
                 <div className="min-w-0"><span className="text-muted-foreground">Teléfono:</span><p className="font-medium truncate">{detailReq.profiles?.phone ?? "—"}</p></div>
                 <div className="min-w-0"><span className="text-muted-foreground">Patente:</span><p className="font-medium truncate">{detailReq.vehicles?.license_plate ?? "Sin vehículo"}</p></div>
