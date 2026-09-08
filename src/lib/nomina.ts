@@ -14,6 +14,9 @@ export type DatosNomina = {
   mantencion: number;
   anticipo: number;
   prestamo: number;
+  otroDescuentoDescripcion: string;
+  otroDescuentoMonto: number;
+  efectivoMonto: number;
 };
 
 export type DetalleDescuento = {
@@ -81,6 +84,8 @@ export function validarDatosNomina(data: Partial<DatosNomina>): ErrorValidacion[
   validarCampo("mantencion", data.mantencion, "Mantención");
   validarCampo("anticipo", data.anticipo, "Anticipo");
   validarCampo("prestamo", data.prestamo, "Préstamo");
+  validarCampo("otroDescuentoMonto", data.otroDescuentoMonto, "Otros descuentos");
+  validarCampo("efectivoMonto", data.efectivoMonto, "Efectivo");
 
   if (data.tag) {
     for (const [key, val] of Object.entries(data.tag)) {
@@ -115,9 +120,20 @@ export function calcularNomina(data: DatosNomina): ResultadoNomina {
     { concepto: "Mantención", monto: data.mantencion },
     { concepto: "Anticipo", monto: data.anticipo },
     { concepto: "Préstamo", monto: data.prestamo },
+    ...(data.otroDescuentoMonto > 0
+      ? [
+          {
+            concepto: data.otroDescuentoDescripcion.trim()
+              ? `Otros descuentos - ${data.otroDescuentoDescripcion.trim()}`
+              : "Otros descuentos",
+            monto: data.otroDescuentoMonto,
+          },
+        ]
+      : []),
+    ...(data.efectivoMonto > 0 ? [{ concepto: "Efectivo", monto: data.efectivoMonto }] : []),
   ];
 
-  const totalDescuentosSecundarios = data.mantencion + data.anticipo + data.prestamo;
+  const totalDescuentosSecundarios = data.mantencion + data.anticipo + data.prestamo + data.otroDescuentoMonto + data.efectivoMonto;
   const totalAPagar = subtotal - totalDescuentosSecundarios;
 
   return {
