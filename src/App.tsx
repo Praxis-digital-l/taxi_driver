@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/features/auth/context/AuthContext";
 import ProtectedRoute from "@/features/auth/components/ProtectedRoute";
+import PushNotificationsProvider from "@/features/notifications/PushNotificationsProvider";
 import AppLayout from "@/shared/layouts/AppLayout";
 import Auth from "@/features/auth/pages/AuthPage";
 import ConductorDashboard from "@/features/conductor/pages/ConductorDashboard";
@@ -70,7 +71,8 @@ const App = () => (
       <Sonner />
       <BrowserRouter basename={import.meta.env.BASE_URL}>
         <AuthProvider>
-          <Routes>
+          <PushNotificationsProvider>
+            <Routes>
             <Route path="/" element={<RootRedirect />} />
             <Route path="/auth" element={<Auth />} />
 
@@ -99,7 +101,8 @@ const App = () => (
             <Route path="/admin/users" element={<ProtectedRoute requiredRole="super_admin"><AppLayout><AdminUsers /></AppLayout></ProtectedRoute>} />
 
             <Route path="*" element={<NotFound />} />
-          </Routes>
+            </Routes>
+          </PushNotificationsProvider>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
