@@ -74,9 +74,10 @@ export default function AdminMessages() {
       setLoading(false);
       return;
     }
+    const receiverId = form.get("receiver_id") as string;
     const { error } = await supabase.from("messages").insert({
       sender_id: profile.id,
-      receiver_id: form.get("receiver_id") as string,
+      receiver_id: receiverId,
       content,
       status: "enviado",
     });
@@ -87,6 +88,13 @@ export default function AdminMessages() {
       setNewMessage("");
       setOpen(false);
       load();
+      supabase.functions.invoke("push-message", {
+        body: {
+          receiver_id: receiverId,
+          message: content,
+          sender_name: profile.full_name || "Administración",
+        },
+      }).catch((err) => console.warn("Notificación push no enviada:", err));
     }
     setLoading(false);
   };
