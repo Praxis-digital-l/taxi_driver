@@ -19,11 +19,19 @@ export type LiquidacionRecord = {
   fecha: string;
   file_url: string | null;
   enviado_por: string | null;
+  firma_url: string | null;
+  firma_estado: number;
+  firma_id_documento: string | null;
+  firma_id_proceso: string | null;
   created_at: string;
 };
 
+export const FIRMA_PENDIENTE = 0;
+export const FIRMA_FIRMADA = 1;
+export const FIRMA_RECHAZADA = 2;
+
 const LIQUIDACIONES_BUCKET = "Liquidaciones";
-const LIQUIDACION_COLUMNS = "id, profile_id, worker_id, nombre, email, rut, total_facturado, descuentos_primarios, subtotal, descuentos_secundarios, total_descuentos, total_a_pagar, mes, fecha, file_url, enviado_por, created_at";
+const LIQUIDACION_COLUMNS = "id, profile_id, worker_id, nombre, email, rut, total_facturado, descuentos_primarios, subtotal, descuentos_secundarios, total_descuentos, total_a_pagar, mes, fecha, file_url, enviado_por, firma_url, firma_estado, firma_id_documento, firma_id_proceso, created_at";
 
 function assertNoError(error: { message: string } | null) {
   if (error) throw new Error(error.message);
@@ -58,6 +66,10 @@ function toRecord(row: Record<string, unknown>): LiquidacionRecord {
     fecha: String(row.fecha),
     file_url: row.file_url ? String(row.file_url) : null,
     enviado_por: row.enviado_por ? String(row.enviado_por) : null,
+    firma_url: row.firma_url ? String(row.firma_url) : null,
+    firma_estado: row.firma_estado !== undefined && row.firma_estado !== null ? Number(row.firma_estado) : FIRMA_PENDIENTE,
+    firma_id_documento: row.firma_id_documento ? String(row.firma_id_documento) : null,
+    firma_id_proceso: row.firma_id_proceso ? String(row.firma_id_proceso) : null,
     created_at: String(row.created_at),
   };
 }
@@ -146,4 +158,35 @@ export async function fetchLiquidacionesByProfile(profileId: string) {
 
   assertNoError(error);
   return ((data ?? []) as Record<string, unknown>[]).map(toRecord);
+}
+
+export async function guardarFirmaLiquidacion(
+  trabajadorId: string,
+  mes: string,
+  datosFirma: {
+    firma_url: string;
+    firma_id_documento: string;
+    firma_id_proceso: string;
+  },
+): Promise<number> {
+  const { error } = await supabase
+    .from("liquidaciones")
+    .update({
+      firma_url: datosFirma.firma_url,
+      firma_id_documento: datosFirma.firma_id_documento,
+      firma_id_proceso: datosFirma.firma_id_proceso,
+      firma_estado: FIRMA_PENDIENTE,
+    })
+    .eq("worker_id", trabajadorId)
+    .eq("mes", mes);
+
+  assertNoError(error);
+
+  const { data: conteo } = await supabase
+    .from("liquidaciones")
+    .select("id", { count: "exact", head: true })
+    .eq("worker_id", trabajadorId)
+    .eq("mes", mes);
+
+  return conteo?.length ?? 0;
 }

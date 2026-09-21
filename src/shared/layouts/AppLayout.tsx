@@ -7,10 +7,11 @@ import { BrandMark } from "@/components/ui/BrandMark";
 import ThemeSwitch from "@/components/ThemeSwitch";
 import {
   Truck, LayoutDashboard, FileText, ClipboardList, Gauge, MessageSquare,
-  Search, LogOut, Menu, X, ChevronRight, Users, Calculator, Upload, Wallet, Landmark
+  Search, LogOut, Menu, X, ChevronRight, Users, Calculator, Upload, Wallet, Landmark, Pencil
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { logDevInteraction } from "@/shared/monitoring/devLogger";
+import { ProfileEditDialog } from "@/features/profile/components/ProfileEditDialog";
 
 const baseAdminLinks = [
   { to: "/admin", icon: LayoutDashboard, label: "Dashboard" },
@@ -39,6 +40,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const { profile, signOut, isAdmin } = useAuth();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [perfilOpen, setPerfilOpen] = useState(false);
   const links = isAdmin ? baseAdminLinks : conductorLinks;
 
   return (
@@ -111,7 +113,12 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         </nav>
 
         <div className="border-t border-sidebar-border p-3 space-y-2">
-          <div className="flex items-center gap-3 rounded-lg px-3 py-2">
+          <button
+            type="button"
+            onClick={() => setPerfilOpen(true)}
+            title="Editar mi perfil"
+            className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left transition-colors hover:bg-sidebar-accent/60"
+          >
             <ConductorAvatar fullName={profile?.full_name} photoUrl={profile?.photo_url} className="h-9 w-9" />
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium truncate">{profile?.full_name || "Usuario"}</p>
@@ -126,7 +133,16 @@ export default function AppLayout({ children }: { children: ReactNode }) {
               title="Turno activo"
               aria-hidden="true"
             />
-          </div>
+          </button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full justify-start text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-accent"
+            onClick={() => setPerfilOpen(true)}
+          >
+            <Pencil className="mr-2 h-4 w-4" />
+            Mi perfil
+          </Button>
           <Button
             variant="ghost"
             size="sm"
@@ -158,6 +174,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         </header>
         <div className="page-container animate-fade-in">{children}</div>
       </main>
+      <ProfileEditDialog open={perfilOpen} onOpenChange={setPerfilOpen} />
     </div>
   );
 }

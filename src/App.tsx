@@ -26,6 +26,7 @@ import AdminConductores from "@/features/admin/pages/AdminConductores";
 import AdminNomina from "@/features/admin/pages/AdminNomina";
 import AdminBulkUpload from "@/features/admin/pages/AdminBulkUpload";
 import NotFound from "@/pages/NotFound";
+import PaginaResultadoFirma from "@/features/nomina/pages/PaginaResultadoFirma";
 
 const queryClient = new QueryClient();
 
@@ -95,6 +96,8 @@ const App = () => (
             <Route path="/admin/bulk-upload" element={<ProtectedRoute requiredRole="admin"><AppLayout><AdminBulkUpload /></AppLayout></ProtectedRoute>} />
             <Route path="/admin/users" element={<ProtectedRoute requiredRole="super_admin"><AppLayout><AdminUsers /></AppLayout></ProtectedRoute>} />
 
+            <Route path="/firma/exito" element={<PaginaResultadoFirma />} />
+            <Route path="/firma/cancelado" element={<PaginaResultadoFirma />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>

@@ -6,14 +6,26 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import PageHeader from "@/components/PageHeader";
-import { FileText, Fingerprint, Wallet, Download, Eye } from "lucide-react";
-import { fetchLiquidacionesByProfile, type LiquidacionRecord } from "@/features/nomina/services/liquidacionesService";
+import { FileText, Fingerprint, Wallet, Download, Eye, PenLine } from "lucide-react";
+import {
+  FIRMA_FIRMADA,
+  FIRMA_RECHAZADA,
+  fetchLiquidacionesByProfile,
+  type LiquidacionRecord,
+} from "@/features/nomina/services/liquidacionesService";
+import { FirmaWebService } from "@/features/nomina/services/firmaWebService";
 
 const MONEDA = new Intl.NumberFormat("es-CL", {
   style: "currency",
   currency: "CLP",
   maximumFractionDigits: 0,
 });
+
+function estadoFirma(estado: number): { texto: string; variante: "default" | "outline" | "destructive" } {
+  if (estado === FIRMA_FIRMADA) return { texto: "Firmada", variante: "default" };
+  if (estado === FIRMA_RECHAZADA) return { texto: "Rechazada", variante: "destructive" };
+  return { texto: "Pendiente de firma", variante: "outline" };
+}
 
 function Fila({ concepto, monto, esTotal = false }: { concepto: string; monto: number; esTotal?: boolean }) {
   return (
@@ -25,6 +37,32 @@ function Fila({ concepto, monto, esTotal = false }: { concepto: string; monto: n
 }
 
 function DetalleLiquidacion({ liquidacion }: { liquidacion: LiquidacionRecord }) {
+  const [descargandoFirmado, setDescargandoFirmado] = useState(false);
+  const [errorFirma, setErrorFirma] = useState<string | null>(null);
+  const firma = estadoFirma(liquidacion.firma_estado);
+
+  const handleDescargarFirmado = async () => {
+    if (!liquidacion.firma_id_documento) return;
+    setDescargandoFirmado(true);
+    setErrorFirma(null);
+    try {
+      const base64 = await FirmaWebService.getInstance().descargarDocumento(liquidacion.firma_id_documento);
+      const binario = atob(base64);
+      const bytes = new Uint8Array(binario.length);
+      for (let i = 0; i < binario.length; i += 1) bytes[i] = binario.charCodeAt(i);
+      const url = URL.createObjectURL(new Blob([bytes], { type: "application/pdf" }));
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `liquidacion-firmada-${liquidacion.worker_id}-${liquidacion.mes}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      setErrorFirma(error instanceof Error ? error.message : "No se pudo descargar el PDF firmado.");
+    } finally {
+      setDescargandoFirmado(false);
+    }
+  };
+
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
@@ -33,6 +71,9 @@ function DetalleLiquidacion({ liquidacion }: { liquidacion: LiquidacionRecord })
         </span>
         <span>{liquidacion.mes}</span>
         <span>{liquidacion.fecha}</span>
+        <Badge variant={firma.variante} className="shrink-0">
+          {firma.texto}
+        </Badge>
       </div>
 
       <div className="space-y-1">
@@ -93,6 +134,34 @@ function DetalleLiquidacion({ liquidacion }: { liquidacion: LiquidacionRecord })
           </Button>
         </div>
       )}
+
+      {liquidacion.firma_url && liquidacion.firma_estado !== FIRMA_FIRMADA && (
+        <div className="flex flex-wrap justify-end gap-2 rounded-lg bg-primary/5 px-3 py-2">
+          <Button
+            size="sm"
+            className="gap-2"
+            onClick={() => window.open(liquidacion.firma_url!, "_blank")}
+          >
+            <PenLine className="h-4 w-4" /> Firmar ahora
+          </Button>
+        </div>
+      )}
+
+      {liquidacion.firma_estado === FIRMA_FIRMADA && liquidacion.firma_id_documento && (
+        <div className="flex flex-col items-end gap-2 rounded-lg bg-primary/5 px-3 py-2">
+          <Button
+            size="sm"
+            className="gap-2"
+            variant="default"
+            onClick={handleDescargarFirmado}
+            disabled={descargandoFirmado}
+          >
+            <Download className="h-4 w-4" />
+            {descargandoFirmado ? "Descargando..." : "Descargar PDF firmado"}
+          </Button>
+          {errorFirma && <p className="text-xs text-destructive">{errorFirma}</p>}
+        </div>
+      )}
     </div>
   );
 }
@@ -141,6 +210,12 @@ export default function ConductorLiquidaciones() {
                     <div className="flex items-center gap-2 flex-wrap">
                       <p className="text-sm font-semibold">Liquidación {liq.mes}</p>
                       <Badge variant="outline" className="text-xs shrink-0">{liq.worker_id}</Badge>
+                      {(() => {
+                        const f = estadoFirma(liq.firma_estado);
+                        return (
+                          <Badge variant={f.variante} className="text-xs shrink-0">{f.texto}</Badge>
+                        );
+                      })()}
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">{liq.fecha}</p>
                     {liq.file_url && (

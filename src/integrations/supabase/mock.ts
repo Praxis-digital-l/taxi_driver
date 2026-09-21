@@ -1203,6 +1203,22 @@ class MockSupabaseClient {
       }
       return { data: null, error: null };
     }
+    if (fnName === "update_own_profile") {
+      const { data } = await this.auth.getSession();
+      const userId = (data.session?.user as { id?: string } | undefined)?.id;
+      const profiles = getTableRows("profiles");
+      const row = userId ? profiles.find((r) => r.user_id === userId) : undefined;
+      if (row) {
+        row.nombres = params.p_nombres ?? "";
+        row.apellido_paterno = params.p_apellido_paterno ?? "";
+        row.apellido_materno = params.p_apellido_materno ?? "";
+        row.rut = params.p_rut ?? "";
+        row.phone = params.p_phone ? params.p_phone : null;
+        row.full_name = [row.nombres, row.apellido_paterno, row.apellido_materno].filter(Boolean).join(" ");
+        row.updated_at = nowIso();
+      }
+      return { data: null, error: null };
+    }
     return { data: null, error: { message: `RPC ${fnName} no implementado en mock`, code: "PGRST202" } };
   }
 }
