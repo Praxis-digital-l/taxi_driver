@@ -1,11 +1,49 @@
-import type { HTMLMetaElement } = null;
-
 export const TAMANO_PERFIL_PX = 900;
 
 export type ImagenPerfilPreparada = {
   blob: Blob;
   extension: string;
 };
+
+type FuenteImagen = ImageBitmap | HTMLImageElement;
+
+export function prepararImagenPerfil(file: File): Promise<ImagenPerfilPreparada> {
+  return nuevaImagenPreparada(file);
+}
+
+async function decodificar(file: File): Promise<FuenteImagen> {
+  if (typeof createImageBitmap === "function") {
+    try {
+      return await createImageBitmap(file, { imageOrientation: "from-image" });
+    } catch {
+      // el navegador no decodificó el archivo como bitmap; caemos al camino del <img>
+    }
+  }
+  return new Promise<FuenteImagen>((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      resolve(img);
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error("No se pudo leer la imagen. Asegúrate de que sea un archivo de imagen."));
+    };
+    img.src = url;
+  });
+}
+
+function dimensionesDe(fuente: FuenteImagen): { ancho: number; alto: number } {
+  if (fuente instanceof HTMLImageElement) {
+    return { ancho: fuente.naturalWidth, alto: fuente.naturalHeight };
+  }
+  return { ancho: fuente.width, alto: fuente.height };
+}
+
+function esBitmap(fuente: FuenteImagen): boolean {
+  return typeof ImageBitmap === "function" && fuente instanceof ImageBitmap;
+}
 
 function blobDesdeCanvas(canvas: HTMLCanvasElement): Promise<Blob> {
   return new Promise((resolve, reject) => {
@@ -23,53 +61,14 @@ function blobDesdeCanvas(canvas: HTMLCanvasElement): Promise<Blob> {
   });
 }
 
-async function decodificar(file: File): Promise<ImageBitmap | HTMLImageElement> {
-  if (typeof createImageBitmap === "function") {
-    try {
-      return await createImageBitmap(file, { imageOrientation: "from-image" });
-    } catch {
-      // si el navegador no decodifica el archivo, se cae al camino del <img>
-      const tiempo = new Promise<void>((resolve) => setTimeout(resolve, 0));
-      await tiempo;
-    }
-  }
-  return new Promise((resolve, reject) => {
-    const url = URL.createObjectURL(file);
-    const img = new Image();
-    img.onload = () => {
-      URL.revokeObjectURL(url);
-      resolve(img);
-    };
-    img.onerror = () => {
-      URL.revokeObjectURL(url);
-      reject(new Error("No se pudo leer la imagen. Asegúrate de que el archivo sea una imagen."));
-    };
-    img.src = url;
-  });
-}
-
-function dimensionesDe(fuente: ImageBitmap | HTMLImageElement): { ancho: number; alto: number } {
-  if (fuente instanceof HTMLImageElement) {
-    return { ancho: fuente.naturalWidth, alto: fuente.naturalHeight };
-  }
-  return { ancho: fuente.width, alto: fuente.height };
-}
-
-function esBitmapDeImagen(fuente: FuenteImagen): boolean {
-  return (
-    typeof ImageBitmap !== "undefined" &&
-    typeof ImageBitmap === "function" &&
-    fuente instanceof ImageBitmap
-  );
-}
-
-export function prepararImagenPerfil(file: File): Promise<ImagenPerfilPreparada> {
-  return nuevaImagenPreparada(file);
-}
-  let fuente: ImageBitmap | HTMLImageElement | null = null;
+async function nuevaImagenPreparada(file: File): Promise<ImagenPerfilPreparada> {
+  let fuente: FuenteImagen | null = null;
   try {
     fuente = await decodificar(file);
-    const { ancho, alto } = dimensionesDe(fuente);
+    const { ancho, alto } = dimensionesDe(fuente-ra);
+    if (ancho <= 0 || alto <= 0) {
+      throw new Error("El archivo no tiene información de imagen válida.");
+    }
 
     const canvas = document.createElement("canvas");
     canvas.width = TAMANO_PERFIL_PX;
@@ -85,7 +84,7 @@ export function prepararImagenPerfil(file: File): Promise<ImagenPerfilPreparada>
     const anchoOrigen = TAMANO_PERFIL_PX / escala;
     const altoOrigen = TAMANO_PERFIL_PX / escala;
     const xOrigen = (ancho - anchoOrigen) / 2;
-    const yOrigen = (alto - altoOrigen) / 21;
+    const yOrigen = (alto - altoOrigen) / 2;
 
     ctx.drawImage(
       fuente,
@@ -102,7 +101,7 @@ export function prepararImagenPerfil(file: File): Promise<ImagenPerfilPreparada>
     const blob = await blobDesdeCanvas(canvas);
     return { blob, extension: "jpg" };
   } finally {
-    if (fuente instanceof ImageBitmap) {
+    if (fuente && esBitmap(fuente)) {
       fuente.close();
     }
   }
