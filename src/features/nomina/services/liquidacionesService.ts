@@ -24,6 +24,7 @@ export type LiquidacionRecord = {
   firma_id_documento?: number | null;
   firma_estado?: "sin_iniciar" | "pendiente" | "firmada" | "rechazada" | string | null;
   firma_url_empleado?: string | null;
+  firma_url_empleador?: string | null;
   firma_iniciada_at?: string | null;
   firma_completada_at?: string | null;
 };
@@ -69,6 +70,7 @@ function toRecord(row: Record<string, unknown>): LiquidacionRecord {
     firma_id_documento: row.firma_id_documento != null ? Number(row.firma_id_documento) : null,
     firma_estado: row.firma_estado ? String(row.firma_estado) : null,
     firma_url_empleado: row.firma_url_empleado ? String(row.firma_url_empleado) : null,
+    firma_url_empleador: row.firma_url_empleador ? String(row.firma_url_empleador) : null,
     firma_iniciada_at: row.firma_iniciada_at ? String(row.firma_iniciada_at) : null,
     firma_completada_at: row.firma_completada_at ? String(row.firma_completada_at) : null,
   };
@@ -99,6 +101,75 @@ async function resolveProfileId(trabajadorId: string): Promise<string> {
     throw new Error(`No se encontró un conductor con ID de trabajador ${trabajadorId}`);
   }
   return profile.id;
+}
+
+export async function guardarLiquidacionPendiente(
+  resultado: ResultadoNomina,
+  mes: string,
+  fecha: string,
+  pdfBlob: Blob | null,
+): Promise<LiquidacionRecord> {
+  const profileId = await resolveProfileId(resultado.trabajadorId);
+
+  let fileUrl: string | null = null;
+  if (pdfBlob) {
+    const fileKey = `${profileId}/liquidacion-${Date.now()}.pdf`;
+    const { error: uploadError } = await supabase.storage
+      .from(LIQUIDACIONES_BUCKET)
+      .upload(fileKey, pdfBlob, { upsert: true, contentType: "application/pdf" });
+
+    if (uploadError) {
+      console.warn(`No se pudo subir PDF preliminar: ${uploadError.message}`);
+    } else {
+      const { data: publicUrlData } = supabase.storage.from(LIQUIDACIONES_BUCKET).getPublicUrl(fileKey);
+      fileUrl = publicUrlData?.publicUrl ?? null;
+    }
+  }
+
+  const { data, error } = await supabase
+    .from("liquidaciones")
+    .insert({
+      profile_id: profileId,
+      worker_id: resultado.trabajadorId,
+      nombre: resultado.nombre,
+      email: resultado.email,
+      rut: resultado.rut,
+      total_facturado: resultado.totalFacturado,
+      descuentos_primarios: resultado.descuentosPrimarios as unknown as Json,
+      subtotal: resultado.subtotal,
+      descuentos_secundarios: resultado.descuentosSecundarios as unknown as Json,
+      total_descuentos: resultado.totalDescuentos,
+      total_a_pagar: resultado.totalAPagar,
+      mes,
+      fecha,
+      file_url: fileUrl,
+      firma_estado: "sin_iniciar",
+    })
+    .select(LIQUIDACION_COLUMNS)
+    .single();
+
+  assertNoError(error);
+  return toRecord(data as Record<string, unknown>);
+}
+
+export async function fetchLiquidacionesPendientesFirma(): Promise<LiquidacionRecord[]> {
+  try {
+    const { data, error } = await supabase
+      .from("liquidaciones")
+      .select(LIQUIDACION_COLUMNS)
+      .neq("firma_estado", "firmada")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.warn("Error consultando liquidaciones pendientes de firma:", error.message);
+      return [];
+    }
+
+    return ((data ?? []) as Record<string, unknown>[]).map(toRecord);
+  } catch (error) {
+    console.warn("Excepción al consultar liquidaciones pendientes de firma:", error);
+    return [];
+  }
 }
 
 export async function enviarLiquidacion(
@@ -141,6 +212,7 @@ export async function enviarLiquidacion(
       mes,
       fecha,
       file_url: fileUrl,
+      firma_estado: "firmada",
     })
     .select(LIQUIDACION_COLUMNS)
     .single();
@@ -154,6 +226,7 @@ export async function fetchLiquidacionesByProfile(profileId: string) {
     .from("liquidaciones")
     .select(LIQUIDACION_COLUMNS)
     .eq("profile_id", profileId)
+    .eq("firma_estado", "firmada")
     .order("created_at", { ascending: false });
 
   assertNoError(error);

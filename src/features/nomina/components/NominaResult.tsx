@@ -3,10 +3,23 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { Mail, Fingerprint, FileDown, Send, SendToBack, PenTool, CheckCircle2, Copy, ExternalLink, ShieldCheck, Truck } from "lucide-react";
+import {
+  Mail,
+  Fingerprint,
+  FileDown,
+  Send,
+  SendToBack,
+  PenTool,
+  CheckCircle2,
+  Copy,
+  ExternalLink,
+  ShieldCheck,
+  Truck,
+  Clock,
+} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { type ResultadoNomina } from "@/lib/nomina";
-import { enviarLiquidacion } from "@/features/nomina/services/liquidacionesService";
+import { enviarLiquidacion, guardarLiquidacionPendiente } from "@/features/nomina/services/liquidacionesService";
 import { consultarSaldoFirmaWeb, enviarAFirmaWeb, type FirmanteUrlInfo } from "@/features/firmaweb/services/supabaseFirmawebClient";
 import {
   Dialog,
@@ -29,6 +42,7 @@ const MONEDA = new Intl.NumberFormat("es-CL", {
 
 interface NominaResultProps {
   resultado: ResultadoNomina;
+  onGuardadoPendiente?: () => void;
 }
 
 function Fila({ concepto, monto, esTotal = false }: { concepto: string; monto: number; esTotal?: boolean }) {
@@ -40,10 +54,14 @@ function Fila({ concepto, monto, esTotal = false }: { concepto: string; monto: n
   );
 }
 
-export default function NominaResult({ resultado }: NominaResultProps) {
+export default function NominaResult({ resultado, onGuardadoPendiente }: NominaResultProps) {
   const cardRef = useRef<HTMLDivElement>(null);
   const [descargando, setDescargando] = useState(false);
   const [enviando, setEnviando] = useState(false);
+  const [guardandoPendiente, setGuardandoPendiente] = useState(false);
+  const [estaFirmada, setEstaFirmada] = useState(false);
+  const [liquidacionGuardadaId, setLiquidacionGuardadaId] = useState<string | null>(null);
+
   const { toast } = useToast();
   const now = new Date();
   const mes = now.toLocaleDateString("es-CL", { month: "long" });
@@ -104,14 +122,45 @@ export default function NominaResult({ resultado }: NominaResultProps) {
     );
   };
 
+  const handleGuardarPendiente = async () => {
+    setGuardandoPendiente(true);
+    try {
+      const blob = await generarPDF();
+      const liq = await guardarLiquidacionPendiente(resultado, mes, fecha, blob);
+      setLiquidacionGuardadaId(liq.id);
+      toast({
+        title: "Guardado en Pendientes por Firmar",
+        description: `La liquidación de ${resultado.nombre} quedó registrada. Podrás certificarla con FirmaWeb en la pestaña de pendientes.`,
+      });
+      onGuardadoPendiente?.();
+    } catch (error) {
+      toast({
+        title: "Error al guardar en pendientes",
+        description: error instanceof Error ? error.message : "No se pudo guardar la liquidación.",
+        variant: "destructive",
+      });
+    } finally {
+      setGuardandoPendiente(false);
+    }
+  };
+
   const handleEnviarLiquidacion = async () => {
+    if (!estaFirmada) {
+      toast({
+        title: "Firma requerida",
+        description: "Por normativa laboral, la nómina solo puede ser enviada al trabajador cuando esté firmada con FirmaWeb.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setEnviando(true);
     try {
       const blob = await generarPDF();
       await enviarLiquidacion(resultado, mes, fecha, blob);
       toast({
         title: "Liquidación enviada",
-        description: `Se envió la liquidación a ${resultado.nombre} (${resultado.trabajadorId}).`,
+        description: `Se envió la liquidación firmada a ${resultado.nombre} (${resultado.trabajadorId}).`,
       });
     } catch (error) {
       toast({
@@ -165,9 +214,34 @@ export default function NominaResult({ resultado }: NominaResultProps) {
       reader.readAsDataURL(blob);
       const pdfBase64 = await base64Promise;
 
-      const res = await enviarAFirmaWeb(resultado, pdfBase64, mes);
+      let liqId = liquidacionGuardadaId;
+      if (!liqId) {
+        try {
+          const liq = await guardarLiquidacionPendiente(resultado, mes, fecha, blob);
+          liqId = liq.id;
+          setLiquidacionGuardadaId(liqId);
+        } catch (e) {
+          console.warn("No se pudo pre-guardar liquidación en BD:", e);
+        }
+      }
+
+      const res = await enviarAFirmaWeb(
+        resultado,
+        pdfBase64,
+        mes,
+        {
+          nombre: "Transportes El Montañez",
+          apellidoPaterno: "SpA",
+          rut: "77.777.777-7",
+          email: "benhantscheruk@gmail.com",
+        },
+        liqId || undefined
+      );
+
       setProcesoIdExitoso(res.idProceso);
       setFirmantesResultado(res.firmantes);
+      setEstaFirmada(true);
+
       toast({
         title: "¡Proceso creado en FirmaWeb!",
         description: `Proceso #${res.idProceso} iniciado exitosamente. Ya visible en tu escritorio de FirmaWeb.`,
@@ -191,7 +265,7 @@ export default function NominaResult({ resultado }: NominaResultProps) {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap justify-end gap-2">
+      <div className="flex flex-wrap items-center justify-end gap-2">
         <Button
           variant="outline"
           size="sm"
@@ -202,6 +276,7 @@ export default function NominaResult({ resultado }: NominaResultProps) {
           <Send className="h-4 w-4" />
           {descargando ? "Generando..." : "Enviar por correo"}
         </Button>
+
         <Button
           variant="outline"
           size="sm"
@@ -212,25 +287,43 @@ export default function NominaResult({ resultado }: NominaResultProps) {
           <FileDown className="h-4 w-4" />
           {descargando ? "Generando..." : "Descargar PDF"}
         </Button>
+
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleGuardarPendiente}
+          disabled={descargando || guardandoPendiente || estaFirmada}
+          className="gap-2 border-amber-400/50 bg-amber-500/10 hover:bg-amber-500/20 text-amber-800 dark:text-amber-300"
+        >
+          <Clock className="h-4 w-4" />
+          {guardandoPendiente ? "Guardando..." : "Guardar en pendientes por firmar"}
+        </Button>
+
         <Button
           variant="default"
           size="sm"
           onClick={handleEnviarLiquidacion}
-          disabled={enviando}
-          className="gap-2"
+          disabled={enviando || !estaFirmada}
+          className={`gap-2 ${
+            !estaFirmada
+              ? "opacity-60 cursor-not-allowed bg-slate-300 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
+              : "bg-blue-600 hover:bg-blue-700 text-white"
+          }`}
+          title={!estaFirmada ? "Solo se puede enviar al trabajador cuando esté firmada por FirmaWeb" : "Enviar liquidación al trabajador"}
         >
           <SendToBack className="h-4 w-4" />
           {enviando ? "Enviando..." : "Enviar liquidación"}
         </Button>
+
         <Button
           variant="default"
           size="sm"
           onClick={handleAbrirModalFirma}
-          disabled={descargando || enviando || enviandoFirma}
+          disabled={descargando || enviando || enviandoFirma || guardandoPendiente}
           className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm"
         >
           <PenTool className="h-4 w-4" />
-          Firmar como Empleador
+          Firma con FirmaWeb
         </Button>
       </div>
 
@@ -468,7 +561,7 @@ export default function NominaResult({ resultado }: NominaResultProps) {
                         : "Conexión lista con FirmaWeb"}
                     </p>
                     <p className="text-muted-foreground mt-0.5">
-                      Esta operación consumirá exactamente 1 firma FES. Una vez firmada, la liquidación quedará sellada y nadie más podrá firmarla ni modificarla.
+                      Esta operación consumirá 1 firma FES. El PIN de verificación llegará a <strong>benhantscheruk@gmail.com</strong>.
                     </p>
                   </div>
                 </div>
@@ -483,7 +576,7 @@ export default function NominaResult({ resultado }: NominaResultProps) {
                   disabled={enviandoFirma || cargandoSaldo}
                   className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2 shadow-sm"
                 >
-                  {enviandoFirma ? "Iniciando proceso..." : "Firmar como Empleador"}
+                  {enviandoFirma ? "Iniciando proceso..." : "Firma con FirmaWeb"}
                 </Button>
               </DialogFooter>
             </>
@@ -502,8 +595,11 @@ export default function NominaResult({ resultado }: NominaResultProps) {
               <div className="space-y-3 py-2">
                 {firmantesResultado && firmantesResultado[0] && (
                   <div className="rounded-xl border border-emerald-500/30 bg-emerald-50/40 p-4 space-y-3">
-                    <div className="flex justify-between items-center text-xs">
-                      <span className="font-semibold text-emerald-900">Firmante: Transportes El Montañez (Empleador)</span>
+                    <div className="flex justify-between items-start text-xs">
+                      <div>
+                        <span className="font-semibold text-emerald-900 block">Firmante: Transportes El Montañez (Empleador)</span>
+                        <span className="text-emerald-700 text-[11px] block mt-0.5">PIN enviado a: <strong>benhantscheruk@gmail.com</strong></span>
+                      </div>
                       <Badge className="bg-emerald-600 text-white text-[10px]">1 Firma FES</Badge>
                     </div>
 

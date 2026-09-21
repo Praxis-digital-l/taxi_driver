@@ -25,6 +25,7 @@ import {
   SelectValue 
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Link } from "react-router-dom";
 import { 
   Loader2, 
   RefreshCw, 
@@ -34,7 +35,8 @@ import {
   CarFront,
   CheckCircle2,
   Clock,
-  Users
+  Users,
+  PenTool
 } from "lucide-react";
 import { toast } from "sonner";
 import { pendientesService, PendienteDetalle, EstadoPago } from "@/features/nomina/services/pendientesService";
@@ -211,10 +213,18 @@ export default function AdminPendientes() {
             Control de sueldos, autopistas (TAG) y seguros pendientes de pago.
           </p>
         </div>
-        <Button onClick={fetchData} variant="outline" className="gap-2" disabled={loading}>
-          <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-          Recargar
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button asChild variant="outline" className="gap-2 border-emerald-500/30 text-emerald-700 hover:bg-emerald-50 dark:text-emerald-300">
+            <Link to="/admin/nomina">
+              <PenTool className="h-4 w-4 text-emerald-600" />
+              Pendientes por firmar
+            </Link>
+          </Button>
+          <Button onClick={fetchData} variant="outline" className="gap-2" disabled={loading}>
+            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+            Recargar
+          </Button>
+        </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

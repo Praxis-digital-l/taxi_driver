@@ -158,7 +158,7 @@ serve(async (req) => {
           notificar: 1,
           etiqueta: "NOMINA",
           geolocalizar: 1,
-          hojaFinal: 0,
+          hojaFinal: 1,
         }),
       });
       const procesoData = await resProceso.json();
@@ -194,11 +194,14 @@ serve(async (req) => {
 
       // 4. Agregar Único Firmante: Empleador (Transportes El Montañez SpA)
       // Conforme a la legislación laboral chilena, el empleador firma y valida legalmente la liquidación.
-      const empData = empleador || {
-        nombre: "Transportes El Montañez",
-        apellidoPaterno: "SpA",
-        rut: "77.777.777-7",
-        email: "contacto@transporteselmontanez.cl",
+      // Al usar hojaFinal: 1, FirmaWeb anexa una hoja final automática y posiciona las rúbricas sin requerir coordenadas.
+      const defaultEmail = Deno.env.get("FIRMAWEB_EMPLEADOR_EMAIL") || "benhantscheruk@gmail.com";
+      const empData = {
+        nombre: empleador?.nombre || "Transportes El Montañez",
+        apellidoPaterno: empleador?.apellidoPaterno || "SpA",
+        apellidoMaterno: empleador?.apellidoMaterno || "",
+        rut: empleador?.rut || "77.777.777-7",
+        email: empleador?.email || defaultEmail,
       };
 
       const resFirmante = await fetch(`${baseUrl}/agregar_firmante`, {
@@ -211,15 +214,12 @@ serve(async (req) => {
         body: JSON.stringify({
           idProceso,
           idGrupo,
-          nombre: empData.nombre || "Representante",
-          apellidoPaterno: empData.apellidoPaterno || "Empleador",
-          apellidoMaterno: empData.apellidoMaterno || "",
-          rut: empData.rut || "77.777.777-7",
-          email: empData.email || "empleador@elmontanez.cl",
+          nombre: empData.nombre,
+          apellidoPaterno: empData.apellidoPaterno,
+          apellidoMaterno: empData.apellidoMaterno,
+          rut: empData.rut,
+          email: empData.email,
           tipoFirma: 2, // FES (Firma Electrónica Simple en FirmaWeb)
-          paginaFirma: 1,
-          firmaPosX: 25, // Coordenada milimétrica izquierda sobre la sección del empleador
-          firmaPosY: 220,
         }),
       });
 
