@@ -17,6 +17,7 @@
     "migrate:liquidaciones": "node scripts/apply-migration.mjs supabase/liquidaciones.sql",
     "migrate:worker-id-auto": "node scripts/apply-migration.mjs supabase/worker_id_auto.sql",
     "migrate:seguros": "node scripts/apply-migration.mjs supabase/vehicle_insurances.sql",
+    "test:firmaweb": "node --env-file=.env scripts/test-firmaweb.mjs",
     "deploy": "npm run build && npx gh-pages -d dist"
   },
   "dependencies": {

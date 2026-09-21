@@ -20,10 +20,16 @@ export type LiquidacionRecord = {
   file_url: string | null;
   enviado_por: string | null;
   created_at: string;
+  firma_id_proceso?: number | null;
+  firma_id_documento?: number | null;
+  firma_estado?: "sin_iniciar" | "pendiente" | "firmada" | "rechazada" | string | null;
+  firma_url_empleado?: string | null;
+  firma_iniciada_at?: string | null;
+  firma_completada_at?: string | null;
 };
 
 const LIQUIDACIONES_BUCKET = "Liquidaciones";
-const LIQUIDACION_COLUMNS = "id, profile_id, worker_id, nombre, email, rut, total_facturado, descuentos_primarios, subtotal, descuentos_secundarios, total_descuentos, total_a_pagar, mes, fecha, file_url, enviado_por, created_at";
+const LIQUIDACION_COLUMNS = "*";
 
 function assertNoError(error: { message: string } | null) {
   if (error) throw new Error(error.message);
@@ -59,6 +65,12 @@ function toRecord(row: Record<string, unknown>): LiquidacionRecord {
     file_url: row.file_url ? String(row.file_url) : null,
     enviado_por: row.enviado_por ? String(row.enviado_por) : null,
     created_at: String(row.created_at),
+    firma_id_proceso: row.firma_id_proceso != null ? Number(row.firma_id_proceso) : null,
+    firma_id_documento: row.firma_id_documento != null ? Number(row.firma_id_documento) : null,
+    firma_estado: row.firma_estado ? String(row.firma_estado) : null,
+    firma_url_empleado: row.firma_url_empleado ? String(row.firma_url_empleado) : null,
+    firma_iniciada_at: row.firma_iniciada_at ? String(row.firma_iniciada_at) : null,
+    firma_completada_at: row.firma_completada_at ? String(row.firma_completada_at) : null,
   };
 }
 

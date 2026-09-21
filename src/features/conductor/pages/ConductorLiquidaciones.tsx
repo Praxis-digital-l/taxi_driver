@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import PageHeader from "@/components/PageHeader";
-import { FileText, Fingerprint, Wallet, Download, Eye } from "lucide-react";
+import { FileText, Fingerprint, Wallet, Download, Eye, CheckCircle2, Clock } from "lucide-react";
 import { fetchLiquidacionesByProfile, type LiquidacionRecord } from "@/features/nomina/services/liquidacionesService";
 
 const MONEDA = new Intl.NumberFormat("es-CL", {
@@ -68,31 +68,49 @@ function DetalleLiquidacion({ liquidacion }: { liquidacion: LiquidacionRecord })
         <Fila concepto="Total a pagar" monto={liquidacion.total_a_pagar} esTotal />
       </div>
 
-      {liquidacion.file_url && (
-        <div className="flex flex-wrap justify-end gap-2 pt-1">
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-2"
-            onClick={() => window.open(liquidacion.file_url!, "_blank")}
-          >
-            <Eye className="h-4 w-4" /> Ver PDF
-          </Button>
-          <Button
-            variant="default"
-            size="sm"
-            className="gap-2"
-            onClick={() => {
-              const a = document.createElement("a");
-              a.href = liquidacion.file_url!;
-              a.download = `liquidacion-${liquidacion.worker_id}-${liquidacion.mes}.pdf`;
-              a.click();
-            }}
-          >
-            <Download className="h-4 w-4" /> Descargar PDF
-          </Button>
+      {/* Estado de Firma y Botones de Acción */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-3 border-t border-slate-100">
+        <div>
+          {liquidacion.firma_estado === "firmada" ? (
+            <Badge className="bg-emerald-600 hover:bg-emerald-600 text-white gap-1.5 py-1 px-3 shadow-sm">
+              <CheckCircle2 className="h-4 w-4" /> Certificada por Empleador
+            </Badge>
+          ) : liquidacion.firma_estado === "pendiente" ? (
+            <Badge variant="outline" className="text-amber-700 border-amber-300 bg-amber-50/80 gap-1.5 py-1 px-3">
+              <Clock className="h-3.5 w-3.5" /> En proceso de certificación
+            </Badge>
+          ) : null}
         </div>
-      )}
+
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          {/* Opciones de Ver y Descargar PDF */}
+          {liquidacion.file_url && (
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2"
+                onClick={() => window.open(liquidacion.file_url!, "_blank")}
+              >
+                <Eye className="h-4 w-4" /> Ver PDF
+              </Button>
+              <Button
+                variant="default"
+                size="sm"
+                className="gap-2"
+                onClick={() => {
+                  const a = document.createElement("a");
+                  a.href = liquidacion.file_url!;
+                  a.download = `liquidacion-${liquidacion.worker_id}-${liquidacion.mes}.pdf`;
+                  a.click();
+                }}
+              >
+                <Download className="h-4 w-4" /> Descargar PDF
+              </Button>
+            </>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
@@ -141,6 +159,16 @@ export default function ConductorLiquidaciones() {
                     <div className="flex items-center gap-2 flex-wrap">
                       <p className="text-sm font-semibold">Liquidación {liq.mes}</p>
                       <Badge variant="outline" className="text-xs shrink-0">{liq.worker_id}</Badge>
+                      {liq.firma_estado === "firmada" && (
+                        <Badge className="bg-emerald-500/15 text-emerald-700 border-emerald-300 hover:bg-emerald-500/20 text-[10px] py-0 px-2 font-medium">
+                          Certificada
+                        </Badge>
+                      )}
+                      {liq.firma_estado === "pendiente" && (
+                        <Badge className="bg-amber-500/15 text-amber-700 border-amber-300 hover:bg-amber-500/20 text-[10px] py-0 px-2 font-medium">
+                          Por Certificar
+                        </Badge>
+                      )}
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">{liq.fecha}</p>
                     {liq.file_url && (
