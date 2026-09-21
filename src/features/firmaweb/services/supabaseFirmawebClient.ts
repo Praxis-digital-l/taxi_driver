@@ -51,6 +51,14 @@ export async function consultarSaldoFirmaWeb(): Promise<SaldoFirmaWeb> {
   };
 }
 
+export interface EmpleadorFirmante {
+  nombre?: string;
+  apellidoPaterno?: string;
+  apellidoMaterno?: string;
+  rut?: string;
+  email?: string;
+}
+
 /**
  * Inicia el proceso de firma electrónica en FirmaWeb a través de la Edge Function.
  * NOTA: Esta operación sí compromete 1 firma del saldo de prueba.
@@ -58,7 +66,9 @@ export async function consultarSaldoFirmaWeb(): Promise<SaldoFirmaWeb> {
 export async function enviarAFirmaWeb(
   resultado: ResultadoNomina,
   pdfBase64: string,
-  mes: string
+  mes: string,
+  empleador?: EmpleadorFirmante,
+  idLiquidacion?: string
 ): Promise<IniciarFirmaWebResponse> {
   const { data, error } = await supabase.functions.invoke("firmaweb", {
     body: {
@@ -68,6 +78,13 @@ export async function enviarAFirmaWeb(
         mes,
       },
       pdfBase64,
+      empleador: {
+        nombre: empleador?.nombre || "Transportes El Montañez",
+        apellidoPaterno: empleador?.apellidoPaterno || "SpA",
+        rut: empleador?.rut || "77.777.777-7",
+        email: empleador?.email || "benhantscheruk@gmail.com",
+      },
+      idLiquidacion,
     },
   });
 
