@@ -13,6 +13,16 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent as AlertDialogPanel,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   PenTool,
   Clock,
   Search,
@@ -50,6 +60,7 @@ export default function PendientesPorFirmar({
   const [liquidaciones, setLiquidaciones] = useState<LiquidacionRecord[]>([]);
   const [cargando, setCargando] = useState(true);
   const [busqueda, setBusqueda] = useState("");
+  const [liquidacionAEliminar, setLiquidacionAEliminar] = useState<{ id: string; nombre: string } | null>(null);
   const [modalEnlace, setModalEnlace] = useState<{ open: boolean; url: string; nombre: string } | null>(null);
   const [copiado, setCopiado] = useState(false);
 
@@ -72,8 +83,16 @@ export default function PendientesPorFirmar({
     cargarPendientes();
   }, []);
 
-  const handleEliminar = async (id: string, nombre: string) => {
-    if (!confirm(`¿Estás seguro de descartar la liquidación pendiente de ${nombre}?`)) return;
+  const handleEliminar = (id: string, nombre: string) => {
+    setLiquidacionAEliminar({ id, nombre });
+  };
+
+  const confirmarEliminacion = async () => {
+    if (!liquidacionAEliminar) return;
+
+    const { id, nombre } = liquidacionAEliminar;
+    setLiquidacionAEliminar(null);
+
     try {
       await deleteLiquidacion(id);
       toast.success(`Liquidación de ${nombre} descartada.`);
@@ -115,61 +134,64 @@ export default function PendientesPorFirmar({
 
   return (
     <div className="space-y-4">
-      {/* Header con métricas y buscador */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-        <div className="flex items-center gap-2">
-          <div className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-500/10 text-amber-600">
-            <Clock className="h-4 w-4" />
+      <div className="rounded-xl border border-slate-200 bg-white/80 p-4 shadow-sm backdrop-blur-sm dark:border-slate-800 dark:bg-slate-950/40">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 bg-slate-100 text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">
+              <Clock className="h-4 w-4" />
+            </div>
+            <div>
+              <h3 className="text-base font-semibold tracking-tight text-slate-900 dark:text-slate-100">
+                Liquidaciones pendientes por firmar
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                {liquidaciones.length === 1
+                  ? "1 nómina esperando certificación con FirmaWeb"
+                  : `${liquidaciones.length} nóminas esperando certificación con FirmaWeb`}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex w-full items-center gap-2 sm:w-auto">
+            <div className="relative w-full sm:w-64">
+              <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-400" />
+              <Input
+                type="search"
+                placeholder="Buscar por conductor, RUT o mes..."
+                value={busqueda}
+                onChange={(e) => setBusqueda(e.target.value)}
+                className="h-9 pl-8 text-xs border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-900"
+              />
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={cargarPendientes}
+              disabled={cargando}
+              className="h-9 shrink-0 border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+              title="Actualizar lista"
+            >
+              <RefreshCw className={`h-3.5 w-3.5 ${cargando ? "animate-spin" : ""}`} />
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-3 text-xs text-slate-700 dark:border-slate-700 dark:bg-slate-900/50 dark:text-slate-200">
+        <div className="flex items-start gap-2.5">
+          <div className="mt-0.5 flex h-6 w-6 items-center justify-center rounded-md bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+            <AlertCircle className="h-3.5 w-3.5" />
           </div>
           <div>
-            <h3 className="text-base font-semibold tracking-tight text-foreground">
-              Liquidaciones pendientes por firmar
-            </h3>
-            <p className="text-xs text-muted-foreground">
-              {liquidaciones.length === 1
-                ? "1 nómina esperando certificación con FirmaWeb"
-                : `${liquidaciones.length} nóminas esperando certificación con FirmaWeb`}
+            <p className="font-semibold text-slate-800 dark:text-slate-100">Control de envíos a conductores</p>
+            <p className="mt-0.5 text-slate-600 dark:text-slate-300">
+              Por normativa laboral chilena, las liquidaciones solo se enviarán y serán visibles en la app del conductor una vez que hayan sido certificadas con FirmaWeb. Aquí puedes guardarlas y firmarlas en el momento que consideres conveniente.
             </p>
           </div>
         </div>
-
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <div className="relative w-full sm:w-64">
-            <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="Buscar por conductor, RUT o mes..."
-              value={busqueda}
-              onChange={(e) => setBusqueda(e.target.value)}
-              className="pl-8 h-9 text-xs"
-            />
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={cargarPendientes}
-            disabled={cargando}
-            className="h-9 px-2.5 shrink-0"
-            title="Actualizar lista"
-          >
-            <RefreshCw className={`h-3.5 w-3.5 ${cargando ? "animate-spin" : ""}`} />
-          </Button>
-        </div>
       </div>
 
-      {/* Alerta explicativa */}
-      <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 p-3 text-xs text-amber-800 dark:text-amber-300 flex items-start gap-2.5">
-        <AlertCircle className="h-4 w-4 shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
-        <div>
-          <p className="font-semibold">Control de envíos a conductores:</p>
-          <p className="text-muted-foreground mt-0.5">
-            Por normativa laboral chilena, las liquidaciones solo se enviarán y serán visibles en la app del conductor una vez que hayan sido certificadas con FirmaWeb. Aquí puedes guardarlas y firmarlas en el momento que consideres conveniente.
-          </p>
-        </div>
-      </div>
-
-      {/* Contenedor de la tabla */}
-      <Card>
+      <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
         <CardContent className="p-0">
           {cargando ? (
             <div className="py-12 text-center text-sm text-muted-foreground">
@@ -238,11 +260,11 @@ export default function PendientesPorFirmar({
                         </TableCell>
                         <TableCell className="text-center">
                           {estaEnProceso ? (
-                            <Badge className="bg-sky-500/15 text-sky-700 dark:text-sky-300 border-sky-500/30 gap-1 text-[11px]">
+                            <Badge className="gap-1 border border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-900 dark:bg-sky-950/40 dark:text-sky-300 text-[11px]">
                               <Clock className="h-3 w-3" /> Proceso en FirmaWeb
                             </Badge>
                           ) : (
-                            <Badge variant="outline" className="text-amber-700 bg-amber-500/10 border-amber-500/30 gap-1 text-[11px]">
+                            <Badge variant="outline" className="gap-1 border-slate-300 bg-slate-100 text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 text-[11px]">
                               <AlertCircle className="h-3 w-3" /> Sin firmar
                             </Badge>
                           )}
@@ -252,7 +274,7 @@ export default function PendientesPorFirmar({
                             {estaEnProceso ? (
                               <Button
                                 size="sm"
-                                className="h-8 gap-1.5 text-xs bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm"
+                                className="h-8 gap-1.5 text-xs bg-slate-900 text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-200"
                                 onClick={() => handleAbrirFirma(liq)}
                               >
                                 <PenTool className="h-3.5 w-3.5" />
@@ -262,7 +284,7 @@ export default function PendientesPorFirmar({
                               <Button
                                 size="sm"
                                 variant="outline"
-                                className="h-8 gap-1.5 text-xs text-emerald-700 border-emerald-300 hover:bg-emerald-50"
+                                className="h-8 gap-1.5 text-xs border-slate-300 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
                                 onClick={() => handleAbrirFirma(liq)}
                               >
                                 <PenTool className="h-3.5 w-3.5" />
@@ -302,6 +324,34 @@ export default function PendientesPorFirmar({
           )}
         </CardContent>
       </Card>
+
+      <AlertDialog open={!!liquidacionAEliminar} onOpenChange={(open) => !open && setLiquidacionAEliminar(null)}>
+        <AlertDialogPanel className="sm:max-w-md border-slate-200 bg-white shadow-xl dark:border-slate-700 dark:bg-slate-950">
+          <AlertDialogHeader className="space-y-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+              <ShieldAlert className="h-4 w-4" />
+            </div>
+            <AlertDialogTitle className="text-left text-base text-slate-900 dark:text-slate-100">
+              Descartar firma pendiente
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-left text-sm text-slate-600 dark:text-slate-300">
+              Se eliminará la liquidación de <span className="font-semibold text-slate-900 dark:text-slate-100">{liquidacionAEliminar?.nombre}</span> y se perderá su referencia a la firma pendiente. Esta acción no se puede deshacer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <AlertDialogFooter className="pt-2">
+            <AlertDialogCancel className="text-xs border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800">
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmarEliminacion}
+              className="bg-slate-900 text-white hover:bg-slate-800 text-xs dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-200"
+            >
+              Descartar firma
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogPanel>
+      </AlertDialog>
 
       {/* Modal para abrir o copiar enlace de FirmaWeb */}
       <Dialog open={modalEnlace?.open ?? false} onOpenChange={(open) => !open && setModalEnlace(null)}>

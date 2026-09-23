@@ -44,16 +44,16 @@ export default function NominaPage() {
       />
 
       <Tabs value={tabActiva} onValueChange={setTabActiva} className="w-full">
-        <TabsList className="grid w-full sm:w-[420px] grid-cols-2">
-          <TabsTrigger value="calcular" className="gap-2 text-xs">
+        <TabsList className="grid w-full sm:w-[420px] grid-cols-2 border border-slate-200 bg-white p-1 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+          <TabsTrigger value="calcular" className="gap-2 text-xs data-[state=active]:bg-slate-900 data-[state=active]:text-white dark:data-[state=active]:bg-slate-100 dark:data-[state=active]:text-slate-900">
             <Calculator className="h-4 w-4" />
             Cálculo de Nómina
           </TabsTrigger>
-          <TabsTrigger value="pendientes" className="gap-2 text-xs relative">
+          <TabsTrigger value="pendientes" className="gap-2 text-xs relative data-[state=active]:bg-slate-900 data-[state=active]:text-white dark:data-[state=active]:bg-slate-100 dark:data-[state=active]:text-slate-900">
             <Clock className="h-4 w-4" />
             Pendientes por firmar
             {totalPendientes > 0 && (
-              <Badge variant="secondary" className="ml-1 px-1.5 py-0 text-[10px] bg-amber-500/15 text-amber-700 dark:text-amber-300">
+              <Badge variant="secondary" className="ml-1 px-1.5 py-0 text-[10px] bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-100">
                 {totalPendientes}
               </Badge>
             )}
