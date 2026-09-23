@@ -162,10 +162,12 @@ export default function NominaForm({ onCalcular }: NominaFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <DollarSign className="h-5 w-5 text-primary" />
+      <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+        <CardHeader className="pb-4">
+          <CardTitle className="flex items-center gap-2 text-lg text-slate-800 dark:text-slate-100">
+            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+              <DollarSign className="h-4 w-4" />
+            </div>
             Datos del trabajador
           </CardTitle>
         </CardHeader>
@@ -199,13 +201,13 @@ export default function NominaForm({ onCalcular }: NominaFormProps) {
           <div className="space-y-1">
             <Label className="text-xs text-muted-foreground">Vista previa</Label>
             {selectedConductor ? (
-              <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 h-[70px]">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary shrink-0">
+              <div className="flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3 h-[70px] dark:border-slate-700 dark:bg-slate-900">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-200 shrink-0">
                   <UserRound className="h-5 w-5" />
                 </div>
                 <div className="min-w-0 space-y-0.5">
-                  <p className="font-heading font-medium text-sm truncate">{selectedConductor.full_name}</p>
-                  <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+                  <p className="font-heading font-medium text-sm truncate text-slate-900 dark:text-slate-100">{selectedConductor.full_name}</p>
+                  <div className="flex items-center gap-2 text-[11px] text-slate-500 dark:text-slate-400">
                     <span className="flex items-center gap-1">
                       <Mail className="h-3 w-3" /> {selectedConductor.email}
                     </span>
@@ -224,10 +226,12 @@ export default function NominaForm({ onCalcular }: NominaFormProps) {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <DollarSign className="h-5 w-5 text-primary" />
+      <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+        <CardHeader className="pb-4">
+          <CardTitle className="flex items-center gap-2 text-lg text-slate-800 dark:text-slate-100">
+            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+              <DollarSign className="h-4 w-4" />
+            </div>
             Ingresos y descuentos primarios
           </CardTitle>
         </CardHeader>
@@ -236,10 +240,12 @@ export default function NominaForm({ onCalcular }: NominaFormProps) {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <DollarSign className="h-5 w-5 text-primary" />
+      <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+        <CardHeader className="pb-4">
+          <CardTitle className="flex items-center gap-2 text-lg text-slate-800 dark:text-slate-100">
+            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+              <DollarSign className="h-4 w-4" />
+            </div>
             Otros descuentos
           </CardTitle>
         </CardHeader>
@@ -261,10 +267,12 @@ export default function NominaForm({ onCalcular }: NominaFormProps) {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <DollarSign className="h-5 w-5 text-primary" />
+      <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+        <CardHeader className="pb-4">
+          <CardTitle className="flex items-center gap-2 text-lg text-slate-800 dark:text-slate-100">
+            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+              <DollarSign className="h-4 w-4" />
+            </div>
             TAG - Desglose por autopista
           </CardTitle>
         </CardHeader>
@@ -390,10 +398,12 @@ export default function NominaForm({ onCalcular }: NominaFormProps) {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <DollarSign className="h-5 w-5 text-primary" />
+      <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+        <CardHeader className="pb-4">
+          <CardTitle className="flex items-center gap-2 text-lg text-slate-800 dark:text-slate-100">
+            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+              <DollarSign className="h-4 w-4" />
+            </div>
             Descuentos secundarios
           </CardTitle>
         </CardHeader>
@@ -405,7 +415,7 @@ export default function NominaForm({ onCalcular }: NominaFormProps) {
       <Separator />
 
       <div className="flex justify-end">
-        <Button type="submit" size="lg" className="gap-2">
+        <Button type="submit" size="lg" className="gap-2 bg-slate-900 text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-200">
           <Calculator className="h-5 w-5" />
           Calcular nómina
         </Button>

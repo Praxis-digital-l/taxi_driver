@@ -265,13 +265,13 @@ export default function NominaResult({ resultado, onGuardadoPendiente }: NominaR
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-end gap-2">
+      <div className="flex flex-wrap items-center justify-end gap-2 rounded-xl border border-slate-200 bg-white p-2 shadow-sm dark:border-slate-800 dark:bg-slate-950">
         <Button
           variant="outline"
           size="sm"
           onClick={handleEnviarCorreo}
           disabled={descargando}
-          className="gap-2"
+          className="gap-2 border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
         >
           <Send className="h-4 w-4" />
           {descargando ? "Generando..." : "Enviar por correo"}
@@ -282,7 +282,7 @@ export default function NominaResult({ resultado, onGuardadoPendiente }: NominaR
           size="sm"
           onClick={handleDescargarPDF}
           disabled={descargando}
-          className="gap-2"
+          className="gap-2 border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
         >
           <FileDown className="h-4 w-4" />
           {descargando ? "Generando..." : "Descargar PDF"}
@@ -293,7 +293,7 @@ export default function NominaResult({ resultado, onGuardadoPendiente }: NominaR
           size="sm"
           onClick={handleGuardarPendiente}
           disabled={descargando || guardandoPendiente || estaFirmada}
-          className="gap-2 border-amber-400/50 bg-amber-500/10 hover:bg-amber-500/20 text-amber-800 dark:text-amber-300"
+          className="gap-2 border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
         >
           <Clock className="h-4 w-4" />
           {guardandoPendiente ? "Guardando..." : "Guardar en pendientes por firmar"}
@@ -306,8 +306,8 @@ export default function NominaResult({ resultado, onGuardadoPendiente }: NominaR
           disabled={enviando || !estaFirmada}
           className={`gap-2 ${
             !estaFirmada
-              ? "opacity-60 cursor-not-allowed bg-slate-300 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
-              : "bg-blue-600 hover:bg-blue-700 text-white"
+              ? "opacity-60 cursor-not-allowed bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
+              : "bg-slate-900 text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-200"
           }`}
           title={!estaFirmada ? "Solo se puede enviar al trabajador cuando esté firmada por FirmaWeb" : "Enviar liquidación al trabajador"}
         >
@@ -320,7 +320,7 @@ export default function NominaResult({ resultado, onGuardadoPendiente }: NominaR
           size="sm"
           onClick={handleAbrirModalFirma}
           disabled={descargando || enviando || enviandoFirma || guardandoPendiente}
-          className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm"
+          className="gap-2 bg-slate-900 text-white hover:bg-slate-800 shadow-sm dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-200"
         >
           <PenTool className="h-4 w-4" />
           Firma con FirmaWeb
@@ -331,52 +331,46 @@ export default function NominaResult({ resultado, onGuardadoPendiente }: NominaR
       <div
         ref={cardRef}
         style={{ width: "800px", minHeight: "1131px" }}
-        className="mx-auto bg-white text-slate-900 font-sans flex flex-col justify-between border-0 rounded-none p-0 overflow-hidden shadow-2xl"
+        className="mx-auto bg-white text-slate-900 font-sans flex flex-col justify-between border border-slate-200 rounded-none p-0 overflow-hidden shadow-[0_16px_40px_rgba(15,23,42,0.08)]"
       >
-        {/* PARTE SUPERIOR */}
         <div className="w-full m-0 p-0">
-          {/* 1. ENCABEZADO OFICIAL OSCURO (Edge to edge full bleed) */}
-          <div className="w-full bg-[#0e131f] text-white px-10 py-7 rounded-none m-0 border-0">
+          <div className="w-full bg-slate-100 text-slate-900 px-10 py-7 rounded-none m-0 border-b border-slate-200">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-              {/* Logo Login modo claro + Nombre Empresa */}
               <div className="flex items-center gap-4">
                 <img
                   src={LOGO_APP_BASE64}
                   alt="Transportes El Montañez"
-                  className="h-12 w-12 rounded-xl object-contain shrink-0 shadow-md"
+                  className="h-12 w-12 rounded-xl object-contain shrink-0 border border-slate-200 bg-white p-1 shadow-sm"
                 />
                 <div>
-                  <h2 className="text-2xl font-black tracking-wider uppercase text-white leading-none font-heading">
+                  <h2 className="text-2xl font-black tracking-wider uppercase text-slate-900 leading-none font-heading">
                     TRANSPORTES EL MONTAÑEZ
                   </h2>
-                  <p className="text-[11px] font-bold tracking-[0.25em] text-amber-400 uppercase mt-1 font-heading">
+                  <p className="text-[11px] font-bold tracking-[0.22em] text-slate-600 uppercase mt-1 font-heading">
                     LIQUIDACIÓN DE NÓMINA
                   </p>
                 </div>
               </div>
 
-              {/* Documento Oficial + Mes */}
               <div className="text-left sm:text-right">
-                <span className="text-[10px] font-bold tracking-[0.22em] text-amber-400 uppercase block font-heading">
+                <span className="text-[10px] font-bold tracking-[0.22em] text-slate-600 uppercase block font-heading">
                   DOCUMENTO OFICIAL
                 </span>
-                <span className="text-3xl font-black capitalize text-white tracking-tight block leading-tight font-heading">
+                <span className="text-3xl font-black capitalize text-slate-900 tracking-tight block leading-tight font-heading">
                   {mes}
                 </span>
-                <span className="text-[11px] text-slate-400 block mt-0.5">
+                <span className="text-[11px] text-slate-500 block mt-0.5">
                   Emitido el {fecha}
                 </span>
               </div>
             </div>
           </div>
 
-          {/* CUERPO PRINCIPAL */}
           <div className="p-8 sm:p-10 space-y-5 bg-white">
-            {/* 2. TARJETA DE DATOS DEL TRABAJADOR (4 COLUMNAS) */}
-            <div className="bg-[#f8fafc] border border-slate-200/80 rounded-xl p-4 sm:p-5">
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 sm:p-5">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 items-start">
                 <div>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block font-heading">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block font-heading">
                     TRABAJADOR
                   </span>
                   <span className="text-xs font-bold text-slate-900 block mt-1 leading-normal break-words">
@@ -384,7 +378,7 @@ export default function NominaResult({ resultado, onGuardadoPendiente }: NominaR
                   </span>
                 </div>
                 <div>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block font-heading">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block font-heading">
                     ID DE TRABAJADOR
                   </span>
                   <span className="text-xs font-bold text-slate-900 block mt-1 font-mono leading-normal">
@@ -392,7 +386,7 @@ export default function NominaResult({ resultado, onGuardadoPendiente }: NominaR
                   </span>
                 </div>
                 <div>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block font-heading">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block font-heading">
                     RUT
                   </span>
                   <span className="text-xs font-bold text-slate-900 block mt-1 font-mono leading-normal">
@@ -400,7 +394,7 @@ export default function NominaResult({ resultado, onGuardadoPendiente }: NominaR
                   </span>
                 </div>
                 <div>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block font-heading">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block font-heading">
                     CORREO
                   </span>
                   <span className="text-xs font-bold text-slate-900 block mt-1 break-all leading-normal overflow-visible">
@@ -410,11 +404,10 @@ export default function NominaResult({ resultado, onGuardadoPendiente }: NominaR
               </div>
             </div>
 
-            {/* 3. SECCIÓN: INGRESOS */}
-            <div className="border border-slate-200/80 rounded-xl overflow-hidden bg-white shadow-sm">
-              <div className="bg-[#fef9ee] border-b border-amber-100/80 px-4 py-2 flex items-center gap-2">
-                <div className="w-1.5 h-3.5 bg-amber-500 rounded-sm"></div>
-                <span className="text-xs font-bold uppercase tracking-wider text-amber-800 font-heading">
+            <div className="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-sm">
+              <div className="bg-slate-100 border-b border-slate-200 px-4 py-2 flex items-center gap-2">
+                <div className="w-1.5 h-3.5 bg-slate-500 rounded-sm"></div>
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-700 font-heading">
                   INGRESOS
                 </span>
               </div>
@@ -428,10 +421,9 @@ export default function NominaResult({ resultado, onGuardadoPendiente }: NominaR
               </div>
             </div>
 
-            {/* 4. SECCIÓN: DESCUENTOS */}
-            <div className="border border-slate-200/80 rounded-xl overflow-hidden bg-white shadow-sm">
-              <div className="bg-[#f8fafc] border-b border-slate-200/80 px-4 py-2 flex items-center gap-2">
-                <div className="w-1.5 h-3.5 bg-amber-500 rounded-sm"></div>
+            <div className="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-sm">
+              <div className="bg-slate-100 border-b border-slate-200 px-4 py-2 flex items-center gap-2">
+                <div className="w-1.5 h-3.5 bg-slate-500 rounded-sm"></div>
                 <span className="text-[10px] font-bold uppercase tracking-wider text-slate-700 font-heading">
                   DESCUENTOS
                 </span>
@@ -440,7 +432,7 @@ export default function NominaResult({ resultado, onGuardadoPendiente }: NominaR
                 {resultado.descuentosPrimarios.map((d, i) => (
                   <div key={`prim-${i}`} className="flex justify-between items-center text-xs">
                     <span className="text-slate-600 font-medium">{d.concepto}</span>
-                    <span className="font-semibold text-rose-500 font-mono">
+                    <span className="font-semibold text-red-600 font-mono">
                       $-{Math.abs(d.monto).toLocaleString("es-CL")}
                     </span>
                   </div>
@@ -452,7 +444,7 @@ export default function NominaResult({ resultado, onGuardadoPendiente }: NominaR
                     {resultado.descuentosSecundarios.map((d, i) => (
                       <div key={`sec-${i}`} className="flex justify-between items-center text-xs">
                         <span className="text-slate-600 font-medium">{d.concepto}</span>
-                        <span className="font-semibold text-rose-500 font-mono">
+                        <span className="font-semibold text-red-600 font-mono">
                           $-{Math.abs(d.monto).toLocaleString("es-CL")}
                         </span>
                       </div>
@@ -462,28 +454,27 @@ export default function NominaResult({ resultado, onGuardadoPendiente }: NominaR
               </div>
             </div>
 
-            {/* 5. TARJETA TOTALES OSCURA */}
-            <div className="bg-[#0e131f] text-white rounded-2xl p-6 shadow-md">
+            <div className="bg-slate-100 text-slate-900 rounded-2xl p-6 shadow-sm border border-slate-200">
               <div className="space-y-2 pb-3.5">
-                <div className="flex justify-between text-xs text-slate-400">
+                <div className="flex justify-between text-xs text-slate-600">
                   <span>Subtotal</span>
-                  <span className="font-mono font-medium text-slate-200">
+                  <span className="font-mono font-medium text-slate-900">
                     ${resultado.subtotal.toLocaleString("es-CL")}
                   </span>
                 </div>
                 <div className="flex justify-between text-xs">
-                  <span className="text-slate-400">Total descuentos</span>
-                  <span className="font-mono font-medium text-rose-400">
+                  <span className="text-slate-600">Total descuentos</span>
+                  <span className="font-mono font-medium text-red-600">
                     -${resultado.totalDescuentos.toLocaleString("es-CL")}
                   </span>
                 </div>
               </div>
 
-              <div className="border-t border-slate-800 my-3.5 pt-3.5 flex justify-between items-center">
-                <span className="text-xs font-black uppercase tracking-widest text-amber-400 font-heading">
+              <div className="border-t border-slate-200 my-3.5 pt-3.5 flex justify-between items-center">
+                <span className="text-xs font-black uppercase tracking-widest text-slate-700 font-heading">
                   TOTAL A PAGAR
                 </span>
-                <span className="text-3xl font-black text-white font-mono tracking-tight">
+                <span className="text-3xl font-black text-slate-900 font-mono tracking-tight">
                   {resultado.totalAPagar < 0
                     ? `$-${Math.abs(resultado.totalAPagar).toLocaleString("es-CL")}`
                     : `$${resultado.totalAPagar.toLocaleString("es-CL")}`}
@@ -493,9 +484,8 @@ export default function NominaResult({ resultado, onGuardadoPendiente }: NominaR
           </div>
         </div>
 
-        {/* 6. PIE DE PÁGINA (ESPACIO ELEGANTE Y FOOTER FORMAL) */}
         <div className="px-8 pb-8 sm:px-10 sm:pb-10 pt-6">
-          <div className="flex justify-between items-end text-[10px] text-slate-400">
+          <div className="flex justify-between items-end text-[10px] text-slate-500">
             <div className="space-y-1">
               <span className="font-bold text-slate-700 block uppercase text-xs font-heading">
                 TRANSPORTES EL MONTAÑEZ
@@ -503,7 +493,7 @@ export default function NominaResult({ resultado, onGuardadoPendiente }: NominaR
               <span className="block">
                 RUT 77.777.777-7 · Documento generado electrónicamente
               </span>
-              <span className="block text-slate-400">
+              <span className="block text-slate-500">
                 Si tiene dudas sobre esta liquidación, contacte a administración.
               </span>
             </div>
