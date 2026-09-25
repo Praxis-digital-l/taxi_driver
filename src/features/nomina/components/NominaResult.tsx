@@ -8,19 +8,28 @@ import {
   Fingerprint,
   FileDown,
   Send,
-  SendToBack,
   PenTool,
   CheckCircle2,
   Copy,
   ExternalLink,
   ShieldCheck,
-  Truck,
   Clock,
+  Upload,
+  FileCheck,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { type ResultadoNomina } from "@/lib/nomina";
-import { enviarLiquidacion, guardarLiquidacionPendiente } from "@/features/nomina/services/liquidacionesService";
-import { consultarSaldoFirmaWeb, enviarAFirmaWeb, type FirmanteUrlInfo } from "@/features/firmaweb/services/supabaseFirmawebClient";
+import {
+  guardarLiquidacionPendiente,
+  actualizarFirmaIniciada,
+  subirYEnviarPdfFirmado,
+  blobToBase64,
+} from "@/features/nomina/services/liquidacionesService";
+import {
+  consultarSaldoFirmaWeb,
+  enviarAFirmaWeb,
+  type FirmanteUrlInfo,
+} from "@/features/firmaweb/services/supabaseFirmawebClient";
 import {
   Dialog,
   DialogContent,
@@ -43,6 +52,7 @@ const MONEDA = new Intl.NumberFormat("es-CL", {
 interface NominaResultProps {
   resultado: ResultadoNomina;
   onGuardadoPendiente?: () => void;
+  onActualizadoPendientes?: () => void;
 }
 
 function Fila({ concepto, monto, esTotal = false }: { concepto: string; monto: number; esTotal?: boolean }) {
@@ -54,13 +64,25 @@ function Fila({ concepto, monto, esTotal = false }: { concepto: string; monto: n
   );
 }
 
-export default function NominaResult({ resultado, onGuardadoPendiente }: NominaResultProps) {
+export default function NominaResult({
+  resultado,
+  onGuardadoPendiente,
+  onActualizadoPendientes,
+}: NominaResultProps) {
   const cardRef = useRef<HTMLDivElement>(null);
+  const fileInputModalRef = useRef<HTMLInputElement>(null);
+  const fileInputDirectRef = useRef<HTMLInputElement>(null);
+
   const [descargando, setDescargando] = useState(false);
   const [enviando, setEnviando] = useState(false);
   const [guardandoPendiente, setGuardandoPendiente] = useState(false);
   const [estaFirmada, setEstaFirmada] = useState(false);
+  const [enviadaAlConductor, setEnviadaAlConductor] = useState(false);
   const [liquidacionGuardadaId, setLiquidacionGuardadaId] = useState<string | null>(null);
+
+  // Estado para subir manualmente el PDF firmado que llega al correo
+  const [modalSubirPdfOpen, setModalSubirPdfOpen] = useState(false);
+  const [archivoPdfFirmado, setArchivoPdfFirmado] = useState<File | null>(null);
 
   const { toast } = useToast();
   const now = new Date();
@@ -123,6 +145,15 @@ export default function NominaResult({ resultado, onGuardadoPendiente }: NominaR
   };
 
   const handleGuardarPendiente = async () => {
+    if (liquidacionGuardadaId) {
+      toast({
+        title: "Liquidación ya en Pendientes por Firmar",
+        description: `La liquidación de ${resultado.nombre} ya se encuentra guardada en la pestaña de pendientes.`,
+      });
+      onGuardadoPendiente?.();
+      return;
+    }
+
     setGuardandoPendiente(true);
     try {
       const blob = await generarPDF();
@@ -144,11 +175,11 @@ export default function NominaResult({ resultado, onGuardadoPendiente }: NominaR
     }
   };
 
-  const handleEnviarLiquidacion = async () => {
-    if (!estaFirmada) {
+  const handleSubirYEnviarPdfFirmado = async () => {
+    if (!archivoPdfFirmado) {
       toast({
-        title: "Firma requerida",
-        description: "Por normativa laboral, la nómina solo puede ser enviada al trabajador cuando esté firmada con FirmaWeb.",
+        title: "Archivo requerido",
+        description: "Selecciona el archivo PDF firmado que recibiste en tu correo de FirmaWeb.",
         variant: "destructive",
       });
       return;
@@ -156,16 +187,30 @@ export default function NominaResult({ resultado, onGuardadoPendiente }: NominaR
 
     setEnviando(true);
     try {
-      const blob = await generarPDF();
-      await enviarLiquidacion(resultado, mes, fecha, blob);
+      const liq = await subirYEnviarPdfFirmado({
+        archivoPdf: archivoPdfFirmado,
+        idLiquidacion: liquidacionGuardadaId,
+        resultado,
+        mes,
+        fecha,
+      });
+
+      setLiquidacionGuardadaId(liq.id);
+      setEnviadaAlConductor(true);
+      setEstaFirmada(true);
+      setArchivoPdfFirmado(null);
+      setModalSubirPdfOpen(false);
+      setModalFirmaOpen(false);
+      onActualizadoPendientes?.();
+
       toast({
-        title: "Liquidación enviada",
-        description: `Se envió la liquidación firmada a ${resultado.nombre} (${resultado.trabajadorId}).`,
+        title: "Liquidación firmada enviada al conductor",
+        description: `El PDF firmado ya está disponible en la cuenta de ${resultado.nombre} (${resultado.trabajadorId}).`,
       });
     } catch (error) {
       toast({
-        title: "Error al enviar liquidación",
-        description: error instanceof Error ? error.message : "No se pudo enviar la liquidación.",
+        title: "Error al enviar PDF firmado",
+        description: error instanceof Error ? error.message : "No se pudo subir y enviar la liquidación.",
         variant: "destructive",
       });
     } finally {
@@ -183,8 +228,10 @@ export default function NominaResult({ resultado, onGuardadoPendiente }: NominaR
 
   const handleAbrirModalFirma = async () => {
     setModalFirmaOpen(true);
-    setFirmantesResultado(null);
-    setProcesoIdExitoso(null);
+    setArchivoPdfFirmado(null);
+    if (firmantesResultado && firmantesResultado.length > 0) {
+      return;
+    }
     setCargandoSaldo(true);
     try {
       const saldo = await consultarSaldoFirmaWeb();
@@ -202,17 +249,7 @@ export default function NominaResult({ resultado, onGuardadoPendiente }: NominaR
       const blob = await generarPDF();
       if (!blob) throw new Error("No se pudo compilar el PDF de la liquidación.");
 
-      const reader = new FileReader();
-      const base64Promise = new Promise<string>((resolve, reject) => {
-        reader.onloadend = () => {
-          const res = reader.result as string;
-          const base64 = res.split(",")[1] || "";
-          resolve(base64);
-        };
-        reader.onerror = reject;
-      });
-      reader.readAsDataURL(blob);
-      const pdfBase64 = await base64Promise;
+      const pdfBase64 = await blobToBase64(blob);
 
       let liqId = liquidacionGuardadaId;
       if (!liqId) {
@@ -238,13 +275,27 @@ export default function NominaResult({ resultado, onGuardadoPendiente }: NominaR
         liqId || undefined
       );
 
+      const urlEmpleador = res.firmantes?.[0]?.Url ?? "";
+      if (liqId && urlEmpleador) {
+        try {
+          await actualizarFirmaIniciada(liqId, {
+            idProceso: res.idProceso,
+            idDocumento: res.idDocumento,
+            urlEmpleador,
+          });
+        } catch (err) {
+          console.warn("No se pudo actualizar estado local tras iniciar firma:", err);
+        }
+      }
+
       setProcesoIdExitoso(res.idProceso);
       setFirmantesResultado(res.firmantes);
       setEstaFirmada(true);
+      onActualizadoPendientes?.();
 
       toast({
         title: "¡Proceso creado en FirmaWeb!",
-        description: `Proceso #${res.idProceso} iniciado exitosamente. Ya visible en tu escritorio de FirmaWeb.`,
+        description: `Proceso #${res.idProceso} iniciado exitosamente. Firma el documento y luego sube el PDF firmado recibido en tu correo.`,
       });
     } catch (error) {
       toast({
@@ -292,7 +343,7 @@ export default function NominaResult({ resultado, onGuardadoPendiente }: NominaR
           variant="outline"
           size="sm"
           onClick={handleGuardarPendiente}
-          disabled={descargando || guardandoPendiente || estaFirmada}
+          disabled={descargando || guardandoPendiente || enviadaAlConductor}
           className="gap-2 border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
         >
           <Clock className="h-4 w-4" />
@@ -302,24 +353,36 @@ export default function NominaResult({ resultado, onGuardadoPendiente }: NominaR
         <Button
           variant="default"
           size="sm"
-          onClick={handleEnviarLiquidacion}
-          disabled={enviando || !estaFirmada}
+          onClick={() => {
+            setArchivoPdfFirmado(null);
+            setModalSubirPdfOpen(true);
+          }}
+          disabled={enviando || enviadaAlConductor}
           className={`gap-2 ${
-            !estaFirmada
-              ? "opacity-60 cursor-not-allowed bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
-              : "bg-slate-900 text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-200"
+            enviadaAlConductor
+              ? "bg-emerald-600 text-white opacity-90"
+              : "bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm"
           }`}
-          title={!estaFirmada ? "Solo se puede enviar al trabajador cuando esté firmada por FirmaWeb" : "Enviar liquidación al trabajador"}
+          title="Subir el PDF firmado recibido en tu correo y enviarlo al conductor"
         >
-          <SendToBack className="h-4 w-4" />
-          {enviando ? "Enviando..." : "Enviar liquidación"}
+          {enviadaAlConductor ? (
+            <>
+              <CheckCircle2 className="h-4 w-4" />
+              PDF firmado enviado
+            </>
+          ) : (
+            <>
+              <Upload className="h-4 w-4" />
+              {enviando ? "Enviando..." : "Enviar PDF firmado al conductor"}
+            </>
+          )}
         </Button>
 
         <Button
           variant="default"
           size="sm"
           onClick={handleAbrirModalFirma}
-          disabled={descargando || enviando || enviandoFirma || guardandoPendiente}
+          disabled={descargando || enviando || enviandoFirma || guardandoPendiente || enviadaAlConductor}
           className="gap-2 bg-slate-900 text-white hover:bg-slate-800 shadow-sm dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-200"
         >
           <PenTool className="h-4 w-4" />
@@ -511,7 +574,7 @@ export default function NominaResult({ resultado, onGuardadoPendiente }: NominaR
 
       {/* Modal de Confirmación y Resultados FirmaWeb */}
       <Dialog open={modalFirmaOpen} onOpenChange={setModalFirmaOpen}>
-        <DialogContent className="sm:max-w-[480px]">
+        <DialogContent className="sm:max-w-[500px]">
           {!firmantesResultado ? (
             <>
               <DialogHeader>
@@ -578,17 +641,21 @@ export default function NominaResult({ resultado, onGuardadoPendiente }: NominaR
                   ¡Proceso #{procesoIdExitoso} Listo para tu Firma!
                 </DialogTitle>
                 <DialogDescription>
-                  El documento ya está en FirmaWeb. Haz clic en el botón a continuación para abrir FirmaWeb y rubricar como empleador:
+                  1. Abre FirmaWeb y rubrica como empleador. 2. Cuando recibas el PDF firmado en tu correo, súbelo aquí abajo para enviárselo al conductor.
                 </DialogDescription>
               </DialogHeader>
 
-              <div className="space-y-3 py-2">
+              <div className="space-y-4 py-2">
                 {firmantesResultado && firmantesResultado[0] && (
                   <div className="rounded-xl border border-emerald-500/30 bg-emerald-50/40 p-4 space-y-3">
                     <div className="flex justify-between items-start text-xs">
                       <div>
-                        <span className="font-semibold text-emerald-900 block">Firmante: Transportes El Montañez (Empleador)</span>
-                        <span className="text-emerald-700 text-[11px] block mt-0.5">PIN enviado a: <strong>benhantscheruk@gmail.com</strong></span>
+                        <span className="font-semibold text-emerald-900 block">
+                          Paso 1: Firmar en FirmaWeb (Empleador)
+                        </span>
+                        <span className="text-emerald-700 text-[11px] block mt-0.5">
+                          PIN y PDF firmado enviados a: <strong>benhantscheruk@gmail.com</strong>
+                        </span>
                       </div>
                       <Badge className="bg-emerald-600 text-white text-[10px]">1 Firma FES</Badge>
                     </div>
@@ -615,15 +682,166 @@ export default function NominaResult({ resultado, onGuardadoPendiente }: NominaR
                     </Button>
                   </div>
                 )}
+
+                {/* Paso 2: Subir manualmente el PDF firmado que llega al correo */}
+                <div className="rounded-xl border border-slate-200 bg-slate-50/70 dark:border-slate-800 dark:bg-slate-900/50 p-4 space-y-3">
+                  <div className="text-xs">
+                    <p className="font-semibold text-slate-900 dark:text-slate-100">
+                      Paso 2: Subir y enviar PDF firmado al conductor
+                    </p>
+                    <p className="text-muted-foreground mt-0.5">
+                      Una vez que firmes, FirmaWeb te enviará al correo el PDF firmado. Adjúntalo aquí para enviarlo al portal de{" "}
+                      <strong>{resultado.nombre}</strong>.
+                    </p>
+                  </div>
+
+                  <input
+                    ref={fileInputModalRef}
+                    type="file"
+                    accept="application/pdf,.pdf"
+                    className="hidden"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0] || null;
+                      setArchivoPdfFirmado(f);
+                    }}
+                  />
+
+                  <div className="flex flex-col gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="w-full justify-start gap-2 text-xs bg-white dark:bg-slate-950"
+                      onClick={() => fileInputModalRef.current?.click()}
+                    >
+                      {archivoPdfFirmado ? (
+                        <>
+                          <FileCheck className="h-4 w-4 text-emerald-600 shrink-0" />
+                          <span className="truncate font-medium">{archivoPdfFirmado.name}</span>
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="h-4 w-4 text-slate-500 shrink-0" />
+                          <span>Seleccionar PDF firmado desde mi equipo...</span>
+                        </>
+                      )}
+                    </Button>
+
+                    <Button
+                      type="button"
+                      size="sm"
+                      disabled={!archivoPdfFirmado || enviando}
+                      onClick={handleSubirYEnviarPdfFirmado}
+                      className="w-full gap-2 bg-slate-900 text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900"
+                    >
+                      <Send className="h-3.5 w-3.5" />
+                      {enviando
+                        ? "Subiendo y enviando al conductor..."
+                        : "Enviar liquidación firmada al conductor"}
+                    </Button>
+                  </div>
+                </div>
               </div>
 
               <DialogFooter>
-                <Button onClick={() => setModalFirmaOpen(false)} className="w-full">
-                  Listo
+                <Button variant="outline" onClick={() => setModalFirmaOpen(false)} className="w-full">
+                  Cerrar (dejar en pendientes por ahora)
                 </Button>
               </DialogFooter>
             </>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal directo para subir y enviar el PDF firmado al conductor */}
+      <Dialog open={modalSubirPdfOpen} onOpenChange={setModalSubirPdfOpen}>
+        <DialogContent className="sm:max-w-[460px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-base">
+              <Upload className="h-5 w-5 text-emerald-600" />
+              Enviar PDF firmado al conductor
+            </DialogTitle>
+            <DialogDescription>
+              Adjunta el documento PDF firmado que recibiste en{" "}
+              <strong>benhantscheruk@gmail.com</strong> tras firmar en FirmaWeb para enviarlo a{" "}
+              <strong>{resultado.nombre}</strong>.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div className="rounded-lg border bg-muted/40 p-3 space-y-1 text-xs">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Conductor:</span>
+                <span className="font-semibold">
+                  {resultado.nombre} ({resultado.trabajadorId})
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Período:</span>
+                <span className="capitalize">{mes}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Total a pagar:</span>
+                <span className="font-bold">{MONEDA.format(resultado.totalAPagar)}</span>
+              </div>
+            </div>
+
+            <input
+              ref={fileInputDirectRef}
+              type="file"
+              accept="application/pdf,.pdf"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0] || null;
+                setArchivoPdfFirmado(f);
+              }}
+            />
+
+            <div
+              onClick={() => fileInputDirectRef.current?.click()}
+              className="cursor-pointer rounded-xl border-2 border-dashed border-slate-300 hover:border-emerald-500 bg-slate-50/60 dark:border-slate-700 dark:bg-slate-900/40 p-6 text-center transition-colors"
+            >
+              {archivoPdfFirmado ? (
+                <div className="space-y-1.5">
+                  <FileCheck className="h-8 w-8 text-emerald-600 mx-auto" />
+                  <p className="text-xs font-semibold text-foreground break-all">
+                    {archivoPdfFirmado.name}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground">
+                    {(archivoPdfFirmado.size / 1024).toFixed(1)} KB · Haz clic para cambiar archivo
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-1.5">
+                  <Upload className="h-8 w-8 text-slate-400 mx-auto" />
+                  <p className="text-xs font-semibold text-foreground">
+                    Haz clic para seleccionar el PDF firmado
+                  </p>
+                  <p className="text-[11px] text-muted-foreground">
+                    Solo archivos PDF (.pdf) descargados desde tu correo de FirmaWeb
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              onClick={() => setModalSubirPdfOpen(false)}
+              disabled={enviando}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleSubirYEnviarPdfFirmado}
+              disabled={!archivoPdfFirmado || enviando}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2"
+            >
+              <Send className="h-4 w-4" />
+              {enviando ? "Enviando..." : "Enviar al conductor"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

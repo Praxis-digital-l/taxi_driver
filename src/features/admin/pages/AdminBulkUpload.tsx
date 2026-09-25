@@ -6,7 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import PageHeader from "@/components/PageHeader";
 import { Upload, FileSpreadsheet, Download, AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
 import { createConductorProfile } from "@/features/admin/services/adminConductoresService";
-import { createVehicle, assignConductorToVehicle } from "@/features/admin/services/adminVehiclesService";
+import { upsertVehicleForBulk, assignConductorToVehicle } from "@/features/admin/services/adminVehiclesService";
 import * as XLSX from "xlsx";
 
 type Row = Record<string, string>;
@@ -114,7 +114,7 @@ function parseCsv(text: string): { headers: string[]; rows: Row[] } {
     const row: Row = {};
     let hasData = false;
     for (let j = 0; j < headers.length; j++) {
-      const val = values[j] ?? "";
+      const val = (values[j] ?? "").trim();
       row[headers[j]] = val;
       if (val.length > 0) hasData = true;
     }
@@ -127,10 +127,23 @@ function parseCsv(text: string): { headers: string[]; rows: Row[] } {
 function parseExcel(data: ArrayBuffer): { headers: string[]; rows: Row[] } {
   const workbook = XLSX.read(data, { type: "array" });
   const sheet = workbook.Sheets[workbook.SheetNames[0]];
-  const json = XLSX.utils.sheet_to_json<Record<string, string>>(sheet, { defval: "" });
-  if (json.length === 0) return { headers: [], rows: [] };
-  const headers = Object.keys(json[0]);
-  return { headers, rows: json };
+  const rawJson = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: "" });
+  if (rawJson.length === 0) return { headers: [], rows: [] };
+  const headers = Object.keys(rawJson[0]);
+
+  const rows: Row[] = [];
+  for (const rawRow of rawJson) {
+    const cleanRow: Row = {};
+    let hasData = false;
+    for (const h of headers) {
+      const val = String(rawRow[h] ?? "").trim();
+      cleanRow[h] = val;
+      if (val.length > 0) hasData = true;
+    }
+    if (hasData) rows.push(cleanRow);
+  }
+
+  return { headers, rows };
 }
 
 function extractErrorMessage(err: unknown): string {
@@ -145,7 +158,7 @@ function extractErrorMessage(err: unknown): string {
   return "Error desconocido";
 }
 
-function buildHeaderMap(row: Row): Record<Field, string> | null {
+function buildHeaderMap(row: Row): Partial<Record<Field, string>> | null {
   const aliasMap: Record<string, Field> = {};
   FIELDS.forEach((field) => {
     HEADER_ALIASES[field].forEach((alias) => {
@@ -159,11 +172,14 @@ function buildHeaderMap(row: Row): Record<Field, string> | null {
     if (field && !mapping[field]) mapping[field] = header;
   });
 
-  const required: Field[] = ["nombres", "apellido_paterno", "email", "rut"];
-  for (const field of required) {
-    if (!mapping[field]) return null;
-  }
-  return mapping as Record<Field, string>;
+  if (Object.keys(mapping).length === 0) return null;
+  return mapping;
+}
+
+function getFieldVal(row: Row, map: Partial<Record<Field, string>>, field: Field): string {
+  const headerKey = map[field];
+  if (!headerKey) return "";
+  return String(row[headerKey] ?? "").trim();
 }
 
 function generateTemplate() {
@@ -243,41 +259,68 @@ export default function AdminBulkUpload() {
       const row = previewRows[i];
       const rowKey = i + 2;
       try {
-        const nombres = (row[headerMap.nombres] || "").trim();
-        const apellidoPaterno = (row[headerMap.apellido_paterno] || "").trim();
-        const apellidoMaterno = (row[headerMap.apellido_materno] || "").trim();
-        const email = (row[headerMap.email] || "").trim();
-        const phone = (row[headerMap.phone] || "").trim();
-        const rut = (row[headerMap.rut] || "").trim();
+        const nombres = getFieldVal(row, headerMap, "nombres");
+        const apellidoPaterno = getFieldVal(row, headerMap, "apellido_paterno");
+        const apellidoMaterno = getFieldVal(row, headerMap, "apellido_materno");
+        const email = getFieldVal(row, headerMap, "email");
+        const phone = getFieldVal(row, headerMap, "phone");
+        const rut = getFieldVal(row, headerMap, "rut");
 
-        if (!nombres || !apellidoPaterno || !email || !rut) {
-          throw new Error("Faltan campos requeridos: Nombres, Apellido Paterno, Email, RUT");
+        const licensePlate = getFieldVal(row, headerMap, "license_plate");
+        const make = getFieldVal(row, headerMap, "make");
+        const model = getFieldVal(row, headerMap, "model");
+        const yearStr = getFieldVal(row, headerMap, "year");
+        const color = getFieldVal(row, headerMap, "color");
+
+        const hasConductorData = Boolean(
+          nombres || apellidoPaterno || apellidoMaterno || email || phone || rut
+        );
+        const hasVehicleData = Boolean(
+          licensePlate || make || model || yearStr || color
+        );
+
+        if (!hasConductorData && !hasVehicleData) {
+          continue;
         }
 
-        const conductorId = await createConductorProfile({
-          nombres,
-          apellidoPaterno,
-          apellidoMaterno,
-          email,
-          phone,
-          rut,
-        });
-
-        const licensePlate = (row[headerMap.license_plate] || "").trim();
-        if (licensePlate) {
-          const vehicleId = await createVehicle({
-            licensePlate,
-            make: (row[headerMap.make] || "").trim(),
-            model: (row[headerMap.model] || "").trim(),
-            year: row[headerMap.year] ? Number.parseInt(row[headerMap.year], 10) : null,
-            color: (row[headerMap.color] || "").trim(),
+        let conductorId: string | null = null;
+        if (hasConductorData) {
+          conductorId = await createConductorProfile({
+            nombres,
+            apellidoPaterno,
+            apellidoMaterno,
+            email,
+            phone,
+            rut,
           });
-          if (vehicleId) {
-            await assignConductorToVehicle(vehicleId, conductorId);
+        }
+
+        let vehicleId: string | null = null;
+        if (hasVehicleData && licensePlate) {
+          const parsedYear = yearStr ? Number.parseInt(yearStr, 10) : null;
+          vehicleId = await upsertVehicleForBulk({
+            licensePlate,
+            make,
+            model,
+            year: parsedYear != null && !Number.isNaN(parsedYear) ? parsedYear : null,
+            color,
+          });
+
+          if (vehicleId && conductorId) {
+            await assignConductorToVehicle(vehicleId, conductorId, true);
           }
         }
 
-        resultList.push({ row: rowKey, status: "ok", message: "Conductor y vehículo importados" });
+        let statusMsg = "Registro importado";
+        if (conductorId && vehicleId) {
+          statusMsg = "Conductor y vehículo importados";
+        } else if (conductorId) {
+          statusMsg = "Conductor importado (sin vehículo)";
+        } else if (vehicleId) {
+          statusMsg = "Vehículo importado (sin conductor asignado)";
+        }
+
+        resultList.push({ row: rowKey, status: "ok", message: statusMsg });
         okCount += 1;
       } catch (err) {
         resultList.push({ row: rowKey, status: "error", message: extractErrorMessage(err) });
@@ -364,11 +407,13 @@ export default function AdminBulkUpload() {
                   </TableHeader>
                   <TableBody>
                     {previewRows.map((row, i) => {
-                      const map = buildHeaderMap(row) as Record<Field, string>;
+                      const map = buildHeaderMap(row) ?? {};
                       return (
                         <TableRow key={i}>
                           {FIELDS.map((field) => (
-                            <TableCell key={field} className="text-sm">{row[map[field]] ?? ""}</TableCell>
+                            <TableCell key={field} className="text-sm">
+                              {getFieldVal(row, map, field)}
+                            </TableCell>
                           ))}
                         </TableRow>
                       );

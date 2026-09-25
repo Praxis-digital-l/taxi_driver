@@ -11,6 +11,7 @@ import { fetchLiquidacionesPendientesFirma } from "@/features/nomina/services/li
 
 export default function NominaPage() {
   const [resultado, setResultado] = useState<ResultadoNomina | null>(null);
+  const [calculoVersion, setCalculoVersion] = useState<number>(0);
   const [tabActiva, setTabActiva] = useState<string>("calcular");
   const [totalPendientes, setTotalPendientes] = useState<number>(0);
 
@@ -25,11 +26,12 @@ export default function NominaPage() {
 
   useEffect(() => {
     actualizarContadorPendientes();
-  }, []);
+  }, [tabActiva]);
 
   const handleCalcular = (data: DatosNomina) => {
     const res = calcularNomina(data);
     setResultado(res);
+    setCalculoVersion((v) => v + 1);
   };
 
   const handleNuevo = () => {
@@ -66,11 +68,13 @@ export default function NominaPage() {
               <NominaForm onCalcular={handleCalcular} />
               <div className="space-y-4">
                 <NominaResult
+                  key={`${resultado.trabajadorId}-${calculoVersion}`}
                   resultado={resultado}
                   onGuardadoPendiente={() => {
                     actualizarContadorPendientes();
                     setTabActiva("pendientes");
                   }}
+                  onActualizadoPendientes={actualizarContadorPendientes}
                 />
                 <div className="flex justify-end">
                   <button
@@ -91,6 +95,7 @@ export default function NominaPage() {
 
         <TabsContent value="pendientes" className="mt-6">
           <PendientesPorFirmar
+            key={tabActiva === "pendientes" ? "active" : "inactive"}
             onNuevaNomina={() => setTabActiva("calcular")}
             onTotalPendientesChange={(count) => setTotalPendientes(count)}
           />
@@ -99,3 +104,4 @@ export default function NominaPage() {
     </div>
   );
 }
+

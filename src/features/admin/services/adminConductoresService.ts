@@ -63,6 +63,26 @@ function assertNoError(error: { message: string; code?: string; details?: string
   }
 }
 
+function normalizeConductorRow(row: Record<string, unknown>): ConductorRecord {
+  return {
+    id: String(row.id ?? ""),
+    user_id: row.user_id ? String(row.user_id) : "",
+    nombres: String(row.nombres ?? ""),
+    apellido_paterno: String(row.apellido_paterno ?? ""),
+    apellido_materno: String(row.apellido_materno ?? ""),
+    full_name: String(row.full_name ?? ""),
+    email: String(row.email ?? ""),
+    phone: row.phone ? String(row.phone) : null,
+    rut: String(row.rut ?? ""),
+    worker_id: row.worker_id ? String(row.worker_id) : undefined,
+    score: row.score != null ? Number(row.score) : null,
+    estado_conductor: String(row.estado_conductor ?? "nuevo"),
+    role: String(row.role ?? "conductor"),
+    created_at: String(row.created_at ?? ""),
+    updated_at: String(row.updated_at ?? ""),
+  };
+}
+
 export async function fetchAdminConductores() {
   const { data, error } = await supabase
     .from("profiles")
@@ -71,7 +91,7 @@ export async function fetchAdminConductores() {
     .order("full_name", { ascending: true });
 
   assertNoError(error);
-  return (data ?? []) as ConductorRecord[];
+  return ((data ?? []) as Record<string, unknown>[]).map(normalizeConductorRow);
 }
 
 export async function fetchConductorDetail(id: string) {
@@ -92,7 +112,7 @@ export async function fetchConductorDetail(id: string) {
   assertNoError(vehiclesError);
 
   return {
-    ...(conductor as ConductorRecord),
+    ...normalizeConductorRow(conductor as Record<string, unknown>),
     vehicles: (vehicles ?? []) as ConductorVehicleRecord[],
   } as ConductorDetailRecord;
 }
@@ -118,45 +138,55 @@ async function generateWorkerId(): Promise<string> {
 }
 
 export async function createConductor(payload: CreateConductorPayload) {
-  const { data: existing } = await supabase
-    .from("profiles")
-    .select("rut, phone")
-    .or(`rut.eq.${payload.rut.trim()},phone.eq.${payload.phone.trim()}`)
-    .maybeSingle();
+  const rutTrim = payload.rut.trim();
+  const phoneTrim = payload.phone.trim();
 
-  if (existing) {
-    if (existing.rut === payload.rut.trim()) throw new Error("Ya existe un conductor con este RUT");
-    if (existing.phone === payload.phone.trim()) throw new Error("Ya existe un conductor con este teléfono");
+  if (rutTrim) {
+    const { data: existingRut } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("rut", rutTrim)
+      .maybeSingle();
+    if (existingRut) throw new Error("Ya existe un conductor con este RUT");
+  }
+
+  if (phoneTrim) {
+    const { data: existingPhone } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("phone", phoneTrim)
+      .maybeSingle();
+    if (existingPhone) throw new Error("Ya existe un conductor con este teléfono");
   }
 
   const workerId = await generateWorkerId();
 
   const fullName = `${payload.nombres.trim()} ${payload.apellidoPaterno.trim()} ${payload.apellidoMaterno.trim()}`.trim();
 
-const { data: fnData, error: fnError } = await supabase.functions.invoke("create-conductor", {
-  body: {
-    email: payload.email.trim().toLowerCase(),
-    password: payload.password,
-    full_name: fullName,
-    nombres: payload.nombres.trim(),
-    apellido_paterno: payload.apellidoPaterno.trim(),
-    apellido_materno: payload.apellidoMaterno.trim(),
-    phone: payload.phone.trim(),
-    rut: payload.rut.trim(),
-    worker_id: workerId,
-  },
-});
+  const { data: fnData, error: fnError } = await supabase.functions.invoke("create-conductor", {
+    body: {
+      email: payload.email.trim().toLowerCase(),
+      password: payload.password,
+      full_name: fullName,
+      nombres: payload.nombres.trim(),
+      apellido_paterno: payload.apellidoPaterno.trim(),
+      apellido_materno: payload.apellidoMaterno.trim(),
+      phone: phoneTrim,
+      rut: rutTrim,
+      worker_id: workerId,
+    },
+  });
 
-if (fnError) {
-  let msg = fnError.message;
-  try {
-    const parsed = JSON.parse(fnError.message);
-    if (parsed.error) msg = parsed.error;
-  } catch {
-    // El mensaje no era JSON, se usa el texto original
+  if (fnError) {
+    let msg = fnError.message;
+    try {
+      const parsed = JSON.parse(fnError.message);
+      if (parsed.error) msg = parsed.error;
+    } catch {
+      // El mensaje no era JSON, se usa el texto original
+    }
+    throw new Error(msg);
   }
-  throw new Error(msg);
-}
 
   // Fallback: si la edge function no pudo escribir el worker_id, asignarlo directamente
   const createdUserId = (fnData as { user_id?: string } | null)?.user_id;
@@ -174,38 +204,81 @@ if (fnError) {
 }
 
 export async function createConductorProfile(payload: {
-  nombres: string;
-  apellidoPaterno: string;
-  apellidoMaterno: string;
-  email: string;
-  phone: string;
-  rut: string;
+  nombres?: string;
+  apellidoPaterno?: string;
+  apellidoMaterno?: string;
+  email?: string;
+  phone?: string;
+  rut?: string;
 }) {
-  const { data: existing } = await supabase
-    .from("profiles")
-    .select("rut, phone")
-    .or(`rut.eq.${payload.rut.trim()},phone.eq.${payload.phone.trim()}`)
-    .maybeSingle();
+  const nombresClean = (payload.nombres ?? "").trim();
+  const paternoClean = (payload.apellidoPaterno ?? "").trim();
+  const maternoClean = (payload.apellidoMaterno ?? "").trim();
+  const emailClean = (payload.email ?? "").trim().toLowerCase();
+  const phoneClean = (payload.phone ?? "").trim();
+  const rutClean = (payload.rut ?? "").trim();
+  const fullName = [nombresClean, paternoClean, maternoClean].filter(Boolean).join(" ");
 
-  if (existing) {
-    if (existing.rut === payload.rut.trim()) throw new Error("Ya existe un conductor con este RUT");
-    if (existing.phone === payload.phone.trim()) throw new Error("Ya existe un conductor con este teléfono");
+  // Si ya existe un conductor con el mismo RUT (cuando no está vacío), actualizamos sus datos no vacíos y retornamos su ID
+  if (rutClean) {
+    const { data: existingByRut } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("rut", rutClean)
+      .maybeSingle();
+
+    if (existingByRut?.id) {
+      await supabase
+        .from("profiles")
+        .update({
+          ...(nombresClean ? { nombres: nombresClean } : {}),
+          ...(paternoClean ? { apellido_paterno: paternoClean } : {}),
+          ...(maternoClean ? { apellido_materno: maternoClean } : {}),
+          ...(fullName ? { full_name: fullName } : {}),
+          ...(emailClean ? { email: emailClean } : {}),
+          ...(phoneClean ? { phone: phoneClean } : {}),
+        })
+        .eq("id", existingByRut.id);
+      return existingByRut.id;
+    }
+  }
+
+  // Si ya existe un conductor con el mismo teléfono (cuando no está vacío), actualizamos sus datos no vacíos y retornamos su ID
+  if (phoneClean) {
+    const { data: existingByPhone } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("phone", phoneClean)
+      .maybeSingle();
+
+    if (existingByPhone?.id) {
+      await supabase
+        .from("profiles")
+        .update({
+          ...(nombresClean ? { nombres: nombresClean } : {}),
+          ...(paternoClean ? { apellido_paterno: paternoClean } : {}),
+          ...(maternoClean ? { apellido_materno: maternoClean } : {}),
+          ...(fullName ? { full_name: fullName } : {}),
+          ...(emailClean ? { email: emailClean } : {}),
+          ...(rutClean ? { rut: rutClean } : {}),
+        })
+        .eq("id", existingByPhone.id);
+      return existingByPhone.id;
+    }
   }
 
   const workerId = await generateWorkerId();
 
-  const fullName = `${payload.nombres.trim()} ${payload.apellidoPaterno.trim()} ${payload.apellidoMaterno.trim()}`.trim();
-
   const { data, error } = await supabase
     .from("profiles")
     .insert({
-      nombres: payload.nombres.trim(),
-      apellido_paterno: payload.apellidoPaterno.trim(),
-      apellido_materno: payload.apellidoMaterno.trim(),
+      nombres: nombresClean,
+      apellido_paterno: paternoClean,
+      apellido_materno: maternoClean,
       full_name: fullName,
-      email: payload.email.trim().toLowerCase(),
-      phone: payload.phone.trim(),
-      rut: payload.rut.trim(),
+      email: emailClean,
+      phone: phoneClean || null,
+      rut: rutClean || null,
       worker_id: workerId,
       role: "conductor",
     })
@@ -219,14 +292,14 @@ export async function createConductorProfile(payload: {
 }
 
 export async function updateConductor(id: string, payload: UpdateConductorPayload) {
-  const updateData: Record<string, string> = {};
+  const updateData: Record<string, string | null> = {};
 
   if (payload.nombres !== undefined) updateData.nombres = payload.nombres.trim();
   if (payload.apellidoPaterno !== undefined) updateData.apellido_paterno = payload.apellidoPaterno.trim();
   if (payload.apellidoMaterno !== undefined) updateData.apellido_materno = payload.apellidoMaterno.trim();
   if (payload.email !== undefined) updateData.email = payload.email.trim().toLowerCase();
-  if (payload.phone !== undefined) updateData.phone = payload.phone.trim();
-  if (payload.rut !== undefined) updateData.rut = payload.rut.trim();
+  if (payload.phone !== undefined) updateData.phone = payload.phone.trim() || null;
+  if (payload.rut !== undefined) updateData.rut = payload.rut.trim() || null;
   if (payload.estado_conductor !== undefined) updateData.estado_conductor = payload.estado_conductor;
 
   const { error } = await supabase.from("profiles").update(updateData).eq("id", id);
@@ -245,7 +318,7 @@ export async function deleteConductor(profileId: string, userId: string) {
 
   let deleted = false;
 
-  if (typeof supabase.functions?.invoke === "function") {
+  if (userId && typeof supabase.functions?.invoke === "function") {
     try {
       const { error } = await supabase.functions.invoke("delete-conductor", {
         body: { user_id: userId },
