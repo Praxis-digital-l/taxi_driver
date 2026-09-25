@@ -349,7 +349,7 @@ serve(async (req) => {
 
               const publicUrl = `${supabaseUrl.replace(/\/$/, "")}/storage/v1/object/public/Liquidaciones/${fileKey}`;
 
-              // Marcar como firmada en la base de datos
+              // Mantener en 'pendiente' hasta que el administrador suba y envíe manualmente el PDF firmado al conductor
               const updateUrl = `${supabaseUrl.replace(/\/$/, "")}/rest/v1/liquidaciones?id=eq.${row.id}`;
               await fetch(updateUrl, {
                 method: "PATCH",
@@ -360,13 +360,12 @@ serve(async (req) => {
                   "Prefer": "return=minimal",
                 },
                 body: JSON.stringify({
-                  firma_estado: "firmada",
-                  file_url: publicUrl,
+                  firma_estado: "pendiente",
                   firma_completada_at: new Date().toISOString(),
                 }),
               });
 
-              console.log(`[FirmaWeb Webhook] Liquidación #${row.id} actualizada a estado 'firmada'.`);
+              console.log(`[FirmaWeb Webhook] Firma recibida para liquidación #${row.id} (esperando envío manual de PDF firmado al conductor).`);
             }
           }
         }

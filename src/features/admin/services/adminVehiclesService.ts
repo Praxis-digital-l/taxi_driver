@@ -78,10 +78,10 @@ export async function createVehicle(payload: CreateVehiclePayload) {
     .from("vehicles")
     .insert({
       license_plate: normalizedPlate,
-      make: payload.make.trim(),
-      model: payload.model.trim(),
-      year: payload.year,
-      color: payload.color.trim(),
+      make: (payload.make ?? "").trim(),
+      model: (payload.model ?? "").trim(),
+      year: payload.year != null && !Number.isNaN(payload.year) ? payload.year : null,
+      color: (payload.color ?? "").trim(),
     })
     .select("id")
     .single();
@@ -95,13 +95,78 @@ export async function createVehicle(payload: CreateVehiclePayload) {
   return createdId ?? null;
 }
 
-export async function assignConductorToVehicle(vehicleId: string, profileId: string) {
+export async function upsertVehicleForBulk(payload: CreateVehiclePayload) {
+  const normalizedPlate = (payload.licensePlate ?? "").trim().toUpperCase();
+  const makeClean = (payload.make ?? "").trim();
+  const modelClean = (payload.model ?? "").trim();
+  const yearClean = payload.year != null && !Number.isNaN(payload.year) ? payload.year : null;
+  const colorClean = (payload.color ?? "").trim();
+
+  if (normalizedPlate) {
+    const { data: existing, error: existingError } = await supabase
+      .from("vehicles")
+      .select("id")
+      .eq("license_plate", normalizedPlate)
+      .maybeSingle();
+
+    assertNoError(existingError);
+    if (existing?.id) {
+      await supabase
+        .from("vehicles")
+        .update({
+          ...(makeClean ? { make: makeClean } : {}),
+          ...(modelClean ? { model: modelClean } : {}),
+          ...(yearClean != null ? { year: yearClean } : {}),
+          ...(colorClean ? { color: colorClean } : {}),
+        })
+        .eq("id", existing.id);
+      return existing.id;
+    }
+  }
+
+  const { data, error } = await supabase
+    .from("vehicles")
+    .insert({
+      license_plate: normalizedPlate,
+      make: makeClean,
+      model: modelClean,
+      year: yearClean,
+      color: colorClean,
+    })
+    .select("id")
+    .single();
+
+  assertNoError(error);
+  const createdId = Array.isArray(data)
+    ? (data[0] as { id: string } | undefined)?.id
+    : (data as { id: string } | undefined)?.id;
+  return createdId ?? null;
+}
+
+export async function assignConductorToVehicle(
+  vehicleId: string,
+  profileId: string,
+  ignoreDuplicate = false,
+) {
+  const { data: existing } = await supabase
+    .from("vehicle_assignments")
+    .select("id")
+    .eq("vehicle_id", vehicleId)
+    .eq("profile_id", profileId)
+    .maybeSingle();
+
+  if (existing?.id) {
+    if (ignoreDuplicate) return;
+    throw new Error("Este conductor ya está asignado a este vehículo.");
+  }
+
   const { error } = await supabase.from("vehicle_assignments").insert({
     vehicle_id: vehicleId,
     profile_id: profileId,
   });
 
   if (error?.code === "23505") {
+    if (ignoreDuplicate) return;
     throw new Error("Este conductor ya está asignado a este vehículo.");
   }
 
