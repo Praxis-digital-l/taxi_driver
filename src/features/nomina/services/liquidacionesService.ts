@@ -1,7 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { type ResultadoNomina, type DetalleDescuento } from "@/lib/nomina";
 import type { Json } from "@/integrations/supabase/types";
-import { PdfLiquidacionService } from "@/features/firmaweb/services/pdfLiquidacionService";
+import { PdfLiquidacionService } from "@/features/firmaweb/services/PdfLiquidacionService";
 
 export type LiquidacionRecord = {
   id: string;
