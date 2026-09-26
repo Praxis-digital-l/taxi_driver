@@ -24,6 +24,8 @@ type Field =
   | "email"
   | "phone"
   | "rut"
+  | "password"
+  | "role"
   | "license_plate"
   | "make"
   | "model"
@@ -37,6 +39,8 @@ const FIELDS: Field[] = [
   "email",
   "phone",
   "rut",
+  "password",
+  "role",
   "license_plate",
   "make",
   "model",
@@ -51,6 +55,8 @@ const HEADER_ALIASES: Record<Field, string[]> = {
   email: ["email", "correo", "correo electronico"],
   phone: ["phone", "telefono", "telefonoorigen", "celular", "celularconductor"],
   rut: ["rut"],
+  password: ["password", "contrasena", "contraseña", "clave", "pass", "pin"],
+  role: ["rol", "role", "cargo", "tipo", "perfil", "tipousuario", "rolusuario"],
   license_plate: ["license plate", "licenseplate", "patente", "matricula", "patentevehiculo"],
   make: ["make", "marca"],
   model: ["model", "modelo"],
@@ -58,7 +64,21 @@ const HEADER_ALIASES: Record<Field, string[]> = {
   color: ["color"],
 };
 
-const TEMPLATE_HEADERS = ["Nombres", "Apellido Paterno", "Apellido Materno", "Email", "Teléfono", "RUT", "Patente", "Marca", "Modelo", "Año", "Color"];
+const TEMPLATE_HEADERS = [
+  "Nombres",
+  "Apellido Paterno",
+  "Apellido Materno",
+  "Email",
+  "Teléfono",
+  "RUT",
+  "Contraseña",
+  "Rol",
+  "Patente",
+  "Marca",
+  "Modelo",
+  "Año",
+  "Color",
+];
 
 function normalizeHeader(value: string): string {
   return value
@@ -182,9 +202,56 @@ function getFieldVal(row: Row, map: Partial<Record<Field, string>>, field: Field
   return String(row[headerKey] ?? "").trim();
 }
 
+function parseBulkRole(value: string): "admin" | "conductor" {
+  const normalized = value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+  if (
+    normalized === "admin" ||
+    normalized === "administrador" ||
+    normalized === "administradora" ||
+    normalized === "super_admin" ||
+    normalized === "superadmin"
+  ) {
+    return "admin";
+  }
+  return "conductor";
+}
+
 function generateTemplate() {
-  const sample = ["Carlos", "Muñoz", "Rojas", "carlos@ejemplo.cl", "+56912345678", "12.345.678-5", "ABCD-12", "Toyota", "Hiace", "2023", "Blanco"];
-  return [TEMPLATE_HEADERS.join(","), sample.join(",")].join("\n");
+  const sampleConductor = [
+    "Carlos",
+    "Muñoz",
+    "Rojas",
+    "carlos@ejemplo.cl",
+    "+56912345678",
+    "12.345.678-5",
+    "Clave1234",
+    "conductor",
+    "ABCD-12",
+    "Toyota",
+    "Hiace",
+    "2023",
+    "Blanco",
+  ];
+  const sampleAdmin = [
+    "Ana",
+    "Pérez",
+    "Soto",
+    "ana@ejemplo.cl",
+    "+56987654321",
+    "11.111.111-1",
+    "Admin1234",
+    "admin",
+    "",
+    "",
+    "",
+    "",
+    "",
+  ];
+  return [TEMPLATE_HEADERS.join(","), sampleConductor.join(","), sampleAdmin.join(",")].join("\n");
 }
 
 export default function AdminBulkUpload() {
@@ -265,6 +332,9 @@ export default function AdminBulkUpload() {
         const email = getFieldVal(row, headerMap, "email");
         const phone = getFieldVal(row, headerMap, "phone");
         const rut = getFieldVal(row, headerMap, "rut");
+        const password = getFieldVal(row, headerMap, "password");
+        const roleRaw = getFieldVal(row, headerMap, "role");
+        const role = parseBulkRole(roleRaw);
 
         const licensePlate = getFieldVal(row, headerMap, "license_plate");
         const make = getFieldVal(row, headerMap, "make");
@@ -273,7 +343,7 @@ export default function AdminBulkUpload() {
         const color = getFieldVal(row, headerMap, "color");
 
         const hasConductorData = Boolean(
-          nombres || apellidoPaterno || apellidoMaterno || email || phone || rut
+          nombres || apellidoPaterno || apellidoMaterno || email || phone || rut || password || roleRaw
         );
         const hasVehicleData = Boolean(
           licensePlate || make || model || yearStr || color
@@ -292,6 +362,8 @@ export default function AdminBulkUpload() {
             email,
             phone,
             rut,
+            password,
+            role,
           });
         }
 
@@ -311,11 +383,16 @@ export default function AdminBulkUpload() {
           }
         }
 
+        const roleLabel = role === "admin" ? "Administrador" : "Conductor";
         let statusMsg = "Registro importado";
         if (conductorId && vehicleId) {
-          statusMsg = "Conductor y vehículo importados";
+          statusMsg = password
+            ? `${roleLabel} (con cuenta y contraseña) y vehículo importados`
+            : `${roleLabel} y vehículo importados`;
         } else if (conductorId) {
-          statusMsg = "Conductor importado (sin vehículo)";
+          statusMsg = password
+            ? `${roleLabel} importado con cuenta y contraseña (sin vehículo)`
+            : `${roleLabel} importado (sin vehículo)`;
         } else if (vehicleId) {
           statusMsg = "Vehículo importado (sin conductor asignado)";
         }
@@ -348,7 +425,7 @@ export default function AdminBulkUpload() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Carga Masiva" description="Sube conductores y vehículos en un solo archivo CSV o Excel">
+      <PageHeader title="Carga Masiva" description="Sube usuarios (conductores o administradores) y vehículos en un solo archivo CSV o Excel">
         <Button variant="outline" size="sm" onClick={downloadTemplate}>
           <Download className="mr-1.5 h-4 w-4" />
           Descargar Plantilla
@@ -357,10 +434,10 @@ export default function AdminBulkUpload() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Subir Conductores y Vehículos</CardTitle>
+          <CardTitle className="text-lg">Subir Usuarios y Vehículos</CardTitle>
           <CardDescription>
-            El archivo (CSV o Excel) debe contener una fila por conductor con los datos solicitados en español:
-            Nombres, Apellido Paterno, Apellido Materno, Email, Teléfono, RUT, Patente, Marca, Modelo, Año, Color.
+            El archivo (CSV o Excel) debe contener una fila por usuario y/o vehículo con las columnas en español:
+            Nombres, Apellido Paterno, Apellido Materno, Email, Teléfono, RUT, Contraseña, Rol (admin o conductor), Patente, Marca, Modelo, Año, Color.
             Usa el botón "Descargar Plantilla" para ver el formato esperado.
           </CardDescription>
         </CardHeader>
@@ -390,8 +467,7 @@ export default function AdminBulkUpload() {
               <CardDescription>{previewRows.length} registros detectados</CardDescription>
             </div>
             <span className="text-xs text-muted-foreground max-w-md text-right">
-              Se importarán los datos del conductor y del vehículo de cada fila. La contraseña se gestiona
-              por separado en la base de datos.
+              Se importarán los datos del usuario (con su rol admin o conductor y su contraseña si la indicaste) y del vehículo de cada fila.
             </span>
           </CardHeader>
           <CardContent>
@@ -412,7 +488,9 @@ export default function AdminBulkUpload() {
                         <TableRow key={i}>
                           {FIELDS.map((field) => (
                             <TableCell key={field} className="text-sm">
-                              {getFieldVal(row, map, field)}
+                              {field === "role"
+                                ? parseBulkRole(getFieldVal(row, map, field))
+                                : getFieldVal(row, map, field)}
                             </TableCell>
                           ))}
                         </TableRow>

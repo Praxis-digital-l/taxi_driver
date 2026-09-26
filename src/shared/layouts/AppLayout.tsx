@@ -3,11 +3,12 @@ import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/features/auth/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { ConductorAvatar } from "@/components/ConductorAvatar";
+import { UserProfileDialog } from "@/components/UserProfileDialog";
 import { BrandMark } from "@/components/ui/BrandMark";
 import ThemeSwitch from "@/components/ThemeSwitch";
 import {
   Truck, LayoutDashboard, FileText, ClipboardList, Gauge, MessageSquare,
-  LogOut, Menu, X, ChevronRight, Users, Calculator, Upload, Wallet, Landmark, ArrowLeftRight, Clock
+  LogOut, Menu, X, ChevronRight, Users, Calculator, Upload, Wallet, Landmark, ArrowLeftRight, Clock, UserCog
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { logDevInteraction } from "@/shared/monitoring/devLogger";
@@ -40,7 +41,13 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const { profile, signOut, isAdmin } = useAuth();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [profileDialogOpen, setProfileDialogOpen] = useState(false);
   const links = isAdmin ? baseAdminLinks : conductorLinks;
+
+  const userDisplayName =
+    profile?.full_name ||
+    [profile?.nombres, profile?.apellido_paterno].filter(Boolean).join(" ") ||
+    "Usuario";
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
@@ -112,11 +119,16 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         </nav>
 
         <div className="border-t border-sidebar-border p-3 space-y-2">
-          <div className="flex items-center gap-3 rounded-lg px-3 py-2">
-            <ConductorAvatar fullName={profile?.full_name || profile?.nombres} photoUrl={profile?.photo_url} className="h-9 w-9" />
+          <button
+            type="button"
+            onClick={() => setProfileDialogOpen(true)}
+            className="w-full flex items-center gap-3 rounded-lg px-3 py-2 text-left hover:bg-sidebar-accent/70 transition-colors group"
+            title="Abrir mi perfil"
+          >
+            <ConductorAvatar fullName={userDisplayName} photoUrl={profile?.photo_url} className="h-9 w-9 ring-2 ring-sidebar-primary/20 group-hover:ring-sidebar-primary/50 transition-all" />
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium truncate">
-                {profile?.full_name || [profile?.nombres, profile?.apellido_paterno].filter(Boolean).join(" ") || "Usuario"}
+                {userDisplayName}
               </p>
               <p className="font-data text-[9px] uppercase tracking-[0.2em] text-sidebar-foreground/50">
                 {profile?.role === "super_admin" 
@@ -131,7 +143,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
               title="Turno activo"
               aria-hidden="true"
             />
-          </div>
+          </button>
           <Button
             variant="ghost"
             size="sm"
@@ -163,6 +175,9 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         </header>
         <div className="page-container animate-fade-in">{children}</div>
       </main>
+
+      <UserProfileDialog open={profileDialogOpen} onOpenChange={setProfileDialogOpen} />
     </div>
   );
 }
+

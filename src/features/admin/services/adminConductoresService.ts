@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { fileToCompressedDataUrl } from "@/features/conductor/services/conductorProfileService";
 
 export type ConductorRecord = {
   id: string;
@@ -13,6 +14,7 @@ export type ConductorRecord = {
   worker_id?: string;
   score: number | null;
   estado_conductor: string;
+  photo_url: string | null;
   role: string;
   created_at: string;
   updated_at: string;
@@ -44,10 +46,16 @@ export type UpdateConductorPayload = {
   nombres?: string;
   apellidoPaterno?: string;
   apellidoMaterno?: string;
+  fullName?: string;
   email?: string;
   phone?: string;
   rut?: string;
+  worker_id?: string;
   estado_conductor?: string;
+  score?: number | null;
+  photo_url?: string | null;
+  password?: string;
+  existing_user_id?: string;
 };
 
 export async function updateConductorScore(id: string, score: number | null) {
@@ -55,7 +63,33 @@ export async function updateConductorScore(id: string, score: number | null) {
   assertNoError(error);
 }
 
-const CONDUCTOR_COLUMNS = "id, user_id, nombres, apellido_paterno, apellido_materno, full_name, email, phone, rut, worker_id, score, estado_conductor, role, created_at, updated_at";
+export async function uploadConductorAvatarByAdmin(profileId: string, file: File): Promise<string> {
+  const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+  const fileKey = `conductores/${profileId}/avatar-${Date.now()}.${ext}`;
+
+  let finalUrl: string;
+
+  const { error: uploadError } = await supabase.storage
+    .from("Avatares")
+    .upload(fileKey, file, { upsert: true });
+
+  if (uploadError) {
+    finalUrl = await fileToCompressedDataUrl(file);
+  } else {
+    const { data } = supabase.storage.from("Avatares").getPublicUrl(fileKey);
+    finalUrl = data.publicUrl;
+  }
+
+  const { error: updateError } = await supabase
+    .from("profiles")
+    .update({ photo_url: finalUrl })
+    .eq("id", profileId);
+  assertNoError(updateError);
+
+  return finalUrl;
+}
+
+const CONDUCTOR_COLUMNS = "id, user_id, nombres, apellido_paterno, apellido_materno, full_name, email, phone, rut, worker_id, score, estado_conductor, photo_url, role, created_at, updated_at";
 
 function assertNoError(error: { message: string; code?: string; details?: string | null } | null) {
   if (error) {
@@ -77,6 +111,7 @@ function normalizeConductorRow(row: Record<string, unknown>): ConductorRecord {
     worker_id: row.worker_id ? String(row.worker_id) : undefined,
     score: row.score != null ? Number(row.score) : null,
     estado_conductor: String(row.estado_conductor ?? "nuevo"),
+    photo_url: row.photo_url ? String(row.photo_url) : null,
     role: String(row.role ?? "conductor"),
     created_at: String(row.created_at ?? ""),
     updated_at: String(row.updated_at ?? ""),
@@ -210,6 +245,8 @@ export async function createConductorProfile(payload: {
   email?: string;
   phone?: string;
   rut?: string;
+  password?: string;
+  role?: "admin" | "conductor";
 }) {
   const nombresClean = (payload.nombres ?? "").trim();
   const paternoClean = (payload.apellidoPaterno ?? "").trim();
@@ -217,54 +254,138 @@ export async function createConductorProfile(payload: {
   const emailClean = (payload.email ?? "").trim().toLowerCase();
   const phoneClean = (payload.phone ?? "").trim();
   const rutClean = (payload.rut ?? "").trim();
+  const passwordClean = (payload.password ?? "").trim();
+  const roleClean: "admin" | "conductor" = payload.role === "admin" ? "admin" : "conductor";
   const fullName = [nombresClean, paternoClean, maternoClean].filter(Boolean).join(" ");
 
-  // Si ya existe un conductor con el mismo RUT (cuando no está vacío), actualizamos sus datos no vacíos y retornamos su ID
+  type ExistingProfileRow = {
+    id: string;
+    user_id: string | null;
+    email: string | null;
+    worker_id: string | null;
+  };
+
+  let existingProfile: ExistingProfileRow | null = null;
+
   if (rutClean) {
-    const { data: existingByRut } = await supabase
+    const { data } = await supabase
       .from("profiles")
-      .select("id")
+      .select("id, user_id, email, worker_id")
       .eq("rut", rutClean)
       .maybeSingle();
-
-    if (existingByRut?.id) {
-      await supabase
-        .from("profiles")
-        .update({
-          ...(nombresClean ? { nombres: nombresClean } : {}),
-          ...(paternoClean ? { apellido_paterno: paternoClean } : {}),
-          ...(maternoClean ? { apellido_materno: maternoClean } : {}),
-          ...(fullName ? { full_name: fullName } : {}),
-          ...(emailClean ? { email: emailClean } : {}),
-          ...(phoneClean ? { phone: phoneClean } : {}),
-        })
-        .eq("id", existingByRut.id);
-      return existingByRut.id;
-    }
+    if (data?.id) existingProfile = data as ExistingProfileRow;
   }
 
-  // Si ya existe un conductor con el mismo teléfono (cuando no está vacío), actualizamos sus datos no vacíos y retornamos su ID
-  if (phoneClean) {
-    const { data: existingByPhone } = await supabase
+  if (!existingProfile && emailClean) {
+    const { data } = await supabase
       .from("profiles")
-      .select("id")
+      .select("id, user_id, email, worker_id")
+      .ilike("email", emailClean)
+      .maybeSingle();
+    if (data?.id) existingProfile = data as ExistingProfileRow;
+  }
+
+  if (!existingProfile && phoneClean) {
+    const { data } = await supabase
+      .from("profiles")
+      .select("id, user_id, email, worker_id")
       .eq("phone", phoneClean)
       .maybeSingle();
+    if (data?.id) existingProfile = data as ExistingProfileRow;
+  }
 
-    if (existingByPhone?.id) {
+  // Si se proporcionó contraseña en el Excel/CSV, crear o actualizar la cuenta de inicio de sesión en Supabase Auth
+  if (passwordClean) {
+    const effectiveEmail = emailClean || (existingProfile?.email ?? "").trim().toLowerCase();
+    if (!effectiveEmail) {
+      throw new Error(
+        "Para registrar contraseña y permitir el inicio de sesión, debes incluir el correo electrónico."
+      );
+    }
+
+    const workerId = existingProfile?.worker_id || (await generateWorkerId());
+
+    const { data: fnData, error: fnError } = await supabase.functions.invoke("create-conductor", {
+      body: {
+        email: effectiveEmail,
+        password: passwordClean,
+        full_name: fullName,
+        nombres: nombresClean,
+        apellido_paterno: paternoClean,
+        apellido_materno: maternoClean,
+        phone: phoneClean,
+        rut: rutClean,
+        worker_id: workerId,
+        role: roleClean,
+        existing_user_id: existingProfile?.user_id || undefined,
+      },
+    });
+
+    if (fnError) {
+      let msg = fnError.message;
+      try {
+        const parsed = JSON.parse(fnError.message);
+        if (parsed.error) msg = parsed.error;
+      } catch {
+        // Texto directo
+      }
+      throw new Error(msg);
+    }
+
+    const fnResult = fnData as { user_id?: string; profile_id?: string; error?: string } | null;
+    if (fnResult?.error) {
+      throw new Error(fnResult.error);
+    }
+
+    let finalProfileId = existingProfile?.id || fnResult?.profile_id || null;
+
+    if (!finalProfileId && fnResult?.user_id) {
+      const { data: profByUser } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("user_id", fnResult.user_id)
+        .maybeSingle();
+      if (profByUser?.id) finalProfileId = profByUser.id;
+    }
+
+    if (finalProfileId) {
       await supabase
         .from("profiles")
         .update({
+          ...(fnResult?.user_id ? { user_id: fnResult.user_id } : {}),
           ...(nombresClean ? { nombres: nombresClean } : {}),
           ...(paternoClean ? { apellido_paterno: paternoClean } : {}),
           ...(maternoClean ? { apellido_materno: maternoClean } : {}),
           ...(fullName ? { full_name: fullName } : {}),
-          ...(emailClean ? { email: emailClean } : {}),
+          ...(effectiveEmail ? { email: effectiveEmail } : {}),
+          ...(phoneClean ? { phone: phoneClean } : {}),
           ...(rutClean ? { rut: rutClean } : {}),
+          ...(workerId ? { worker_id: workerId } : {}),
+          role: roleClean,
         })
-        .eq("id", existingByPhone.id);
-      return existingByPhone.id;
+        .eq("id", finalProfileId);
+      return finalProfileId;
     }
+
+    throw new Error("No se pudo obtener el perfil del usuario creado con contraseña.");
+  }
+
+  // Si NO se proporcionó contraseña pero el perfil ya existe en profiles, actualizamos sus campos no vacíos
+  if (existingProfile?.id) {
+    await supabase
+      .from("profiles")
+      .update({
+        ...(nombresClean ? { nombres: nombresClean } : {}),
+        ...(paternoClean ? { apellido_paterno: paternoClean } : {}),
+        ...(maternoClean ? { apellido_materno: maternoClean } : {}),
+        ...(fullName ? { full_name: fullName } : {}),
+        ...(emailClean ? { email: emailClean } : {}),
+        ...(phoneClean ? { phone: phoneClean } : {}),
+        ...(rutClean ? { rut: rutClean } : {}),
+        ...(payload.role ? { role: roleClean } : {}),
+      })
+      .eq("id", existingProfile.id);
+    return existingProfile.id;
   }
 
   const workerId = await generateWorkerId();
@@ -280,27 +401,92 @@ export async function createConductorProfile(payload: {
       phone: phoneClean || null,
       rut: rutClean || null,
       worker_id: workerId,
-      role: "conductor",
+      role: roleClean,
     })
     .select("id")
     .single();
   assertNoError(error);
 
   const createdId = Array.isArray(data) ? (data[0] as { id: string } | undefined)?.id : (data as { id: string } | undefined)?.id;
-  if (!createdId) throw new Error("No se pudo obtener el id del conductor creado");
+  if (!createdId) throw new Error("No se pudo obtener el id del perfil creado");
   return createdId;
 }
 
 export async function updateConductor(id: string, payload: UpdateConductorPayload) {
-  const updateData: Record<string, string | null> = {};
+  const updateData: Record<string, string | number | null> = {};
 
   if (payload.nombres !== undefined) updateData.nombres = payload.nombres.trim();
   if (payload.apellidoPaterno !== undefined) updateData.apellido_paterno = payload.apellidoPaterno.trim();
   if (payload.apellidoMaterno !== undefined) updateData.apellido_materno = payload.apellidoMaterno.trim();
+
+  if (
+    payload.fullName !== undefined ||
+    payload.nombres !== undefined ||
+    payload.apellidoPaterno !== undefined ||
+    payload.apellidoMaterno !== undefined
+  ) {
+    const joinedName = [
+      (payload.nombres ?? "").trim(),
+      (payload.apellidoPaterno ?? "").trim(),
+      (payload.apellidoMaterno ?? "").trim(),
+    ]
+      .filter(Boolean)
+      .join(" ");
+    updateData.full_name = (payload.fullName ?? "").trim() || joinedName;
+  }
+
   if (payload.email !== undefined) updateData.email = payload.email.trim().toLowerCase();
   if (payload.phone !== undefined) updateData.phone = payload.phone.trim() || null;
   if (payload.rut !== undefined) updateData.rut = payload.rut.trim() || null;
+  if (payload.worker_id !== undefined) updateData.worker_id = payload.worker_id.trim() || null;
   if (payload.estado_conductor !== undefined) updateData.estado_conductor = payload.estado_conductor;
+  if (payload.score !== undefined) updateData.score = payload.score;
+  if (payload.photo_url !== undefined) updateData.photo_url = payload.photo_url;
+
+  const passwordClean = (payload.password ?? "").trim();
+  if (passwordClean) {
+    if (passwordClean.length < 6) {
+      throw new Error("La contraseña debe tener al menos 6 caracteres.");
+    }
+    const effectiveEmail = (payload.email ?? "").trim().toLowerCase();
+    if (!effectiveEmail) {
+      throw new Error("Debes ingresar un correo electrónico válido para asignarle una contraseña al conductor.");
+    }
+
+    const { data: fnData, error: fnError } = await supabase.functions.invoke("create-conductor", {
+      body: {
+        email: effectiveEmail,
+        password: passwordClean,
+        full_name: String(updateData.full_name ?? ""),
+        nombres: String(updateData.nombres ?? ""),
+        apellido_paterno: String(updateData.apellido_paterno ?? ""),
+        apellido_materno: String(updateData.apellido_materno ?? ""),
+        phone: updateData.phone ? String(updateData.phone) : "",
+        rut: updateData.rut ? String(updateData.rut) : "",
+        worker_id: updateData.worker_id ? String(updateData.worker_id) : undefined,
+        existing_user_id: payload.existing_user_id || undefined,
+      },
+    });
+
+    if (fnError) {
+      let msg = fnError.message;
+      try {
+        const parsed = JSON.parse(fnError.message);
+        if (parsed.error) msg = parsed.error;
+      } catch {
+        // Texto directo
+      }
+      throw new Error(msg);
+    }
+
+    const fnResult = fnData as { user_id?: string; error?: string } | null;
+    if (fnResult?.error) {
+      throw new Error(fnResult.error);
+    }
+    if (fnResult?.user_id) {
+      updateData.user_id = fnResult.user_id;
+    }
+  }
 
   const { error } = await supabase.from("profiles").update(updateData).eq("id", id);
   assertNoError(error);

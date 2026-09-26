@@ -19,11 +19,11 @@ export function validateEmail(email: string): string | null {
 
 export function validatePhone(phone: string): string | null {
   const cleaned = phone.trim();
-  if (!cleaned) return "El teléfono es obligatorio";
+  if (!cleaned || cleaned === "+569") return "El número de teléfono es obligatorio";
   if (cleaned.length > 20) return "El teléfono es demasiado largo";
   const re = /^(\+56\s?)?(9\s?\d{4}\s?\d{4}|2\d{7,8})$/;
   const normalized = cleaned.replace(/\s+/g, " ");
-  if (!re.test(normalized)) return "Formato de teléfono chileno inválido (ej: +56 9 XXXX XXXX)";
+  if (!re.test(normalized)) return "Ingresa un número válido de 8 dígitos (+569 XXXX XXXX)";
   return null;
 }
 
@@ -49,6 +49,7 @@ export function validateRut(rut: string): string | null {
   if (!/^\d+$/.test(body) || !/^[\dk]$/.test(dv)) {
     return "Formato de RUT inválido (ej: 12.345.678-5)";
   }
+  if (body.length < 7) return "El RUT es inválido (mínimo 7 dígitos antes del guion)";
   if (body.length > 8) return "El RUT es demasiado largo";
 
   let sum = 0;
