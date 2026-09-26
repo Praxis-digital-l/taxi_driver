@@ -175,7 +175,7 @@ export default function PendientesPorFirmar({
         {
           nombre: "Transportes El Montañez",
           apellidoPaterno: "SpA",
-          rut: "77.777.777-7",
+          rut: "77.611.481-2",
           email: "benhantscheruk@gmail.com",
         },
         liqActivaFirma.id
@@ -317,7 +317,7 @@ export default function PendientesPorFirmar({
           <div>
             <p className="font-semibold text-slate-800 dark:text-slate-100">Flujo de firma y envío manual al conductor</p>
             <p className="mt-0.5 text-slate-600 dark:text-slate-300">
-              1) Haz clic en <strong>Firma con FirmaWeb</strong> para firmar la liquidación como empleador. 2) Una vez que recibas en tu correo (<strong>benhantscheruk@gmail.com</strong>) el PDF firmado por FirmaWeb, súbelo con el botón <strong>Enviar PDF firmado</strong> para que el conductor pueda verlo y descargarlo en su cuenta.
+              1) Haz clic en <strong>Firma con FirmaWeb</strong> para firmar la liquidación como empleador. 2) Una vez que recibas en tu correo el PDF firmado por FirmaWeb, súbelo con el botón <strong>Enviar PDF firmado</strong> para que el conductor pueda verlo y descargarlo en su cuenta.
             </p>
           </div>
         </div>
