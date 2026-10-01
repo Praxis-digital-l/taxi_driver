@@ -98,9 +98,9 @@ const App = () => (
             <Route path="/admin/bulk-upload" element={<ProtectedRoute requiredRole="admin"><AppLayout><AdminBulkUpload /></AppLayout></ProtectedRoute>} />
             <Route path="/admin/pendientes" element={<ProtectedRoute requiredRole="admin"><AppLayout><AdminPendientes /></AppLayout></ProtectedRoute>} />
             <Route path="/admin/finanzas" element={<ProtectedRoute requiredRole="admin"><AppLayout><AdminFinanzas /></AppLayout></ProtectedRoute>} />
-            <Route path="/admin/users" element={<ProtectedRoute requiredRole="super_admin"><AppLayout><AdminUsers /></AppLayout></ProtectedRoute>} />
+            <Route path="/admin/users" element={<ProtectedRoute requiredRole="admin"><AppLayout><AdminUsers /></AppLayout></ProtectedRoute>} />
 
-            <Route path="*" element={<NotFound />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </PushNotificationsProvider>
         </AuthProvider>

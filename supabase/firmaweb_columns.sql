@@ -8,7 +8,6 @@ ALTER TABLE public.liquidaciones
   ADD COLUMN IF NOT EXISTS firma_id_proceso BIGINT,
   ADD COLUMN IF NOT EXISTS firma_id_documento BIGINT,
   ADD COLUMN IF NOT EXISTS firma_estado TEXT DEFAULT 'sin_iniciar',
-  ADD COLUMN IF NOT EXISTS firma_url_empleado TEXT,
   ADD COLUMN IF NOT EXISTS firma_url_empleador TEXT,
   ADD COLUMN IF NOT EXISTS firma_iniciada_at TIMESTAMPTZ,
   ADD COLUMN IF NOT EXISTS firma_completada_at TIMESTAMPTZ;
@@ -27,6 +26,5 @@ CREATE INDEX IF NOT EXISTS idx_liquidaciones_firma_estado
 COMMENT ON COLUMN public.liquidaciones.firma_id_proceso IS 'ID del proceso devuelto por FirmaWeb (/crear_proceso)';
 COMMENT ON COLUMN public.liquidaciones.firma_id_documento IS 'ID del documento devuelto por FirmaWeb (/agregar_documento)';
 COMMENT ON COLUMN public.liquidaciones.firma_estado IS 'Estado del flujo: sin_iniciar, pendiente, firmada, rechazada';
-COMMENT ON COLUMN public.liquidaciones.firma_url_empleado IS 'Enlace de firma electrónica para el conductor';
 COMMENT ON COLUMN public.liquidaciones.firma_url_empleador IS 'Enlace de firma electrónica para el empleador';
 

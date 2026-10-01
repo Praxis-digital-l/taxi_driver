@@ -82,15 +82,17 @@ export default function NominaForm({ onCalcular }: NominaFormProps) {
     setAgregando(false);
   };
 
-  const eliminarAutopista = (key: string) => {
+  const eliminarAutopista = (key: string, label?: string) => {
     setAutopistas((prev) => prev.filter((a) => a.key !== key));
     setValues((prev) => {
       const { [key]: _, ...rest } = prev;
       return rest;
     });
     setErrores((prev) => {
-      const { [`tag.${key}`]: _e, ...rest } = prev;
-      return rest;
+      const next = { ...prev };
+      delete next[`tag.${key}`];
+      if (label) delete next[`tag.${label}`];
+      return next;
     });
   };
 
@@ -104,8 +106,8 @@ export default function NominaForm({ onCalcular }: NominaFormProps) {
     };
 
     const tag = crearDescuentosTAG();
-    for (const { key } of autopistas) {
-      tag[key] = parseNum(key);
+    for (const { key, label } of autopistas) {
+      tag[label] = parseNum(key);
     }
 
     const data: DatosNomina = {
@@ -319,36 +321,39 @@ export default function NominaForm({ onCalcular }: NominaFormProps) {
             )
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {autopistas.map(({ key, label }) => (
-                <div key={key} className="space-y-1">
-                  <div className="flex items-center justify-between gap-2">
-                    <Label htmlFor={key} className="truncate">{label}</Label>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="h-5 w-5 text-muted-foreground hover:text-destructive"
-                      aria-label={`Eliminar ${label}`}
-                      onClick={() => eliminarAutopista(key)}
-                    >
-                      <X className="h-3.5 w-3.5" />
-                    </Button>
+              {autopistas.map(({ key, label }) => {
+                const errorTAG = errores[`tag.${label}`] || errores[`tag.${key}`];
+                return (
+                  <div key={key} className="space-y-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <Label htmlFor={key} className="truncate">{label}</Label>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-5 w-5 text-muted-foreground hover:text-destructive"
+                        aria-label={`Eliminar ${label}`}
+                        onClick={() => eliminarAutopista(key, label)}
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                    <Input
+                      id={key}
+                      name={key}
+                      type="text"
+                      inputMode="numeric"
+                      value={values[key] || ""}
+                      onChange={(e) => handleCurrencyChange(key, e.target.value)}
+                      placeholder="0"
+                      className={`${SPINNER_HIDE} ${errorTAG ? "border-destructive" : ""}`}
+                    />
+                    {errorTAG && (
+                      <p className="text-xs text-destructive">{errorTAG}</p>
+                    )}
                   </div>
-                  <Input
-                    id={key}
-                    name={key}
-                    type="text"
-                    inputMode="numeric"
-                    value={values[key] || ""}
-                    onChange={(e) => handleCurrencyChange(key, e.target.value)}
-                    placeholder="0"
-                    className={`${SPINNER_HIDE} ${errores[`tag.${key}`] ? "border-destructive" : ""}`}
-                  />
-                  {errores[`tag.${key}`] && (
-                    <p className="text-xs text-destructive">{errores[`tag.${key}`]}</p>
-                  )}
-                </div>
-              ))}
+                );
+              })}
 
               <div className="flex items-end">
                 {agregando ? (

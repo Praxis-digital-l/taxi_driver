@@ -200,7 +200,7 @@ serve(async (req) => {
         nombre: empleador?.nombre || "Transportes El Montañez",
         apellidoPaterno: empleador?.apellidoPaterno || "SpA",
         apellidoMaterno: empleador?.apellidoMaterno || "",
-        rut: empleador?.rut || "77.777.777-7",
+        rut: empleador?.rut || "77.611.481-2",
         email: empleador?.email || defaultEmail,
       };
 

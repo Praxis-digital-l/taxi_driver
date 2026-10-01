@@ -7,6 +7,7 @@ export type AdminInsurance = {
   id: string;
   vehicle_id: string;
   insurance_type: InsuranceType;
+  custom_insurance_name?: string | null;
   amount: number;
   expiration_date: string;
   payment_status: InsurancePaymentStatus;
@@ -61,7 +62,7 @@ function assertNoError(error: { message: string } | null) {
 export async function fetchInsuranceByVehicle(vehicleId: string): Promise<AdminInsurance | null> {
   const { data, error } = await supabase
     .from("vehicle_insurances")
-    .select("id, vehicle_id, insurance_type, amount, expiration_date, payment_status, last_payment_date, created_at, updated_at")
+    .select("id, vehicle_id, insurance_type, custom_insurance_name, amount, expiration_date, payment_status, last_payment_date, created_at, updated_at")
     .eq("vehicle_id", vehicleId)
     .maybeSingle();
 
@@ -72,11 +73,12 @@ export async function fetchInsuranceByVehicle(vehicleId: string): Promise<AdminI
 export async function saveVehicleInsurance(params: {
   vehicleId: string;
   insuranceType: InsuranceType;
+  customInsuranceName?: string | null;
   amount: number;
   expirationDate: string;
   paymentStatus: InsurancePaymentStatus;
 }) {
-  const { vehicleId, insuranceType, amount, expirationDate, paymentStatus } = params;
+  const { vehicleId, insuranceType, customInsuranceName, amount, expirationDate, paymentStatus } = params;
 
   const existing = await fetchInsuranceByVehicle(vehicleId);
   const lastPaymentDate =
@@ -88,6 +90,7 @@ export async function saveVehicleInsurance(params: {
 
   const values = {
     insurance_type: insuranceType,
+    custom_insurance_name: insuranceType === "otro" ? customInsuranceName?.trim() || null : null,
     amount,
     expiration_date: expirationDate,
     payment_status: paymentStatus,
@@ -117,6 +120,15 @@ export async function markInsurancePaid(insuranceId: string) {
       payment_status: "pagado",
       last_payment_date: new Date().toISOString().slice(0, 10),
     })
+    .eq("id", insuranceId);
+
+  assertNoError(error);
+}
+
+export async function deleteVehicleInsurance(insuranceId: string) {
+  const { error } = await supabase
+    .from("vehicle_insurances")
+    .delete()
     .eq("id", insuranceId);
 
   assertNoError(error);
