@@ -24,7 +24,6 @@ export type LiquidacionRecord = {
   firma_id_proceso?: number | null;
   firma_id_documento?: number | null;
   firma_estado?: "sin_iniciar" | "pendiente" | "firmada" | "rechazada" | string | null;
-  firma_url_empleado?: string | null;
   firma_url_empleador?: string | null;
   firma_iniciada_at?: string | null;
   firma_completada_at?: string | null;
@@ -93,7 +92,6 @@ function toRecord(row: Record<string, unknown>): LiquidacionRecord {
     firma_id_proceso: row.firma_id_proceso != null ? Number(row.firma_id_proceso) : null,
     firma_id_documento: row.firma_id_documento != null ? Number(row.firma_id_documento) : null,
     firma_estado: row.firma_estado ? String(row.firma_estado) : "sin_iniciar",
-    firma_url_empleado: row.firma_url_empleado ? String(row.firma_url_empleado) : null,
     firma_url_empleador: row.firma_url_empleador ? String(row.firma_url_empleador) : null,
     firma_iniciada_at: row.firma_iniciada_at ? String(row.firma_iniciada_at) : null,
     firma_completada_at: row.firma_completada_at ? String(row.firma_completada_at) : null,
@@ -240,7 +238,7 @@ export async function obtenerPdfBase64DeLiquidacion(liq: LiquidacionRecord): Pro
     },
     empleador: {
       razonSocial: "TRANSPORTES EL MONTAÑEZ",
-      rut: "77.777.777-7",
+      rut: "77.611.481-2",
       nombreRepresentante: "Transportes El Montañez",
       apellidoPaternoRepresentante: "SpA",
       emailRepresentante: "benhantscheruk@gmail.com",

@@ -15,6 +15,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import StatusBadge from "@/components/StatusBadge";
 import { Plate } from "@/components/ui/plate";
@@ -36,6 +46,7 @@ import {
   Eye,
   CheckCircle2,
   PencilLine,
+  Trash2,
   Loader2,
 } from "lucide-react";
 import {
@@ -57,6 +68,7 @@ import {
   INSURANCE_TYPE_LABEL,
   markInsurancePaid,
   saveVehicleInsurance,
+  deleteVehicleInsurance,
   getInsuranceDaysLeft,
   isInsuranceExpired,
   isInsuranceExpiring,
@@ -94,8 +106,11 @@ export default function VehicleDetailView({ plate, onBack, initialTab = "info" }
   const [insuranceEditing, setInsuranceEditing] = useState(false);
   const [insuranceSaving, setInsuranceSaving] = useState(false);
   const [insurancePaying, setInsurancePaying] = useState(false);
+  const [deleteInsuranceDialogOpen, setDeleteInsuranceDialogOpen] = useState(false);
+  const [insuranceDeleting, setInsuranceDeleting] = useState(false);
   const [insuranceForm, setInsuranceForm] = useState({
     insuranceType: "comercial" as InsuranceType,
+    customInsuranceName: "",
     amount: "",
     expirationDate: "",
     paymentStatus: "pendiente" as InsurancePaymentStatus,
@@ -199,6 +214,7 @@ export default function VehicleDetailView({ plate, onBack, initialTab = "info" }
     setInsuranceEditing(true);
     setInsuranceForm({
       insuranceType: insurance?.insurance_type ?? "comercial",
+      customInsuranceName: insurance?.custom_insurance_name ?? "",
       amount: insurance ? String(insurance.amount) : "",
       expirationDate: insurance?.expiration_date ?? "",
       paymentStatus: insurance?.payment_status ?? "pendiente",
@@ -207,6 +223,14 @@ export default function VehicleDetailView({ plate, onBack, initialTab = "info" }
 
   const handleSaveInsurance = async () => {
     if (!vehicle) return;
+    if (insuranceForm.insuranceType === "otro" && !insuranceForm.customInsuranceName.trim()) {
+      toast({
+        title: "Nombre del seguro requerido",
+        description: "Por favor escribe el nombre de este seguro.",
+        variant: "destructive",
+      });
+      return;
+    }
     const amount = Number(insuranceForm.amount);
     if (Number.isNaN(amount) || amount <= 0) {
       toast({ title: "Monto inválido", description: "Ingresa un monto mayor a cero.", variant: "destructive" });
@@ -222,6 +246,7 @@ export default function VehicleDetailView({ plate, onBack, initialTab = "info" }
       await saveVehicleInsurance({
         vehicleId: vehicle.id,
         insuranceType: insuranceForm.insuranceType,
+        customInsuranceName: insuranceForm.customInsuranceName,
         amount,
         expirationDate: insuranceForm.expirationDate,
         paymentStatus: insuranceForm.paymentStatus,
@@ -255,6 +280,29 @@ export default function VehicleDetailView({ plate, onBack, initialTab = "info" }
       });
     } finally {
       setInsurancePaying(false);
+    }
+  };
+
+  const handleDeleteInsurance = async () => {
+    if (!insurance) return;
+    setInsuranceDeleting(true);
+    try {
+      await deleteVehicleInsurance(insurance.id);
+      setDeleteInsuranceDialogOpen(false);
+      setInsuranceEditing(false);
+      await loadVehicleData();
+      toast({
+        title: "Seguro eliminado",
+        description: "La póliza de seguro del vehículo ha sido eliminada.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error al eliminar seguro",
+        description: error instanceof Error ? error.message : "No se pudo eliminar el seguro.",
+        variant: "destructive",
+      });
+    } finally {
+      setInsuranceDeleting(false);
     }
   };
 
@@ -515,14 +563,27 @@ export default function VehicleDetailView({ plate, onBack, initialTab = "info" }
                   >
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      {INSURANCE_TYPES.map((type) => (
-                        <SelectItem key={type} value={type}>
-                          {INSURANCE_TYPE_LABEL[type]}
+                      {INSURANCE_TYPES.map(({ value, label }) => (
+                        <SelectItem key={value} value={value}>
+                          {label}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
+                {insuranceForm.insuranceType === "otro" && (
+                  <div className="space-y-2">
+                    <Label className="text-xs">Nombre del seguro (*)</Label>
+                    <Input
+                      type="text"
+                      value={insuranceForm.customInsuranceName}
+                      onChange={(event) =>
+                        setInsuranceForm((prev) => ({ ...prev, customInsuranceName: event.target.value }))
+                      }
+                      placeholder="Ej: Seguro de Carga, BCI Flota, etc."
+                    />
+                  </div>
+                )}
                 <div className="space-y-2">
                   <Label className="text-xs">Monto ($)</Label>
                   <Input
@@ -560,11 +621,25 @@ export default function VehicleDetailView({ plate, onBack, initialTab = "info" }
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="flex gap-2 sm:col-span-2">
-                  <Button onClick={handleSaveInsurance} disabled={insuranceSaving}>
-                    {insuranceSaving ? "Guardando..." : "Guardar"}
-                  </Button>
-                  <Button variant="outline" onClick={() => setInsuranceEditing(false)}>Cancelar</Button>
+                <div className="flex gap-2 sm:col-span-2 items-center justify-between flex-wrap">
+                  <div className="flex gap-2">
+                    <Button onClick={handleSaveInsurance} disabled={insuranceSaving}>
+                      {insuranceSaving ? "Guardando..." : "Guardar"}
+                    </Button>
+                    <Button variant="outline" onClick={() => setInsuranceEditing(false)}>Cancelar</Button>
+                  </div>
+                  {insurance && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="text-destructive hover:bg-destructive/10 hover:text-destructive border-destructive/20"
+                      onClick={() => setDeleteInsuranceDialogOpen(true)}
+                    >
+                      <Trash2 className="h-3.5 w-3.5 mr-1" />
+                      Eliminar Seguro
+                    </Button>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -574,7 +649,11 @@ export default function VehicleDetailView({ plate, onBack, initialTab = "info" }
                 <div className="flex items-start justify-between gap-3 flex-wrap">
                   <div className="flex items-center gap-2">
                     <ShieldCheck className="h-5 w-5 text-primary shrink-0" />
-                    <p className="font-semibold text-sm">{INSURANCE_TYPE_LABEL[insurance.insurance_type]}</p>
+                    <p className="font-semibold text-sm">
+                      {insurance.insurance_type === "otro" && insurance.custom_insurance_name
+                        ? insurance.custom_insurance_name
+                        : INSURANCE_TYPE_LABEL[insurance.insurance_type]}
+                    </p>
                   </div>
                   <div className="flex items-center gap-2 flex-wrap">
                     {isInsuranceExpired(insurance) ? (
@@ -601,6 +680,14 @@ export default function VehicleDetailView({ plate, onBack, initialTab = "info" }
                         {insurancePaying ? "Registrando..." : "Marcar como pagado"}
                       </Button>
                     )}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 text-destructive hover:bg-destructive/10 hover:text-destructive border-destructive/20"
+                      onClick={() => setDeleteInsuranceDialogOpen(true)}
+                    >
+                      <Trash2 className="h-3.5 w-3.5 mr-1" />Eliminar
+                    </Button>
                   </div>
                 </div>
                 <div className="grid gap-y-3 gap-x-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -870,6 +957,39 @@ export default function VehicleDetailView({ plate, onBack, initialTab = "info" }
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Modal de confirmación para eliminar seguro */}
+      <AlertDialog open={deleteInsuranceDialogOpen} onOpenChange={setDeleteInsuranceDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-destructive font-heading">
+              <AlertCircle className="h-5 w-5" />
+              ¿Eliminar póliza de seguro?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              ¿Estás seguro de que deseas eliminar este seguro del vehículo{" "}
+              <strong>{vehicle?.license_plate}</strong>? Esta acción eliminará el registro de la póliza y no se puede deshacer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={insuranceDeleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={handleDeleteInsurance}
+              disabled={insuranceDeleting}
+            >
+              {insuranceDeleting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Eliminando...
+                </>
+              ) : (
+                "Sí, eliminar seguro"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

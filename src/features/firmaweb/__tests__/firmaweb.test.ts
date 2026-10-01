@@ -137,7 +137,7 @@ describe("PdfLiquidacionService", () => {
       fechaEmision: "21 de Septiembre 2026",
       empleador: {
         razonSocial: "Transportes El Montañez SpA",
-        rut: "77.777.777-7",
+        rut: "77.611.481-2",
         representanteNombre: "Carlos",
         representanteApellidoPaterno: "González",
         representanteRut: "11.111.111-1",
@@ -222,7 +222,7 @@ describe("LiquidacionFirmaController", () => {
       fechaEmision: "21-09-2026",
       empleador: {
         razonSocial: "Transportes El Montañez",
-        rut: "77.777.777-7",
+        rut: "77.611.481-2",
         representanteNombre: "Carlos",
         representanteApellidoPaterno: "González",
         representanteRut: "11.111.111-1",

@@ -90,7 +90,7 @@ export async function fetchAdminDashboardData() {
       .gte("expiration_date", today),
     supabase
       .from("vehicle_insurances")
-      .select("id, vehicle_id, insurance_type, amount, expiration_date, payment_status, last_payment_date, created_at, updated_at, vehicles(license_plate)")
+      .select("id, vehicle_id, insurance_type, custom_insurance_name, amount, expiration_date, payment_status, last_payment_date, created_at, updated_at, vehicles(license_plate)")
       .lte("expiration_date", twoMonths)
       .gte("expiration_date", today)
       .order("expiration_date", { ascending: true })

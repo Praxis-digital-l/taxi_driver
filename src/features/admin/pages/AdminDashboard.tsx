@@ -133,7 +133,7 @@ export default function AdminDashboard() {
       items.push({
         id: ins.id,
         type: "insurance",
-        title: `Seguro: ${INSURANCE_TYPE_LABEL[ins.insurance_type] ?? ins.insurance_type}`,
+        title: `Seguro: ${ins.insurance_type === "otro" && ins.custom_insurance_name ? ins.custom_insurance_name : (INSURANCE_TYPE_LABEL[ins.insurance_type] ?? ins.insurance_type)}`,
         subtitle: `$ ${Number(ins.amount).toLocaleString("es-CL")}`,
         plate: ins.vehicles?.license_plate ?? null,
         meta: `${daysLeft} día(s)`,

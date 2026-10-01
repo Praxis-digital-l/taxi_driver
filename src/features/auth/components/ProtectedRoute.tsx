@@ -3,7 +3,7 @@ import { useAuth } from "@/features/auth/context/AuthContext";
 
 interface Props {
   children: React.ReactNode;
-  requiredRole?: "admin" | "conductor" | "super_admin";
+  requiredRole?: "admin" | "conductor";
 }
 
 export default function ProtectedRoute({ children, requiredRole }: Props) {
@@ -15,7 +15,7 @@ export default function ProtectedRoute({ children, requiredRole }: Props) {
 
   const hasRequiredRole = (role: Props["requiredRole"], required: Props["requiredRole"]) => {
     if (!role || !required) return false;
-    if (required === "admin") return role === "admin" || role === "super_admin";
+    if (required === "admin") return role === "admin";
     return role === required;
   };
 

@@ -291,9 +291,9 @@ export default function AdminPendientes() {
           <Tabs defaultValue="general" onValueChange={setActiveTab} className="w-full mb-6">
             <TabsList className="grid w-full grid-cols-4 lg:w-[600px]">
               <TabsTrigger value="general">Todos</TabsTrigger>
-              <TabsTrigger value="sueldo">Solo Sueldos</TabsTrigger>
-              <TabsTrigger value="autopista">Solo Autopistas</TabsTrigger>
-              <TabsTrigger value="seguro">Solo Seguros</TabsTrigger>
+              <TabsTrigger value="sueldo">Sueldos</TabsTrigger>
+              <TabsTrigger value="autopista">Autopistas</TabsTrigger>
+              <TabsTrigger value="seguro">Seguros</TabsTrigger>
             </TabsList>
           </Tabs>
 

@@ -269,7 +269,7 @@ export default function NominaResult({
         {
           nombre: "Transportes El Montañez",
           apellidoPaterno: "SpA",
-          rut: "77.777.777-7",
+          rut: "77.611.481-2",
           email: "benhantscheruk@gmail.com",
         },
         liqId || undefined
@@ -554,7 +554,7 @@ export default function NominaResult({
                 TRANSPORTES EL MONTAÑEZ
               </span>
               <span className="block">
-                RUT 77.777.777-7 · Documento generado electrónicamente
+                RUT 77.611.481-2 · Documento generado electrónicamente
               </span>
               <span className="block text-slate-500">
                 Si tiene dudas sobre esta liquidación, contacte a administración.

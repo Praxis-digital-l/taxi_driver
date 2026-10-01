@@ -81,7 +81,7 @@ export async function enviarAFirmaWeb(
       empleador: {
         nombre: empleador?.nombre || "Transportes El Montañez",
         apellidoPaterno: empleador?.apellidoPaterno || "SpA",
-        rut: empleador?.rut || "77.777.777-7",
+        rut: empleador?.rut || "77.611.481-2",
         email: empleador?.email || "benhantscheruk@gmail.com",
       },
       idLiquidacion,
