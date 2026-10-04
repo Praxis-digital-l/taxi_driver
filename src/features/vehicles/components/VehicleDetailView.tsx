@@ -101,12 +101,15 @@ export default function VehicleDetailView({ plate, onBack, initialTab = "info" }
   const [mileage, setMileage] = useState<AdminSearchMileage[]>([]);
   const [notes, setNotes] = useState<AdminSearchNote[]>([]);
   const [insurance, setInsurance] = useState<AdminInsurance | null>(null);
+  const [insurances, setInsurances] = useState<AdminInsurance[]>([]);
   const [activeTab, setActiveTab] = useState(initialTab);
 
   const [insuranceEditing, setInsuranceEditing] = useState(false);
+  const [editingInsuranceId, setEditingInsuranceId] = useState<string | null>(null);
   const [insuranceSaving, setInsuranceSaving] = useState(false);
   const [insurancePaying, setInsurancePaying] = useState(false);
   const [deleteInsuranceDialogOpen, setDeleteInsuranceDialogOpen] = useState(false);
+  const [insuranceToDelete, setInsuranceToDelete] = useState<AdminInsurance | null>(null);
   const [insuranceDeleting, setInsuranceDeleting] = useState(false);
   const [insuranceForm, setInsuranceForm] = useState({
     insuranceType: "comercial" as InsuranceType,
@@ -157,6 +160,7 @@ export default function VehicleDetailView({ plate, onBack, initialTab = "info" }
       setMileage(result.mileage);
       setNotes(result.notes);
       setInsurance(result.insurance);
+      setInsurances(result.insurances || (result.insurance ? [result.insurance] : []));
     } catch (error) {
       toast({
         title: "Error al cargar vehículo",
@@ -210,15 +214,28 @@ export default function VehicleDetailView({ plate, onBack, initialTab = "info" }
     }
   };
 
-  const startInsuranceEdit = () => {
-    setInsuranceEditing(true);
+  const startInsuranceAdd = () => {
+    setEditingInsuranceId(null);
     setInsuranceForm({
-      insuranceType: insurance?.insurance_type ?? "comercial",
-      customInsuranceName: insurance?.custom_insurance_name ?? "",
-      amount: insurance ? String(insurance.amount) : "",
-      expirationDate: insurance?.expiration_date ?? "",
-      paymentStatus: insurance?.payment_status ?? "pendiente",
+      insuranceType: "comercial",
+      customInsuranceName: "",
+      amount: "",
+      expirationDate: "",
+      paymentStatus: "pendiente",
     });
+    setInsuranceEditing(true);
+  };
+
+  const startInsuranceEdit = (ins: AdminInsurance) => {
+    setEditingInsuranceId(ins.id);
+    setInsuranceForm({
+      insuranceType: ins.insurance_type,
+      customInsuranceName: ins.custom_insurance_name ?? "",
+      amount: String(ins.amount),
+      expirationDate: ins.expiration_date ?? "",
+      paymentStatus: ins.payment_status,
+    });
+    setInsuranceEditing(true);
   };
 
   const handleSaveInsurance = async () => {
@@ -244,6 +261,7 @@ export default function VehicleDetailView({ plate, onBack, initialTab = "info" }
     setInsuranceSaving(true);
     try {
       await saveVehicleInsurance({
+        id: editingInsuranceId || undefined,
         vehicleId: vehicle.id,
         insuranceType: insuranceForm.insuranceType,
         customInsuranceName: insuranceForm.customInsuranceName,
@@ -252,8 +270,9 @@ export default function VehicleDetailView({ plate, onBack, initialTab = "info" }
         paymentStatus: insuranceForm.paymentStatus,
       });
       setInsuranceEditing(false);
+      setEditingInsuranceId(null);
       await loadVehicleData();
-      toast({ title: "Seguro guardado" });
+      toast({ title: editingInsuranceId ? "Seguro actualizado" : "Seguro agregado" });
     } catch (error) {
       toast({
         title: "Error al guardar seguro",
@@ -265,11 +284,11 @@ export default function VehicleDetailView({ plate, onBack, initialTab = "info" }
     }
   };
 
-  const handlePayInsurance = async () => {
-    if (!insurance || !vehicle) return;
+  const handlePayInsurance = async (insuranceId: string) => {
+    if (!vehicle) return;
     setInsurancePaying(true);
     try {
-      await markInsurancePaid(insurance.id);
+      await markInsurancePaid(insuranceId);
       await loadVehicleData();
       toast({ title: "Pago del seguro registrado" });
     } catch (error) {
@@ -283,13 +302,22 @@ export default function VehicleDetailView({ plate, onBack, initialTab = "info" }
     }
   };
 
+  const openDeleteInsuranceDialog = (ins: AdminInsurance) => {
+    setInsuranceToDelete(ins);
+    setDeleteInsuranceDialogOpen(true);
+  };
+
   const handleDeleteInsurance = async () => {
-    if (!insurance) return;
+    if (!insuranceToDelete) return;
     setInsuranceDeleting(true);
     try {
-      await deleteVehicleInsurance(insurance.id);
+      await deleteVehicleInsurance(insuranceToDelete.id);
       setDeleteInsuranceDialogOpen(false);
-      setInsuranceEditing(false);
+      if (editingInsuranceId === insuranceToDelete.id) {
+        setInsuranceEditing(false);
+        setEditingInsuranceId(null);
+      }
+      setInsuranceToDelete(null);
       await loadVehicleData();
       toast({
         title: "Seguro eliminado",
@@ -480,7 +508,7 @@ export default function VehicleDetailView({ plate, onBack, initialTab = "info" }
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <TabsList className="flex-wrap h-auto gap-1 bg-muted/50 p-1">
           <TabsTrigger value="info" className="text-xs gap-1.5"><Truck className="h-3.5 w-3.5" />Vehículo</TabsTrigger>
-          <TabsTrigger value="insurance" className="text-xs gap-1.5"><ShieldCheck className="h-3.5 w-3.5" />Seguro</TabsTrigger>
+          <TabsTrigger value="insurance" className="text-xs gap-1.5"><ShieldCheck className="h-3.5 w-3.5" />Seguros ({insurances.length})</TabsTrigger>
           <TabsTrigger value="documents" className="text-xs gap-1.5"><FileText className="h-3.5 w-3.5" />Docs ({documents.length})</TabsTrigger>
           <TabsTrigger value="requests" className="text-xs gap-1.5"><ClipboardList className="h-3.5 w-3.5" />Solicitudes ({requests.length})</TabsTrigger>
           <TabsTrigger value="mileage" className="text-xs gap-1.5"><Gauge className="h-3.5 w-3.5" />Km ({mileage.length})</TabsTrigger>
@@ -545,12 +573,14 @@ export default function VehicleDetailView({ plate, onBack, initialTab = "info" }
           </div>
         </TabsContent>
 
-        {/* TAB 2: SEGURO */}
+        {/* TAB 2: SEGUROS */}
         <TabsContent value="insurance" className="space-y-4 mt-4">
           {insuranceEditing ? (
             <Card className="stat-card">
               <CardHeader className="pb-2">
-                <CardTitle className="font-heading text-sm">Editar Seguro</CardTitle>
+                <CardTitle className="font-heading text-sm">
+                  {editingInsuranceId ? "Editar Seguro" : "Nuevo Seguro"}
+                </CardTitle>
               </CardHeader>
               <CardContent className="grid gap-3 sm:grid-cols-2 p-4 sm:p-5">
                 <div className="space-y-2">
@@ -624,17 +654,28 @@ export default function VehicleDetailView({ plate, onBack, initialTab = "info" }
                 <div className="flex gap-2 sm:col-span-2 items-center justify-between flex-wrap">
                   <div className="flex gap-2">
                     <Button onClick={handleSaveInsurance} disabled={insuranceSaving}>
-                      {insuranceSaving ? "Guardando..." : "Guardar"}
+                      {insuranceSaving ? "Guardando..." : editingInsuranceId ? "Actualizar" : "Guardar Seguro"}
                     </Button>
-                    <Button variant="outline" onClick={() => setInsuranceEditing(false)}>Cancelar</Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setInsuranceEditing(false);
+                        setEditingInsuranceId(null);
+                      }}
+                    >
+                      Cancelar
+                    </Button>
                   </div>
-                  {insurance && (
+                  {editingInsuranceId && (
                     <Button
                       type="button"
                       variant="outline"
                       size="sm"
                       className="text-destructive hover:bg-destructive/10 hover:text-destructive border-destructive/20"
-                      onClick={() => setDeleteInsuranceDialogOpen(true)}
+                      onClick={() => {
+                        const target = insurances.find((i) => i.id === editingInsuranceId);
+                        if (target) openDeleteInsuranceDialog(target);
+                      }}
                     >
                       <Trash2 className="h-3.5 w-3.5 mr-1" />
                       Eliminar Seguro
@@ -643,88 +684,106 @@ export default function VehicleDetailView({ plate, onBack, initialTab = "info" }
                 </div>
               </CardContent>
             </Card>
-          ) : insurance ? (
-            <Card className="stat-card">
-              <CardContent className="p-4 sm:p-5 space-y-4">
-                <div className="flex items-start justify-between gap-3 flex-wrap">
-                  <div className="flex items-center gap-2">
-                    <ShieldCheck className="h-5 w-5 text-primary shrink-0" />
-                    <p className="font-semibold text-sm">
-                      {insurance.insurance_type === "otro" && insurance.custom_insurance_name
-                        ? insurance.custom_insurance_name
-                        : INSURANCE_TYPE_LABEL[insurance.insurance_type]}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    {isInsuranceExpired(insurance) ? (
-                      <Badge variant="outline" className="text-[10px] border-destructive/20 bg-destructive/10 text-destructive flex items-center gap-0.5">
-                        <AlertCircle className="h-3 w-3" />Vencido
-                      </Badge>
-                    ) : isInsuranceExpiring(insurance.expiration_date, 60) ? (
-                      <Badge variant="outline" className="text-[10px] border-warning/20 bg-warning/10 text-warning flex items-center gap-0.5">
-                        <AlertCircle className="h-3 w-3" />
-                        Por vencer ({getInsuranceDaysLeft(insurance.expiration_date)} día(s))
-                      </Badge>
-                    ) : null}
-                    {insurance.payment_status === "pagado" ? (
-                      <Badge variant="outline" className="text-[10px] border-accent/20 bg-accent/10 text-accent">Pagado</Badge>
-                    ) : (
-                      <Badge variant="outline" className="text-[10px] border-muted bg-muted text-muted-foreground">Pendiente</Badge>
-                    )}
-                    <Button variant="outline" size="sm" className="h-8" onClick={startInsuranceEdit}>
-                      <PencilLine className="h-3.5 w-3.5 mr-1" />Editar
-                    </Button>
-                    {insurance.payment_status === "pendiente" && (
-                      <Button size="sm" className="h-8" onClick={handlePayInsurance} disabled={insurancePaying}>
-                        <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
-                        {insurancePaying ? "Registrando..." : "Marcar como pagado"}
-                      </Button>
-                    )}
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-8 text-destructive hover:bg-destructive/10 hover:text-destructive border-destructive/20"
-                      onClick={() => setDeleteInsuranceDialogOpen(true)}
-                    >
-                      <Trash2 className="h-3.5 w-3.5 mr-1" />Eliminar
-                    </Button>
-                  </div>
-                </div>
-                <div className="grid gap-y-3 gap-x-4 sm:grid-cols-2 lg:grid-cols-4">
-                  <div>
-                    <p className="text-xs text-muted-foreground">Monto</p>
-                    <p className="font-heading font-bold">$ {insurance.amount.toLocaleString("es-CL")}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">Vence</p>
-                    <p>{new Date(insurance.expiration_date).toLocaleDateString("es-CL")}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">Último pago</p>
-                    <p>{insurance.last_payment_date ? new Date(insurance.last_payment_date).toLocaleDateString("es-CL") : "—"}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">Estado de pago</p>
-                    <p className="capitalize">{insurance.payment_status}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
           ) : (
-            <Card className="stat-card">
-              <CardContent className="p-6 text-center space-y-3">
-                <ShieldCheck className="h-10 w-10 text-muted-foreground/40 mx-auto" />
+            <div className="space-y-4">
+              <div className="flex items-center justify-between gap-3 flex-wrap">
                 <div>
-                  <p className="text-sm font-medium">Sin seguro registrado</p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Registra el seguro de este vehículo con su fecha de vencimiento.
-                  </p>
+                  <p className="text-sm font-medium">Pólizas y Seguros ({insurances.length})</p>
+                  <p className="text-xs text-muted-foreground">Seguros registrados para este vehículo.</p>
                 </div>
-                <Button size="sm" onClick={startInsuranceEdit}>
-                  <Plus className="h-4 w-4 mr-1" /> Registrar Seguro
+                <Button size="sm" onClick={startInsuranceAdd}>
+                  <Plus className="h-4 w-4 mr-1" /> Agregar Seguro
                 </Button>
-              </CardContent>
-            </Card>
+              </div>
+
+              {insurances.length === 0 ? (
+                <Card className="stat-card">
+                  <CardContent className="p-6 text-center space-y-3">
+                    <ShieldCheck className="h-10 w-10 text-muted-foreground/40 mx-auto" />
+                    <div>
+                      <p className="text-sm font-medium">Sin seguro registrado</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Registra el seguro de este vehículo con su fecha de vencimiento.
+                      </p>
+                    </div>
+                    <Button size="sm" onClick={startInsuranceAdd}>
+                      <Plus className="h-4 w-4 mr-1" /> Registrar Seguro
+                    </Button>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="space-y-3">
+                  {insurances.map((ins) => (
+                    <Card key={ins.id} className="stat-card">
+                      <CardContent className="p-4 sm:p-5 space-y-4">
+                        <div className="flex items-start justify-between gap-3 flex-wrap">
+                          <div className="flex items-center gap-2">
+                            <ShieldCheck className="h-5 w-5 text-primary shrink-0" />
+                            <p className="font-semibold text-sm">
+                              {ins.insurance_type === "otro" && ins.custom_insurance_name
+                                ? ins.custom_insurance_name
+                                : INSURANCE_TYPE_LABEL[ins.insurance_type]}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            {isInsuranceExpired(ins) ? (
+                              <Badge variant="outline" className="text-[10px] border-destructive/20 bg-destructive/10 text-destructive flex items-center gap-0.5">
+                                <AlertCircle className="h-3 w-3" />Vencido
+                              </Badge>
+                            ) : isInsuranceExpiring(ins.expiration_date, 60) ? (
+                              <Badge variant="outline" className="text-[10px] border-warning/20 bg-warning/10 text-warning flex items-center gap-0.5">
+                                <AlertCircle className="h-3 w-3" />
+                                Por vencer ({getInsuranceDaysLeft(ins.expiration_date)} día(s))
+                              </Badge>
+                            ) : null}
+                            {ins.payment_status === "pagado" ? (
+                              <Badge variant="outline" className="text-[10px] border-accent/20 bg-accent/10 text-accent">Pagado</Badge>
+                            ) : (
+                              <Badge variant="outline" className="text-[10px] border-muted bg-muted text-muted-foreground">Pendiente</Badge>
+                            )}
+                            <Button variant="outline" size="sm" className="h-8" onClick={() => startInsuranceEdit(ins)}>
+                              <PencilLine className="h-3.5 w-3.5 mr-1" />Editar
+                            </Button>
+                            {ins.payment_status === "pendiente" && (
+                              <Button size="sm" className="h-8" onClick={() => handlePayInsurance(ins.id)} disabled={insurancePaying}>
+                                <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
+                                {insurancePaying ? "Registrando..." : "Marcar como pagado"}
+                              </Button>
+                            )}
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-8 text-destructive hover:bg-destructive/10 hover:text-destructive border-destructive/20"
+                              onClick={() => openDeleteInsuranceDialog(ins)}
+                            >
+                              <Trash2 className="h-3.5 w-3.5 mr-1" />Eliminar
+                            </Button>
+                          </div>
+                        </div>
+                        <div className="grid gap-y-3 gap-x-4 sm:grid-cols-2 lg:grid-cols-4">
+                          <div>
+                            <p className="text-xs text-muted-foreground">Monto</p>
+                            <p className="font-heading font-bold">$ {ins.amount.toLocaleString("es-CL")}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-muted-foreground">Vence</p>
+                            <p>{new Date(ins.expiration_date).toLocaleDateString("es-CL")}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-muted-foreground">Último pago</p>
+                            <p>{ins.last_payment_date ? new Date(ins.last_payment_date).toLocaleDateString("es-CL") : "—"}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-muted-foreground">Estado de pago</p>
+                            <p className="capitalize">{ins.payment_status}</p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </div>
           )}
         </TabsContent>
 
@@ -967,12 +1026,12 @@ export default function VehicleDetailView({ plate, onBack, initialTab = "info" }
               ¿Eliminar póliza de seguro?
             </AlertDialogTitle>
             <AlertDialogDescription>
-              ¿Estás seguro de que deseas eliminar este seguro del vehículo{" "}
-              <strong>{vehicle?.license_plate}</strong>? Esta acción eliminará el registro de la póliza y no se puede deshacer.
+              ¿Estás seguro de que deseas eliminar este seguro{insuranceToDelete ? ` (${insuranceToDelete.insurance_type === "otro" && insuranceToDelete.custom_insurance_name ? insuranceToDelete.custom_insurance_name : INSURANCE_TYPE_LABEL[insuranceToDelete.insurance_type]})` : ""} del vehículo{" "}
+              <strong>{vehicle?.license_plate}</strong>? Esta acción no se puede deshacer.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={insuranceDeleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel disabled={insuranceDeleting} onClick={() => setInsuranceToDelete(null)}>Cancelar</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={handleDeleteInsurance}

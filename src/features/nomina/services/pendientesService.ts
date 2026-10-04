@@ -75,19 +75,23 @@ export const pendientesService = {
       let monto_autopista = 0;
       let monto_seguro = 0;
 
-      // Autopista: sumar tag de los primarios
+      // Autopista y Seguro: extraer de los primarios
       if (Array.isArray(liq.descuentos_primarios)) {
         liq.descuentos_primarios.forEach((desc: any) => {
-          if (desc.concepto.toLowerCase().includes("tag") || desc.concepto.toLowerCase().includes("autopista")) {
+          const c = (desc.concepto || "").toLowerCase();
+          if (c.includes("tag") || c.includes("autopista")) {
             monto_autopista += Number(desc.monto) || 0;
+          }
+          if (c.includes("seguro")) {
+            monto_seguro += Number(desc.monto) || 0;
           }
         });
       }
 
-      // Seguro: extraer de los secundarios
+      // Seguro: extraer de los secundarios (compatibilidad histórica)
       if (Array.isArray(liq.descuentos_secundarios)) {
         liq.descuentos_secundarios.forEach((desc: any) => {
-          if (desc.concepto.toLowerCase().includes("seguro")) {
+          if ((desc.concepto || "").toLowerCase().includes("seguro")) {
             monto_seguro += Number(desc.monto) || 0;
           }
         });

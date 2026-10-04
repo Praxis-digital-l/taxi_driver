@@ -59,18 +59,24 @@ function assertNoError(error: { message: string } | null) {
   }
 }
 
-export async function fetchInsuranceByVehicle(vehicleId: string): Promise<AdminInsurance | null> {
+export async function fetchInsurancesByVehicle(vehicleId: string): Promise<AdminInsurance[]> {
   const { data, error } = await supabase
     .from("vehicle_insurances")
     .select("id, vehicle_id, insurance_type, custom_insurance_name, amount, expiration_date, payment_status, last_payment_date, created_at, updated_at")
     .eq("vehicle_id", vehicleId)
-    .maybeSingle();
+    .order("created_at", { ascending: false });
 
   assertNoError(error);
-  return (data ?? null) as AdminInsurance | null;
+  return (data ?? []) as AdminInsurance[];
+}
+
+export async function fetchInsuranceByVehicle(vehicleId: string): Promise<AdminInsurance | null> {
+  const list = await fetchInsurancesByVehicle(vehicleId);
+  return list[0] ?? null;
 }
 
 export async function saveVehicleInsurance(params: {
+  id?: string;
   vehicleId: string;
   insuranceType: InsuranceType;
   customInsuranceName?: string | null;
@@ -78,15 +84,21 @@ export async function saveVehicleInsurance(params: {
   expirationDate: string;
   paymentStatus: InsurancePaymentStatus;
 }) {
-  const { vehicleId, insuranceType, customInsuranceName, amount, expirationDate, paymentStatus } = params;
+  const { id, vehicleId, insuranceType, customInsuranceName, amount, expirationDate, paymentStatus } = params;
 
-  const existing = await fetchInsuranceByVehicle(vehicleId);
-  const lastPaymentDate =
-    existing && existing.payment_status === "pagado" && paymentStatus === "pagado"
-      ? existing.last_payment_date
-      : paymentStatus === "pagado"
-        ? new Date().toISOString().slice(0, 10)
-        : null;
+  let lastPaymentDate: string | null = paymentStatus === "pagado" ? new Date().toISOString().slice(0, 10) : null;
+
+  if (id) {
+    const { data: existing } = await supabase
+      .from("vehicle_insurances")
+      .select("payment_status, last_payment_date")
+      .eq("id", id)
+      .maybeSingle();
+
+    if (existing && existing.payment_status === "pagado" && paymentStatus === "pagado") {
+      lastPaymentDate = existing.last_payment_date;
+    }
+  }
 
   const values = {
     insurance_type: insuranceType,
@@ -97,11 +109,11 @@ export async function saveVehicleInsurance(params: {
     last_payment_date: lastPaymentDate,
   };
 
-  if (existing) {
+  if (id) {
     const { error } = await supabase
       .from("vehicle_insurances")
       .update(values)
-      .eq("id", existing.id);
+      .eq("id", id);
     assertNoError(error);
     return;
   }
