@@ -26,13 +26,13 @@ const CAMPOS_BASE = [
   { id: "diesel", label: "Diesel", placeholder: "Ej: 200.000" },
   { id: "arriendo", label: "Arriendo", placeholder: "Ej: 150.000" },
   { id: "seguro", label: "Seguro", placeholder: "Ej: 50.000" },
+  { id: "efectivoMonto", label: "Efectivo", placeholder: "Ej: 30.000" },
 ] as const;
 
 const CAMPOS_SECUNDARIOS = [
   { id: "mantencion", label: "Mantención", placeholder: "Ej: 80.000" },
   { id: "anticipo", label: "Anticipo", placeholder: "Ej: 100.000" },
   { id: "prestamo", label: "Préstamo", placeholder: "Ej: 50.000" },
-  { id: "efectivoMonto", label: "Efectivo", placeholder: "Ej: 30.000" },
 ] as const;
 
 function formatPesos(digits: string): string {

@@ -6,7 +6,7 @@
 -- 1. Tabla vehicle_insurances (una póliza activa por vehículo)
 CREATE TABLE IF NOT EXISTS public.vehicle_insurances (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  vehicle_id uuid NOT NULL UNIQUE REFERENCES public.vehicles(id) ON DELETE CASCADE,
+  vehicle_id uuid NOT NULL REFERENCES public.vehicles(id) ON DELETE CASCADE,
   insurance_type text NOT NULL CHECK (insurance_type IN ('obligatorio', 'comercial', 'asiento', 'otro')),
   amount numeric NOT NULL DEFAULT 0,
   expiration_date date NOT NULL,
