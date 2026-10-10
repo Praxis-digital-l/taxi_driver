@@ -162,7 +162,7 @@ export default function PendientesPorFirmar({
         rut: liqActivaFirma.rut || "",
         totalFacturado: liqActivaFirma.total_facturado,
         descuentosPrimarios: liqActivaFirma.descuentos_primarios,
-        subtotal: liqActivaFirma.subtotal,
+        subtotal: liqActivaFirma.total_facturado ?? liqActivaFirma.subtotal,
         descuentosSecundarios: liqActivaFirma.descuentos_secundarios,
         totalDescuentos: liqActivaFirma.total_descuentos,
         totalAPagar: liqActivaFirma.total_a_pagar,

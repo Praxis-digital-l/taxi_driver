@@ -245,7 +245,7 @@ export async function obtenerPdfBase64DeLiquidacion(liq: LiquidacionRecord): Pro
     },
     totalFacturado: liq.total_facturado,
     descuentosPrimarios: liq.descuentos_primarios,
-    subtotal: liq.subtotal,
+    subtotal: liq.total_facturado ?? liq.subtotal,
     descuentosSecundarios: liq.descuentos_secundarios,
     totalDescuentos: liq.total_descuentos,
     totalAPagar: liq.total_a_pagar,

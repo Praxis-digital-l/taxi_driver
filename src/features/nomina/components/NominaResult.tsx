@@ -522,7 +522,7 @@ export default function NominaResult({
                 <div className="flex justify-between text-xs text-slate-600">
                   <span>Subtotal</span>
                   <span className="font-mono font-medium text-slate-900">
-                    ${resultado.subtotal.toLocaleString("es-CL")}
+                    ${(resultado.totalFacturado ?? resultado.subtotal).toLocaleString("es-CL")}
                   </span>
                 </div>
                 <div className="flex justify-between text-xs">

@@ -59,7 +59,7 @@ function DetalleLiquidacion({ liquidacion }: { liquidacion: LiquidacionRecord })
 
       <Separator />
 
-      <Fila concepto="Subtotal" monto={liquidacion.subtotal} />
+      <Fila concepto="Subtotal" monto={liquidacion.total_facturado ?? liquidacion.subtotal} />
       <Separator />
       <Fila concepto="Total descuentos" monto={-liquidacion.total_descuentos} />
       <Separator />
