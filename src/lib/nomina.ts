@@ -110,13 +110,15 @@ export function calcularNomina(data: DatosNomina): ResultadoNomina {
     ...(data.efectivoMonto > 0 ? [{ concepto: "Efectivo", monto: data.efectivoMonto }] : []),
   ];
 
-  const subtotal = data.totalFacturado
-    - data.gastoOperacional
-    - data.diesel
-    - totalTAGValue
-    - data.arriendo
-    - data.seguro
-    - data.efectivoMonto;
+  const totalDescuentosPrimarios =
+    data.gastoOperacional +
+    data.diesel +
+    totalTAGValue +
+    data.arriendo +
+    data.seguro +
+    data.efectivoMonto;
+
+  const subtotal = data.totalFacturado;
 
   const descuentosSecundarios: DetalleDescuento[] = [
     { concepto: "Mantención", monto: data.mantencion },
@@ -135,7 +137,8 @@ export function calcularNomina(data: DatosNomina): ResultadoNomina {
   ];
 
   const totalDescuentosSecundarios = data.mantencion + data.anticipo + data.prestamo + data.otroDescuentoMonto;
-  const totalAPagar = subtotal - totalDescuentosSecundarios;
+  const totalDescuentos = totalDescuentosPrimarios + totalDescuentosSecundarios;
+  const totalAPagar = subtotal - totalDescuentos;
 
   return {
     trabajadorId: data.trabajadorId,
@@ -146,7 +149,7 @@ export function calcularNomina(data: DatosNomina): ResultadoNomina {
     descuentosPrimarios,
     subtotal,
     descuentosSecundarios,
-    totalDescuentos: totalTAGValue + data.gastoOperacional + data.diesel + data.arriendo + data.seguro + data.efectivoMonto + totalDescuentosSecundarios,
+    totalDescuentos,
     totalAPagar,
   };
 }
