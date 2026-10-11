@@ -44,9 +44,27 @@ function DetalleLiquidacion({ liquidacion }: { liquidacion: LiquidacionRecord })
 
       <div>
         <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 block">Descuentos</span>
-        {liquidacion.descuentos_primarios.map((d, i) => (
-          <Fila key={`prim-${i}`} concepto={d.concepto} monto={-d.monto} />
-        ))}
+        {(() => {
+          // Agrupar entradas TAG en una sola fila sumada
+          const tagEntries = liquidacion.descuentos_primarios.filter((d) =>
+            d.concepto.toLowerCase().startsWith("tag")
+          );
+          const nonTagEntries = liquidacion.descuentos_primarios.filter(
+            (d) => !d.concepto.toLowerCase().startsWith("tag")
+          );
+          const totalTag = tagEntries.reduce((sum, d) => sum + (Number(d.monto) || 0), 0);
+
+          return (
+            <>
+              {nonTagEntries.map((d, i) => (
+                <Fila key={`prim-${i}`} concepto={d.concepto} monto={-d.monto} />
+              ))}
+              {totalTag > 0 && (
+                <Fila concepto="TAG (Autopistas)" monto={-totalTag} />
+              )}
+            </>
+          );
+        })()}
         {liquidacion.descuentos_secundarios.length > 0 && (
           <>
             <div className="my-1.5 border-t border-dashed border-muted-foreground/20" />

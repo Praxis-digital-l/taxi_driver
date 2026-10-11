@@ -54,6 +54,11 @@ function desgloseTAG(tag: DescuentosTAG): DetalleDescuento[] {
     }));
 }
 
+function resumenTAG(tag: DescuentosTAG): DetalleDescuento[] {
+  const total = totalTAG(tag);
+  return total > 0 ? [{ concepto: "Total TAGs", monto: total }] : [];
+}
+
 function montoValido(valor: unknown): valor is number {
   return typeof valor === "number" && !Number.isNaN(valor) && valor >= 0;
 }
@@ -104,7 +109,7 @@ export function calcularNomina(data: DatosNomina): ResultadoNomina {
   const descuentosPrimarios: DetalleDescuento[] = [
     { concepto: "Gasto operacional", monto: data.gastoOperacional },
     { concepto: "Diesel", monto: data.diesel },
-    ...desgloseTAG(data.tag),
+    ...resumenTAG(data.tag),
     { concepto: "Arriendo", monto: data.arriendo },
     { concepto: "Seguro", monto: data.seguro },
     ...(data.efectivoMonto > 0 ? [{ concepto: "Efectivo", monto: data.efectivoMonto }] : []),

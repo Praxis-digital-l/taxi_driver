@@ -46,7 +46,7 @@ import { LOGO_APP_BASE64 } from "./logoBase64";
 const MONEDA = new Intl.NumberFormat("es-CL", {
   style: "currency",
   currency: "CLP",
-  maximumFractionDigits: 0,
+  maximumFractionDigits: 0,S
 });
 
 interface NominaResultProps {
