@@ -16,6 +16,7 @@ import RequestPriorityBadge from "@/components/RequestPriorityBadge";
 import RequestTypeIcon from "@/components/RequestTypeIcon";
 import PageHeader from "@/components/PageHeader";
 import { resolveRequestTypeName } from "@/lib/requestPriority";
+import { canRequestType, isBenefitType } from "@/lib/requestBenefits";
 import { Car, ClipboardList, Pencil, Plus, Trash2, Wallet, XCircle, CheckCircle2 } from "lucide-react";
 
 const TERMINAL_STATUSES = ["aprobado", "rechazado", "completado"];
@@ -105,8 +106,8 @@ export default function ConductorRequests() {
     }
   }, [location.state, requests]);
 
-  const openNewRequest = () => {
-    setNewTypeId("");
+  const openNewRequest = (typeId = "") => {
+    setNewTypeId(typeId);
     setNewVehicleId("none");
     setNewDetails("");
     setOpen(true);
@@ -221,6 +222,11 @@ export default function ConductorRequests() {
 
   const filtered = filterStatus === "all" ? requests : requests.filter((r: any) => r.status === filterStatus);
 
+  // Los beneficios (min_score > 0) se muestran siempre, pero bloqueados
+  // mientras el conductor no alcanza el puntaje mínimo requerido.
+  const isTypeLocked = (type: { min_score?: number | null }) =>
+    isBenefitType(type) && !canRequestType(profile?.score, type);
+
   return (
     <div>
       <PageHeader title="Mis Solicitudes" description={`${requests.length} solicitud(es) en total`}>
@@ -233,7 +239,7 @@ export default function ConductorRequests() {
         </Select>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button size="sm" onClick={openNewRequest}><Plus className="mr-1.5 h-4 w-4" />Nueva Solicitud</Button>
+            <Button size="sm" onClick={() => openNewRequest()}><Plus className="mr-1.5 h-4 w-4" />Nueva Solicitud</Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-md">
             <DialogHeader><DialogTitle className="font-heading">Crear Solicitud</DialogTitle></DialogHeader>
@@ -243,7 +249,9 @@ export default function ConductorRequests() {
                 <Select value={newTypeId} onValueChange={setNewTypeId} required>
                   <SelectTrigger><SelectValue placeholder="Seleccionar tipo" /></SelectTrigger>
                   <SelectContent>
-                    {reqTypes.map((t) => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
+                    {reqTypes.map((t) => (
+                      <SelectItem key={t.id} value={t.id} disabled={isTypeLocked(t)}>{t.name}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -415,7 +423,9 @@ export default function ConductorRequests() {
                 <Select value={editTypeId} onValueChange={setEditTypeId} required>
                   <SelectTrigger><SelectValue placeholder="Seleccionar tipo" /></SelectTrigger>
                   <SelectContent>
-                    {reqTypes.map((t) => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
+                    {reqTypes.map((t) => (
+                      <SelectItem key={t.id} value={t.id} disabled={isTypeLocked(t)}>{t.name}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
