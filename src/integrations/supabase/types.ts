@@ -387,14 +387,17 @@ export type Database = {
       request_types: {
         Row: {
           id: string
+          min_score: number
           name: string
         }
         Insert: {
           id?: string
+          min_score?: number
           name: string
         }
         Update: {
           id?: string
+          min_score?: number
           name?: string
         }
         Relationships: []

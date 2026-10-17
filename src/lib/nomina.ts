@@ -1,5 +1,10 @@
 export type DescuentosTAG = Record<string, number>;
 
+export type DescuentoExtra = {
+  descripcion: string;
+  monto: number;
+};
+
 export type DatosNomina = {
   trabajadorId: string;
   nombre: string;
@@ -14,8 +19,7 @@ export type DatosNomina = {
   mantencion: number;
   anticipo: number;
   prestamo: number;
-  otroDescuentoDescripcion: string;
-  otroDescuentoMonto: number;
+  descuentosExtra: DescuentoExtra[];
   efectivoMonto: number;
 };
 
@@ -89,8 +93,16 @@ export function validarDatosNomina(data: Partial<DatosNomina>): ErrorValidacion[
   validarCampo("mantencion", data.mantencion, "Mantención");
   validarCampo("anticipo", data.anticipo, "Anticipo");
   validarCampo("prestamo", data.prestamo, "Préstamo");
-  validarCampo("otroDescuentoMonto", data.otroDescuentoMonto, "Otros descuentos");
   validarCampo("efectivoMonto", data.efectivoMonto, "Efectivo");
+
+  (data.descuentosExtra ?? []).forEach((descuento, index) => {
+    if (typeof descuento.monto !== "number" || Number.isNaN(descuento.monto) || descuento.monto < 0) {
+      errores.push({
+        campo: `descuentoExtra.${index}`,
+        mensaje: "El monto del descuento extra debe ser un número mayor o igual a 0",
+      });
+    }
+  });
 
   if (data.tag) {
     for (const [key, val] of Object.entries(data.tag)) {
@@ -125,23 +137,28 @@ export function calcularNomina(data: DatosNomina): ResultadoNomina {
 
   const subtotal = data.totalFacturado;
 
+  // Descuentos extra (uno o varios, definidos solo para este cálculo; no se persisten)
+  const descuentosExtra: DetalleDescuento[] = (data.descuentosExtra ?? [])
+    .filter((d) => d.monto > 0)
+    .map((d) => ({
+      concepto: d.descripcion.trim() ? `Descuento extra - ${d.descripcion.trim()}` : "Descuento extra",
+      monto: d.monto,
+    }));
+
+  const totalDescuentosExtra = (data.descuentosExtra ?? []).reduce(
+    (sum, d) => sum + (Number.isFinite(d.monto) ? d.monto : 0),
+    0
+  );
+
   const descuentosSecundarios: DetalleDescuento[] = [
     { concepto: "Mantención", monto: data.mantencion },
     { concepto: "Anticipo", monto: data.anticipo },
     { concepto: "Préstamo", monto: data.prestamo },
-    ...(data.otroDescuentoMonto > 0
-      ? [
-          {
-            concepto: data.otroDescuentoDescripcion.trim()
-              ? `Otros descuentos - ${data.otroDescuentoDescripcion.trim()}`
-              : "Otros descuentos",
-            monto: data.otroDescuentoMonto,
-          },
-        ]
-      : []),
+    ...descuentosExtra,
   ];
 
-  const totalDescuentosSecundarios = data.mantencion + data.anticipo + data.prestamo + data.otroDescuentoMonto;
+  const totalDescuentosSecundarios =
+    data.mantencion + data.anticipo + data.prestamo + totalDescuentosExtra;
   const totalDescuentos = totalDescuentosPrimarios + totalDescuentosSecundarios;
   const totalAPagar = subtotal - totalDescuentos;
 

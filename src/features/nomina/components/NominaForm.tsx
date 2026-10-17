@@ -18,6 +18,7 @@ import {
   Star,
   Clock,
   Bookmark,
+  Info,
 } from "lucide-react";
 import {
   type DatosNomina,
@@ -85,6 +86,11 @@ export default function NominaForm({ onCalcular }: NominaFormProps) {
   const [agregando, setAgregando] = useState(false);
   const [nuevaAutopistaNombre, setNuevaAutopistaNombre] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Descuentos extra: solo aplican al cálculo actual y no se guardan en la base de datos
+  const [descuentosExtra, setDescuentosExtra] = useState<
+    Array<{ key: string; descripcion: string; monto: string }>
+  >([]);
 
   // Dialog para preguntar si guardar como recurrente
   const [dialogRecurrenteOpen, setDialogRecurrenteOpen] = useState(false);
@@ -173,12 +179,42 @@ export default function NominaForm({ onCalcular }: NominaFormProps) {
     }
   };
 
+  const agregarDescuentoExtra = () => {
+    setDescuentosExtra((prev) => [
+      ...prev,
+      {
+        key: `extra_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+        descripcion: "",
+        monto: "",
+      },
+    ]);
+  };
+
+  const actualizarDescuentoExtra = (
+    key: string,
+    campo: "descripcion" | "monto",
+    valor: string
+  ) => {
+    setDescuentosExtra((prev) =>
+      prev.map((d) => (d.key === key ? { ...d, [campo]: valor } : d))
+    );
+  };
+
+  const eliminarDescuentoExtra = (key: string) => {
+    setDescuentosExtra((prev) => prev.filter((d) => d.key !== key));
+  };
+
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     const parseNum = (key: string): number => {
       const raw = values[key] || "";
       const digits = raw.replace(/\D/g, "");
+      return digits ? parseInt(digits, 10) : 0;
+    };
+
+    const parseMonto = (raw: string): number => {
+      const digits = (raw || "").replace(/\D/g, "");
       return digits ? parseInt(digits, 10) : 0;
     };
 
@@ -201,8 +237,12 @@ export default function NominaForm({ onCalcular }: NominaFormProps) {
       mantencion: parseNum("mantencion"),
       anticipo: parseNum("anticipo"),
       prestamo: parseNum("prestamo"),
-      otroDescuentoDescripcion: (values.otroDescuentoDescripcion || "").trim(),
-      otroDescuentoMonto: parseNum("otroDescuentoMonto"),
+      descuentosExtra: descuentosExtra
+        .map((d) => ({
+          descripcion: d.descripcion.trim(),
+          monto: parseMonto(d.monto),
+        }))
+        .filter((d) => d.monto > 0 || d.descripcion.length > 0),
       efectivoMonto: parseNum("efectivoMonto"),
     };
 
@@ -331,21 +371,71 @@ export default function NominaForm({ onCalcular }: NominaFormProps) {
               Otros descuentos
             </CardTitle>
           </CardHeader>
-          <CardContent className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-1">
-              <Label htmlFor="otroDescuentoDescripcion">Descripción</Label>
-              <Input
-                id="otroDescuentoDescripcion"
-                name="otroDescuentoDescripcion"
-                type="text"
-                value={values.otroDescuentoDescripcion || ""}
-                onChange={(e) =>
-                  setValues((prev) => ({ ...prev, otroDescuentoDescripcion: e.target.value }))
-                }
-                placeholder="Ej: Multa, cobro administrativo"
-              />
+          <CardContent className="space-y-4">
+            <div className="flex items-start gap-2 rounded-lg border border-slate-200 bg-slate-50/70 px-3 py-2 dark:border-slate-700 dark:bg-slate-900/40">
+              <Info className="h-4 w-4 text-slate-500 dark:text-slate-400 shrink-0 mt-0.5" />
+              <p className="text-xs text-slate-600 dark:text-slate-300">
+                Puedes agregar <strong>varios descuentos extra</strong> que no estén contemplados.
+                No se guardan en el sistema y aplican únicamente a este cálculo; se verán reflejados en el PDF de la liquidación.
+              </p>
             </div>
-            {renderCurrencyInput({ id: "otroDescuentoMonto", label: "Monto", placeholder: "Ej: 20.000" })}
+
+            {descuentosExtra.length === 0 ? (
+              <div className="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed py-8 text-center">
+                <p className="text-sm text-muted-foreground">Aún no hay descuentos extra agregados</p>
+                <Button type="button" variant="outline" size="sm" className="gap-2" onClick={agregarDescuentoExtra}>
+                  <Plus className="h-4 w-4" />
+                  Agregar descuento extra
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {descuentosExtra.map((d, idx) => (
+                  <div key={d.key} className="grid gap-3 sm:grid-cols-[1fr_180px_auto] sm:items-end">
+                    <div className="space-y-1">
+                      <Label htmlFor={`${d.key}-descripcion`}>Descripción</Label>
+                      <Input
+                        id={`${d.key}-descripcion`}
+                        type="text"
+                        value={d.descripcion}
+                        onChange={(e) => actualizarDescuentoExtra(d.key, "descripcion", e.target.value)}
+                        placeholder="Ej: Multa, cobro administrativo"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor={`${d.key}-monto`}>Monto</Label>
+                      <Input
+                        id={`${d.key}-monto`}
+                        type="text"
+                        inputMode="numeric"
+                        value={d.monto}
+                        onChange={(e) => {
+                          const digits = e.target.value.replace(/\D/g, "");
+                          actualizarDescuentoExtra(d.key, "monto", digits ? formatPesos(digits) : "");
+                        }}
+                        placeholder="Ej: 20.000"
+                        className={SPINNER_HIDE}
+                      />
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-9 w-9 text-muted-foreground hover:text-destructive sm:mb-0.5"
+                      aria-label={`Eliminar descuento extra ${idx + 1}`}
+                      onClick={() => eliminarDescuentoExtra(d.key)}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+
+                <Button type="button" variant="outline" size="sm" className="gap-2" onClick={agregarDescuentoExtra}>
+                  <Plus className="h-4 w-4" />
+                  Agregar otro descuento
+                </Button>
+              </div>
+            )}
           </CardContent>
         </Card>
 

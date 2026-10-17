@@ -15,6 +15,8 @@
     "migrate:worker-id": "node scripts/apply-migration.mjs",
     "migrate:conductor-del-mes": "node scripts/apply-migration.mjs supabase/conductor_del_mes.sql",
     "migrate:liquidaciones": "node scripts/apply-migration.mjs supabase/liquidaciones.sql",
+    "migrate:document-types": "node scripts/apply-migration.mjs supabase/migrations/20261017000000_add_document_types_revision_tecnica_y_cambio_tarifa.sql",
+    "migrate:request-benefits": "node scripts/apply-migration.mjs supabase/migrations/20261017010000_add_request_benefits_min_score.sql",
     "migrate:worker-id-auto": "node scripts/apply-migration.mjs supabase/worker_id_auto.sql",
     "migrate:seguros": "node scripts/apply-migration.mjs supabase/vehicle_insurances.sql",
     "test:firmaweb": "node --env-file=.env scripts/test-firmaweb.mjs",
