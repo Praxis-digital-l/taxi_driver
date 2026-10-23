@@ -11,6 +11,10 @@ export type AdminRequest = {
   created_at: string;
   updated_at: string;
   vehicle_id: string | null;
+  cuotas?: number | null;
+  recargo_porcentaje?: number | null;
+  total_con_recargo?: number | null;
+  es_solicitud_especial?: boolean | null;
   request_types?: { name: string | null } | null;
   profiles?: { full_name: string | null; rut: string | null; phone: string | null } | null;
   vehicles?: { license_plate: string | null } | null;
@@ -25,7 +29,7 @@ function assertNoError(error: { message: string } | null) {
 export async function fetchAdminRequests(statusFilter: string) {
   let query = supabase
     .from("requests")
-    .select("id, profile_id, request_type_id, status, details, amount, created_at, updated_at, vehicle_id, request_types(name), profiles(full_name, rut, phone), vehicles(license_plate)")
+    .select("id, profile_id, request_type_id, status, details, amount, created_at, updated_at, vehicle_id, cuotas, recargo_porcentaje, total_con_recargo, es_solicitud_especial, request_types(name), profiles(full_name, rut, phone), vehicles(license_plate)")
     .limit(200);
 
   if (statusFilter !== "all") {
@@ -47,7 +51,7 @@ async function syncVacationStatus(requestId: string, status: string, reason?: st
   try {
     const { data: req } = await supabase
       .from("requests")
-      .select("profile_id, details")
+      .select("profile_id, details, request_types(name)")
       .eq("id", requestId)
       .single();
 
@@ -123,6 +127,32 @@ export async function updateRequest(requestId: string, updates: {
 }
 
 export async function deleteRequest(requestId: string) {
+  try {
+    const { data: req } = await supabase
+      .from("requests")
+      .select("profile_id, details, request_types(name)")
+      .eq("id", requestId)
+      .maybeSingle();
+
+    if (req && (
+      req.request_types?.name?.toLowerCase().includes("vacacion") ||
+      req.details?.includes("[VACACIONES") ||
+      req.details?.includes("[SOLICITUD DE VACACIONES")
+    )) {
+      const matchDates = req.details?.match(/Salida:\s*(\d{4}-\d{2}-\d{2})\s*·\s*Retorno:\s*(\d{4}-\d{2}-\d{2})/);
+      let q = supabase
+        .from("conductor_vacations")
+        .update({ status: "cancelada", updated_at: new Date().toISOString() })
+        .eq("profile_id", req.profile_id);
+      if (matchDates) {
+        q = q.eq("start_date", matchDates[1]).eq("end_date", matchDates[2]);
+      }
+      await q;
+    }
+  } catch (err) {
+    console.warn("Aviso al sincronizar eliminación con conductor_vacations:", err);
+  }
+
   const { data, error } = await supabase.from("requests").delete().eq("id", requestId).select();
   assertNoError(error);
   if (!data || data.length === 0) {

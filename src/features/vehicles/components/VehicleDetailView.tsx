@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import StatusBadge from "@/components/StatusBadge";
+import { requiresExpirationDate } from "@/lib/documentRules";
 import { Plate } from "@/components/ui/plate";
 import VehicleInspectionView from "@/features/vehicles/components/VehicleInspectionView";
 import {
@@ -798,7 +799,7 @@ export default function VehicleDetailView({ plate, onBack, initialTab = "info" }
                   <div className="flex-1 min-w-0 pr-3">
                     <p className="text-sm font-medium">{doc.document_types?.name || "Documento"}</p>
                     <p className="text-xs text-muted-foreground break-all whitespace-pre-wrap">{doc.profiles?.full_name} • {doc.description || ""}</p>
-                    {doc.expiration_date && (
+                    {requiresExpirationDate(doc.document_types?.name) && doc.expiration_date && (
                       <p className="text-xs text-muted-foreground">Vence: {new Date(doc.expiration_date).toLocaleDateString("es-CL")}</p>
                     )}
                   </div>

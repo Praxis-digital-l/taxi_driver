@@ -1,6 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { sortActiveRequestsByPriority, type AdminRequest } from "@/features/admin/services/adminRequestsService";
 import type { AdminExpiringInsurance } from "@/features/admin/services/adminInsuranceService";
+import { requiresExpirationDate } from "@/lib/documentRules";
 
 export type AdminDashboardStats = {
   vehicles: number;
@@ -47,7 +48,6 @@ export async function fetchAdminDashboardData() {
     conductorsRes,
     pendingRequestsRes,
     inProcessRequestsRes,
-    expiringDocumentsRes,
     totalDocumentsRes,
     unreadMessagesRes,
     activeRequestsRes,
@@ -61,7 +61,6 @@ export async function fetchAdminDashboardData() {
     supabase.from("profiles").select("id", { count: "exact", head: true }).eq("role", "conductor"),
     supabase.from("requests").select("id", { count: "exact", head: true }).eq("status", "pendiente"),
     supabase.from("requests").select("id", { count: "exact", head: true }).eq("status", "en_proceso"),
-    supabase.from("documents").select("id", { count: "exact", head: true }).lte("expiration_date", thirtyDays).gte("expiration_date", today),
     supabase.from("documents").select("id", { count: "exact", head: true }),
     supabase.from("messages").select("id", { count: "exact", head: true }).eq("status", "enviado").is("read_at", null),
     supabase
@@ -75,7 +74,7 @@ export async function fetchAdminDashboardData() {
       .lte("expiration_date", thirtyDays)
       .gte("expiration_date", today)
       .order("expiration_date", { ascending: true })
-      .limit(5),
+      .limit(50),
     supabase
       .from("messages")
       .select("id, content, created_at, sender:profiles!messages_sender_id_fkey(full_name)")
@@ -102,7 +101,6 @@ export async function fetchAdminDashboardData() {
   assertNoError(conductorsRes.error);
   assertNoError(pendingRequestsRes.error);
   assertNoError(inProcessRequestsRes.error);
-  assertNoError(expiringDocumentsRes.error);
   assertNoError(totalDocumentsRes.error);
   assertNoError(unreadMessagesRes.error);
   assertNoError(activeRequestsRes.error);
@@ -111,20 +109,23 @@ export async function fetchAdminDashboardData() {
   assertNoError(expiringInsurancesRes.error);
   assertNoError(expiringInsurancesListRes.error);
 
+  const allExpiringDocs = ((expiringDocumentsListRes.data ?? []) as AdminExpiringDocument[])
+    .filter((doc) => requiresExpirationDate(doc.document_types?.name));
+
   const stats: AdminDashboardStats = {
     vehicles: vehiclesRes.count || 0,
     activeVehicles: activeVehiclesRes.count || 0,
     conductors: conductorsRes.count || 0,
     pendingRequests: pendingRequestsRes.count || 0,
     inProcessRequests: inProcessRequestsRes.count || 0,
-    expiringDocs: expiringDocumentsRes.count || 0,
+    expiringDocs: allExpiringDocs.length,
     totalDocs: totalDocumentsRes.count || 0,
     unreadMessages: unreadMessagesRes.count || 0,
     expiringInsurances: expiringInsurancesRes.count || 0,
   };
 
   const activeRequests = sortActiveRequestsByPriority((activeRequestsRes.data ?? []) as AdminRequest[]).slice(0, 6);
-  const expiringDocuments = (expiringDocumentsListRes.data ?? []) as AdminExpiringDocument[];
+  const expiringDocuments = allExpiringDocs.slice(0, 5);
   const unreadMessages = (unreadMessagesListRes.data ?? []) as AdminDashboardUnreadMessage[];
   const expiringInsurances = (expiringInsurancesListRes.data ?? []) as AdminExpiringInsurance[];
 
