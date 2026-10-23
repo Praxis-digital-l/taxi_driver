@@ -189,7 +189,7 @@ npx supabase functions deploy send-push --no-verify-jwt
 
 ---
 
-## 8. Formato de Carga Masiva (Excel / CSV)
+## 8. Formato de Carga Masiva (Excel / CSV).
 
 Desde `/admin/bulk-upload` puedes descargar la plantilla oficial `plantilla_carga_datos.csv`, la cual soporta las siguientes **13 columnas**:
 
