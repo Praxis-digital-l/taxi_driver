@@ -279,9 +279,8 @@ export default function NominaResult({ resultado }: NominaResultProps) {
 
           {/* CUERPO PRINCIPAL */}
           <div className="p-8 sm:p-10 space-y-5 bg-white">
-            {/* 2. TARJETA DE DATOS DEL TRABAJADOR (4 COLUMNAS) */}
-            <div className="bg-[#f8fafc] border border-slate-200/80 rounded-xl p-4 sm:p-5">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 sm:p-5">
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-4 sm:gap-6 items-start">
                 <div>
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block font-heading">
                     TRABAJADOR
@@ -312,6 +311,14 @@ export default function NominaResult({ resultado }: NominaResultProps) {
                   </span>
                   <span className="text-xs font-bold text-slate-900 block mt-1 truncate">
                     {resultado.email || "No registrado"}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block font-heading">
+                    VEHÍCULO
+                  </span>
+                  <span className="text-xs font-bold text-slate-900 block mt-1 leading-normal">
+                    {resultado.vehicle_plate ? `${resultado.vehicle_plate}${resultado.vehicle_make || resultado.vehicle_model ? ` | ${[resultado.vehicle_make, resultado.vehicle_model].filter(Boolean).join(' ')}${resultado.vehicle_year ? ` (${resultado.vehicle_year})` : ''}` : ''}` : "Sin vehículo"}
                   </span>
                 </div>
               </div>

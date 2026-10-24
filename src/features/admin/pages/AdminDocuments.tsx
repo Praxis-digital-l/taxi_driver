@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import PageHeader from "@/components/PageHeader";
 import { FileText, Download, Eye, AlertCircle, Search } from "lucide-react";
 import { fetchAllDocuments, fetchDocumentTypes, type AdminDocument } from "@/features/admin/services/adminDocumentsService";
+import { formatMontoInput } from "@/lib/rendimientoActivos";
 import { downloadDocumentFile } from "@/shared/utils/storageFiles";
 import DocumentPreviewDialog from "@/features/admin/components/DocumentPreviewDialog";
 import { requiresExpirationDate } from "@/lib/documentRules";
@@ -161,30 +162,45 @@ export default function AdminDocuments() {
                       </p>
                     )}
                   </div>
-                  <div className="flex items-center gap-1">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 shrink-0"
-                      onClick={(e) => { e.stopPropagation(); openPreview(document.file_key, document.document_types?.name || "Documento"); }}
-                      title="Vista previa"
-                    >
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 shrink-0"
-                      onClick={(e) => { e.stopPropagation(); handleDownload(document.file_key); }}
-                      title="Descargar documento"
-                    >
-                      <Download className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
+                  <p className="text-xs text-muted-foreground break-all whitespace-pre-wrap">
+                    {document.profiles?.full_name || "Sin conductor"}
+                    {document.vehicles?.license_plate ? ` • ${document.vehicles.license_plate}` : ""}
+                    {document.description ? ` • ${document.description}` : ""}
+                  </p>
+                  {document.expiration_date && (
+                    <p className="text-xs text-muted-foreground">
+                      Vence: {new Date(document.expiration_date).toLocaleDateString("es-CL")}
+                    </p>
+                  )}
+                  {Number(document.amount) > 0 && (
+                    <p className="text-xs text-muted-foreground font-mono">
+                      Monto: {formatMontoInput(Number(document.amount))}
+                    </p>
+                  )}
+                </div>
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 shrink-0"
+                    onClick={(e) => { e.stopPropagation(); openPreview(document.file_key, document.document_types?.name || "Documento"); }}
+                    title="Vista previa"
+                  >
+                    <Eye className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 shrink-0"
+                    onClick={(e) => { e.stopPropagation(); handleDownload(document.file_key); }}
+                    title="Descargar documento"
+                  >
+                    <Download className="h-4 w-4" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
       )}
 

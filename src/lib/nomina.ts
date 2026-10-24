@@ -1,3 +1,5 @@
+export const ARRIENDO_ESTANDAR = 700_000;
+
 export type DescuentosTAG = Record<string, number>;
 
 export type DescuentoExtra = {
@@ -21,6 +23,11 @@ export type DatosNomina = {
   prestamo: number;
   descuentosExtra: DescuentoExtra[];
   efectivoMonto: number;
+  vehicle_id: string;
+  vehicle_plate: string;
+  vehicle_make?: string | null;
+  vehicle_model?: string | null;
+  vehicle_year?: number | null;
 };
 
 export type DetalleDescuento = {
@@ -39,6 +46,11 @@ export type ResultadoNomina = {
   descuentosSecundarios: DetalleDescuento[];
   totalDescuentos: number;
   totalAPagar: number;
+  vehicle_id?: string | null;
+  vehicle_plate?: string | null;
+  vehicle_make?: string | null;
+  vehicle_model?: string | null;
+  vehicle_year?: number | null;
 };
 
 export function crearDescuentosTAG(): DescuentosTAG {
@@ -77,6 +89,10 @@ export function validarDatosNomina(data: Partial<DatosNomina>): ErrorValidacion[
 
   if (!data.trabajadorId?.trim()) {
     errores.push({ campo: "trabajadorId", mensaje: "Debe seleccionar un trabajador" });
+  }
+
+  if (!data.vehicle_id?.trim()) {
+    errores.push({ campo: "vehiculo", mensaje: "Debe seleccionar el vehículo con el cual se realizará esta liquidación." });
   }
 
   const validarCampo = (campo: string, valor: unknown, etiqueta: string) => {
@@ -173,5 +189,10 @@ export function calcularNomina(data: DatosNomina): ResultadoNomina {
     descuentosSecundarios,
     totalDescuentos,
     totalAPagar,
+    vehicle_id: data.vehicle_id,
+    vehicle_plate: data.vehicle_plate,
+    vehicle_make: data.vehicle_make,
+    vehicle_model: data.vehicle_model,
+    vehicle_year: data.vehicle_year,
   };
 }
