@@ -10,6 +10,7 @@ import { fetchAllDocuments, fetchDocumentTypes, type AdminDocument } from "@/fea
 import { formatMontoInput } from "@/lib/rendimientoActivos";
 import { downloadDocumentFile } from "@/shared/utils/storageFiles";
 import DocumentPreviewDialog from "@/features/admin/components/DocumentPreviewDialog";
+import { requiresExpirationDate } from "@/lib/documentRules";
 
 export default function AdminDocuments() {
   const { toast } = useToast();
@@ -131,21 +132,34 @@ export default function AdminDocuments() {
           <p className="text-xs text-muted-foreground mb-3">
             Mostrando {filtered.length} de {documents.length} documento(s)
           </p>
-          {filtered.map((document) => (
-            <Card
-              key={document.id}
-              className="stat-card cursor-pointer transition-colors hover:border-primary/40 hover:bg-muted/50"
-              onClick={() => openPreview(document.file_key, document.document_types?.name || "Documento")}
-            >
-              <CardContent className="flex items-center gap-4 p-4">
-                <FileText className="h-5 w-5 text-primary shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <p className="font-medium text-sm">{document.document_types?.name}</p>
-                    {isExpiringSoon(document.expiration_date) && (
-                      <span className="text-[10px] font-medium text-destructive flex items-center gap-0.5">
-                        <AlertCircle className="h-3 w-3" />Por vencer
-                      </span>
+          {filtered.map((document) => {
+            const needsExp = requiresExpirationDate(document.document_types?.name);
+            return (
+              <Card
+                key={document.id}
+                className="stat-card cursor-pointer transition-colors hover:border-primary/40 hover:bg-muted/50"
+                onClick={() => openPreview(document.file_key, document.document_types?.name || "Documento")}
+              >
+                <CardContent className="flex items-center gap-4 p-4">
+                  <FileText className="h-5 w-5 text-primary shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="font-medium text-sm">{document.document_types?.name}</p>
+                      {needsExp && isExpiringSoon(document.expiration_date) && (
+                        <span className="text-[10px] font-medium text-destructive flex items-center gap-0.5">
+                          <AlertCircle className="h-3 w-3" />Por vencer
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground break-all whitespace-pre-wrap">
+                      {document.profiles?.full_name || "Sin conductor"}
+                      {document.vehicles?.license_plate ? ` • ${document.vehicles.license_plate}` : ""}
+                      {document.description ? ` • ${document.description}` : ""}
+                    </p>
+                    {needsExp && document.expiration_date && (
+                      <p className="text-xs text-muted-foreground">
+                        Vence: {new Date(document.expiration_date).toLocaleDateString("es-CL")}
+                      </p>
                     )}
                   </div>
                   <p className="text-xs text-muted-foreground break-all whitespace-pre-wrap">

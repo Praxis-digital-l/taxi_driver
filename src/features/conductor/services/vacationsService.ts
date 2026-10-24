@@ -193,19 +193,21 @@ export async function registerConductorVacation(payload: {
     );
   }
 
-  // Obtener tipo de solicitud "Vacaciones"
+  // Obtener tipo de solicitud oficial "Vacaciones" (min_score: 0)
   const { data: requestTypes } = await supabase.from("request_types").select("id, name");
   let reqTypeId = requestTypes?.find((rt: any) =>
-    rt.name?.toLowerCase().includes("vacacion") || rt.name?.toLowerCase().includes("arriendo")
+    rt.name?.trim().toLowerCase() === "vacaciones"
   )?.id;
 
   if (!reqTypeId && requestTypes && requestTypes.length > 0) {
-    reqTypeId = requestTypes[0].id;
+    reqTypeId = requestTypes.find((rt: any) =>
+      rt.name?.toLowerCase().includes("vacacion")
+    )?.id || requestTypes[0].id;
   }
 
   const detailsText = `[SOLICITUD DE VACACIONES Y POSTERGACIÓN DE ARRIENDO] Salida: ${payload.startDate} · Retorno: ${payload.endDate} (${payload.daysCount} días). Se solicita postergación de pago de arriendo con recargo del 10% al retorno. Estado: Pendiente de aprobación por administración.`;
 
-  // 1. Guardar en 'requests' como PENDIENTE para que le llegue directamente al Admin
+  // 1. Guardar en 'requests' como PENDIENTE para que aparezca en Mis Solicitudes y Admin
   let createdRequestId: string | null = null;
   if (reqTypeId) {
     const { data: newReq, error: reqError } = await supabase
@@ -220,7 +222,11 @@ export async function registerConductorVacation(payload: {
       .select("id")
       .single();
 
-    if (!reqError && newReq) {
+    if (reqError) {
+      console.error("Error al registrar solicitud de vacaciones en requests:", reqError);
+      throw new Error(`Error al enviar la solicitud de vacaciones: ${reqError.message}`);
+    }
+    if (newReq) {
       createdRequestId = newReq.id;
     }
   }
@@ -285,8 +291,24 @@ export async function registerConductorVacation(payload: {
 }
 
 export async function cancelConductorVacation(vacationId: string): Promise<void> {
+  let profileId: string | null = null;
+  let startDate: string | null = null;
+  let endDate: string | null = null;
+
   // Cancelar en conductor_vacations
   try {
+    const { data: vac } = await supabase
+      .from("conductor_vacations")
+      .select("profile_id, start_date, end_date")
+      .eq("id", vacationId)
+      .maybeSingle();
+
+    if (vac) {
+      profileId = vac.profile_id;
+      startDate = vac.start_date;
+      endDate = vac.end_date;
+    }
+
     await supabase
       .from("conductor_vacations")
       .update({ status: "cancelada", updated_at: new Date().toISOString() })
@@ -297,13 +319,15 @@ export async function cancelConductorVacation(vacationId: string): Promise<void>
 
   // Cancelar en requests
   try {
-    await supabase
-      .from("requests")
-      .update({ status: "cancelado" })
-      .eq("id", vacationId);
+    if (profileId && startDate && endDate) {
+      await supabase
+        .from("requests")
+        .delete()
+        .eq("profile_id", profileId)
+        .or(`details.ilike.%${startDate}%,details.ilike.%${endDate}%`)
+        .eq("status", "pendiente");
+    }
   } catch (error) {
     console.warn("Aviso al cancelar en requests:", error);
   }
 }
-
-
