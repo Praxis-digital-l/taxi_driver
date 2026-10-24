@@ -4,6 +4,8 @@ import { defineConfig, loadEnv, type Plugin } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import { componentTagger } from "lovable-tagger";
 
+//quien chucha es JSON??
+
 const githubPagesBase = "/sistema-control-flota/";
 const developmentLogPath = path.resolve(__dirname, "development.log");
 
@@ -39,7 +41,7 @@ const createDevelopmentLogPlugin = (enabled: boolean): Plugin => ({
         next();
         return;
       }
-
+ 
       const startedAt = Date.now();
       const method = req.method ?? "GET";
       const url = req.url;
