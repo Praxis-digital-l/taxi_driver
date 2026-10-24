@@ -9,6 +9,7 @@ import { PhotoUploadCard } from "@/features/conductor/components/PhotoUploadCard
 import { ConductorDelMesCard } from "@/components/ConductorDelMesCard";
 import ConductorVacationsCard from "@/features/conductor/components/ConductorVacationsCard";
 import { resolveRequestTypeName } from "@/lib/requestPriority";
+import { requiresExpirationDate } from "@/lib/documentRules";
 
 export default function ConductorDashboard() {
   const { profile } = useAuth();
@@ -33,12 +34,13 @@ export default function ConductorDashboard() {
         supabase.from("requests").select("*, request_types(name)").eq("profile_id", profile.id).order("created_at", { ascending: false }).limit(5),
         supabase.from("mileage_records").select("kilometers").eq("profile_id", profile.id).order("recorded_date", { ascending: false }).order("created_at", { ascending: false }).limit(1),
         supabase.from("messages").select("id", { count: "exact" }).eq("receiver_id", profile.id).eq("status", "enviado").is("read_at", null),
-        supabase.from("documents").select("id", { count: "exact" }).eq("profile_id", profile.id).lte("expiration_date", thirtyDays).gte("expiration_date", now.toISOString().slice(0, 10)),
+        supabase.from("documents").select("id, document_types(name)").eq("profile_id", profile.id).lte("expiration_date", thirtyDays).gte("expiration_date", now.toISOString().slice(0, 10)),
       ]);
 
       const pendingReqs = (rRes.data || []).filter((r: any) => r.status === "pendiente" || r.status === "en_proceso");
       setRecentRequests(rRes.data || []);
-      setHasPending(pendingReqs.length > 0 || (msgRes.count || 0) > 0 || (expRes.count || 0) > 0);
+      const expiringCount = ((expRes.data as any[]) || []).filter((d: any) => requiresExpirationDate(d.document_types?.name)).length;
+      setHasPending(pendingReqs.length > 0 || (msgRes.count || 0) > 0 || expiringCount > 0);
       setStats({
         vehicles: vRes.count || 0,
         documents: dRes.count || 0,
@@ -46,7 +48,7 @@ export default function ConductorDashboard() {
         totalRequests: (rRes.data || []).length,
         pendingMessages: msgRes.count || 0,
         lastMileage: mRes.data?.[0]?.kilometers || 0,
-        expiringDocs: expRes.count || 0,
+        expiringDocs: expiringCount,
       });
     };
     load();

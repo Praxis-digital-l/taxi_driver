@@ -82,6 +82,20 @@ export default function ConductorDocuments() {
       return;
     }
 
+    const docTypeId = (form.get("document_type_id") as string) || selectedTypeId;
+    const selectedType = docTypes.find((t) => t.id === docTypeId);
+    const needsExp = requiresExpirationDate(selectedType?.name);
+    const expDateValue = (form.get("expiration_date") as string) || "";
+    if (needsExp && !expDateValue) {
+      toast({
+        title: "Fecha de vencimiento requerida",
+        description: `El documento "${selectedType?.name || "seleccionado"}" requiere indicar su fecha de vencimiento.`,
+        variant: "destructive",
+      });
+      setUploading(false);
+      return;
+    }
+
     const fileKey = `${user.id}/${Date.now()}_${file.name}`;
     const { error: uploadError } = await supabase.storage.from("Documents").upload(fileKey, file);
     if (uploadError) {
@@ -150,6 +164,9 @@ export default function ConductorDocuments() {
     return diff > 0 && diff < 30 * 86400000;
   };
 
+  const selectedType = docTypes.find((t) => t.id === selectedTypeId);
+  const showExpirationInput = selectedType ? requiresExpirationDate(selectedType.name) : false;
+
   return (
     <div>
       <PageHeader title="Mis Documentos" description={`${documents.length} documento(s) en total`}>
@@ -215,10 +232,15 @@ export default function ConductorDocuments() {
                 <Label>Descripción</Label>
                 <Input name="description" placeholder="Ej: Liquidación marzo 2026" maxLength={200} />
               </div>
-              <div className="space-y-2">
-                <Label>Fecha de vencimiento</Label>
-                <Input name="expiration_date" type="date" />
-              </div>
+              {showExpirationInput && (
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-1.5">
+                    <span>Fecha de vencimiento *</span>
+                    <span className="text-[10px] text-primary font-normal">(Requerido para {selectedType?.name})</span>
+                  </Label>
+                  <Input name="expiration_date" type="date" required />
+                </div>
+              )}
               <div className="space-y-2">
                 <Label>Archivo * (máx. 10MB)</Label>
                 <Input name="file" type="file" required accept={DOCUMENT_ACCEPT_ATTR} />
@@ -247,58 +269,61 @@ export default function ConductorDocuments() {
         <Card><CardContent className="empty-state"><FileText /><p>No hay documentos con estos filtros.</p></CardContent></Card>
       ) : (
         <div className="grid gap-3">
-          {filtered.map((doc: any) => (
-            <Card
-              key={doc.id}
-              className="stat-card cursor-pointer transition-colors hover:border-primary/40 hover:bg-muted/50"
-              onClick={() => setPreview({ fileKey: doc.file_key, name: getDefaultFileName(doc.file_key), type: doc.document_types?.name || "Documento" })}
-            >
-              <CardContent className="flex items-center gap-4 p-4">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary shrink-0">
-                  <FileText className="h-5 w-5" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <p className="font-medium text-sm">{doc.document_types?.name}</p>
-                    {isExpiringSoon(doc.expiration_date) && (
-                      <span className="inline-flex items-center gap-0.5 text-[10px] font-medium text-destructive">
-                        <AlertCircle className="h-3 w-3" />Por vencer
-                      </span>
-                    )}
+          {filtered.map((doc: any) => {
+            const needsExp = requiresExpirationDate(doc.document_types?.name);
+            return (
+              <Card
+                key={doc.id}
+                className="stat-card cursor-pointer transition-colors hover:border-primary/40 hover:bg-muted/50"
+                onClick={() => setPreview({ fileKey: doc.file_key, name: getDefaultFileName(doc.file_key), type: doc.document_types?.name || "Documento" })}
+              >
+                <CardContent className="flex items-center gap-4 p-4">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary shrink-0">
+                    <FileText className="h-5 w-5" />
                   </div>
-                  <p className="text-xs text-muted-foreground truncate">{doc.description || "Sin descripción"}</p>
-                  <div className="flex gap-3 text-xs text-muted-foreground mt-0.5">
-                    {doc.vehicles?.license_plate && <span>🚗 {doc.vehicles.license_plate}</span>}
-                    {doc.expiration_date && <span>📅 Vence: {new Date(doc.expiration_date).toLocaleDateString("es-CL")}</span>}
-                    <span>{new Date(doc.created_at).toLocaleDateString("es-CL")}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="font-medium text-sm">{doc.document_types?.name}</p>
+                      {needsExp && isExpiringSoon(doc.expiration_date) && (
+                        <span className="inline-flex items-center gap-0.5 text-[10px] font-medium text-destructive">
+                          <AlertCircle className="h-3 w-3" />Por vencer
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground truncate">{doc.description || "Sin descripción"}</p>
+                    <div className="flex gap-3 text-xs text-muted-foreground mt-0.5">
+                      {doc.vehicles?.license_plate && <span>🚗 {doc.vehicles.license_plate}</span>}
+                      {needsExp && doc.expiration_date && <span>📅 Vence: {new Date(doc.expiration_date).toLocaleDateString("es-CL")}</span>}
+                      <span>{new Date(doc.created_at).toLocaleDateString("es-CL")}</span>
+                    </div>
                   </div>
-                </div>
-                <div className="flex gap-1 shrink-0">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={(e) => { e.stopPropagation(); setPreview({ fileKey: doc.file_key, name: getDefaultFileName(doc.file_key), type: doc.document_types?.name || "Documento" }); }}
-                    title="Vista previa"
-                  >
-                    <Eye className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={(e) => { e.stopPropagation(); handleDownload(doc.file_key); }}
-                    title="Descargar archivo"
-                  >
-                    <Download className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={(e) => { e.stopPropagation(); handleDelete(doc.id, doc.file_key); }} title="Eliminar">
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                  <div className="flex gap-1 shrink-0">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={(e) => { e.stopPropagation(); setPreview({ fileKey: doc.file_key, name: getDefaultFileName(doc.file_key), type: doc.document_types?.name || "Documento" }); }}
+                      title="Vista previa"
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={(e) => { e.stopPropagation(); handleDownload(doc.file_key); }}
+                      title="Descargar archivo"
+                    >
+                      <Download className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={(e) => { e.stopPropagation(); handleDelete(doc.id, doc.file_key); }} title="Eliminar">
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       )}
 

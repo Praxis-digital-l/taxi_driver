@@ -119,28 +119,7 @@ serve(async (req) => {
         return json({ error: "Faltan parámetros requeridos (resultado o pdfBase64)." }, 400);
       }
 
-      // 0. Si se proporcionó idLiquidacion, verificar que no esté ya firmada
-      const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
-      const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-      if (idLiquidacion && supabaseUrl && serviceRoleKey) {
-        try {
-          const checkUrl = `${supabaseUrl.replace(/\/$/, "")}/rest/v1/liquidaciones?id=eq.${idLiquidacion}&select=firma_estado`;
-          const checkRes = await fetch(checkUrl, {
-            headers: {
-              "apikey": serviceRoleKey,
-              "Authorization": `Bearer ${serviceRoleKey}`,
-            },
-          });
-          const rows = await checkRes.json();
-          if (Array.isArray(rows) && rows[0]?.firma_estado === "firmada") {
-            throw new Error("Esta liquidación ya ha sido firmada por el empleador y no puede volver a firmarse.");
-          }
-        } catch (checkErr: any) {
-          if (checkErr.message?.includes("ya ha sido firmada")) {
-            throw checkErr;
-          }
-        }
-      }
+      console.log(`[FirmaWeb Edge] Iniciando proceso para ${resultado.nombre} (${resultado.trabajadorId})`);
 
       // 1. Obtener Token
       const token = await obtenerToken(baseUrl, authBase64);
@@ -158,7 +137,7 @@ serve(async (req) => {
           notificar: 1,
           etiqueta: "NOMINA",
           geolocalizar: 1,
-          hojaFinal: 1,
+          hojaFinal: 0,
         }),
       });
       const procesoData = await resProceso.json();
@@ -192,19 +171,15 @@ serve(async (req) => {
 
       const idDocumento = docData.IdDocumento;
 
-      // 4. Agregar Único Firmante: Empleador (Transportes El Montañez SpA)
-      // Conforme a la legislación laboral chilena, el empleador firma y valida legalmente la liquidación.
-      // Al usar hojaFinal: 1, FirmaWeb anexa una hoja final automática y posiciona las rúbricas sin requerir coordenadas.
-      const defaultEmail = Deno.env.get("FIRMAWEB_EMPLEADOR_EMAIL") || "benhantscheruk@gmail.com";
-      const empData = {
-        nombre: empleador?.nombre || "Transportes El Montañez",
-        apellidoPaterno: empleador?.apellidoPaterno || "SpA",
-        apellidoMaterno: empleador?.apellidoMaterno || "",
-        rut: empleador?.rut || "77.611.481-2",
-        email: empleador?.email || defaultEmail,
+      // 4. Agregar Firmante 1: Empleador (Transportes El Montañez)
+      const empData = empleador || {
+        nombre: "Transportes El Montañez SpA",
+        apellidoPaterno: "Montañez",
+        rut: "77.777.777-7",
+        email: "contacto@transporteselmontanez.cl",
       };
 
-      const resFirmante = await fetch(`${baseUrl}/agregar_firmante`, {
+      await fetch(`${baseUrl}/agregar_firmante`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -214,22 +189,47 @@ serve(async (req) => {
         body: JSON.stringify({
           idProceso,
           idGrupo,
-          nombre: empData.nombre,
-          apellidoPaterno: empData.apellidoPaterno,
-          apellidoMaterno: empData.apellidoMaterno,
-          rut: empData.rut,
-          email: empData.email,
-          tipoFirma: 2, // FES (Firma Electrónica Simple en FirmaWeb)
+          nombre: empData.nombre || "Representante",
+          apellidoPaterno: empData.apellidoPaterno || "Empleador",
+          apellidoMaterno: empData.apellidoMaterno || "",
+          rut: empData.rut || "77.777.777-7",
+          email: empData.email || "empleador@elmontanez.cl",
+          tipoFirma: 1, // FES (Firma Electrónica Simple)
+          paginaFirma: 1,
+          firmaPosX: 25, // Coordenada milimétrica izquierda
+          firmaPosY: 220,
         }),
       });
 
-      const firmanteData = await resFirmante.json();
-      if (firmanteData.Estado !== 1) {
-        throw new Error(`Error en agregar_firmante [Estado ${firmanteData.Estado}]: ${firmanteData.Mensaje}`);
-      }
+      // 5. Agregar Firmante 2: Conductor / Trabajador
+      const nombresSplit = (resultado.nombre || "").trim().split(" ");
+      const nombrePila = nombresSplit[0] || "Conductor";
+      const apellidoPaterno = nombresSplit.slice(1).join(" ") || "Trabajador";
 
-      // 5. Iniciar Proceso de Firma
-      const webhookBase = `${supabaseUrl ? supabaseUrl.replace(/\/$/, "") : ""}/functions/v1/firmaweb?action=webhook`;
+      await fetch(`${baseUrl}/agregar_firmante`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          idProceso,
+          idGrupo,
+          nombre: nombrePila,
+          apellidoPaterno: apellidoPaterno,
+          rut: resultado.rut || "11.111.111-1",
+          email: resultado.email,
+          tipoFirma: 1, // FES
+          paginaFirma: 1,
+          firmaPosX: 120, // Coordenada milimétrica derecha
+          firmaPosY: 220,
+        }),
+      });
+
+      // 6. Iniciar Proceso de Firma
+      const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+      const webhookBase = `${supabaseUrl.replace(/\/$/, "")}/functions/v1/firmaweb?action=webhook`;
 
       const resInicio = await fetch(`${baseUrl}/iniciar_proceso`, {
         method: "POST",
@@ -252,14 +252,16 @@ serve(async (req) => {
         throw new Error(`Error en iniciar_proceso [Estado ${inicioData.Estado}]: ${inicioData.Mensaje}`);
       }
 
-      console.log(`[FirmaWeb Edge] Proceso #${idProceso} iniciado con éxito para el Empleador!`);
+      console.log(`[FirmaWeb Edge] Proceso #${idProceso} iniciado con éxito!`);
 
       const firmantes: Array<{ Email: string; Url: string; Notificado: string }> = inicioData.Firmantes || [];
       const urlEmpleador = firmantes[0]?.Url ?? "";
+      const urlEmpleado = firmantes[1]?.Url ?? "";
 
-      // 6. Si se proporcionó idLiquidacion, registrar en la base de datos Supabase
+      // 7. Si se proporcionó idLiquidacion, registrar en la base de datos Supabase
       if (idLiquidacion && supabaseUrl) {
         try {
+          const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
           const restUrl = `${supabaseUrl.replace(/\/$/, "")}/rest/v1/liquidaciones?id=eq.${idLiquidacion}`;
           await fetch(restUrl, {
             method: "PATCH",
@@ -274,6 +276,7 @@ serve(async (req) => {
               firma_id_documento: idDocumento,
               firma_estado: "pendiente",
               firma_url_empleador: urlEmpleador,
+              firma_url_empleado: urlEmpleado,
               firma_iniciada_at: new Date().toISOString(),
             }),
           });
@@ -349,7 +352,7 @@ serve(async (req) => {
 
               const publicUrl = `${supabaseUrl.replace(/\/$/, "")}/storage/v1/object/public/Liquidaciones/${fileKey}`;
 
-              // Mantener en 'pendiente' hasta que el administrador suba y envíe manualmente el PDF firmado al conductor
+              // Marcar como firmada en la base de datos
               const updateUrl = `${supabaseUrl.replace(/\/$/, "")}/rest/v1/liquidaciones?id=eq.${row.id}`;
               await fetch(updateUrl, {
                 method: "PATCH",
@@ -360,12 +363,13 @@ serve(async (req) => {
                   "Prefer": "return=minimal",
                 },
                 body: JSON.stringify({
-                  firma_estado: "pendiente",
+                  firma_estado: "firmada",
+                  file_url: publicUrl,
                   firma_completada_at: new Date().toISOString(),
                 }),
               });
 
-              console.log(`[FirmaWeb Webhook] Firma recibida para liquidación #${row.id} (esperando envío manual de PDF firmado al conductor).`);
+              console.log(`[FirmaWeb Webhook] Liquidación #${row.id} actualizada a estado 'firmada'.`);
             }
           }
         }

@@ -10,7 +10,32 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.5"
+    PostgrestVersion: "14.17"
+  }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
   }
   public: {
     Tables: {
@@ -162,14 +187,17 @@ export type Database = {
         Row: {
           id: string
           name: string
+          requires_expiration: boolean
         }
         Insert: {
           id?: string
           name: string
+          requires_expiration?: boolean
         }
         Update: {
           id?: string
           name?: string
+          requires_expiration?: boolean
         }
         Relationships: []
       }
@@ -236,6 +264,102 @@ export type Database = {
             columns: ["vehicle_id"]
             isOneToOne: false
             referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      liquidaciones: {
+        Row: {
+          created_at: string
+          descuentos_primarios: Json
+          descuentos_secundarios: Json
+          email: string | null
+          enviado_por: string | null
+          fecha: string
+          file_url: string | null
+          firma_completada_at: string | null
+          firma_estado: string
+          firma_id_documento: string | null
+          firma_id_proceso: string | null
+          firma_iniciada_at: string | null
+          firma_url: string | null
+          firma_url_empleador: string | null
+          id: string
+          mes: string
+          nombre: string
+          profile_id: string
+          rut: string | null
+          subtotal: number
+          total_a_pagar: number
+          total_descuentos: number
+          total_facturado: number
+          worker_id: string
+        }
+        Insert: {
+          created_at?: string
+          descuentos_primarios?: Json
+          descuentos_secundarios?: Json
+          email?: string | null
+          enviado_por?: string | null
+          fecha: string
+          file_url?: string | null
+          firma_completada_at?: string | null
+          firma_estado?: string
+          firma_id_documento?: string | null
+          firma_id_proceso?: string | null
+          firma_iniciada_at?: string | null
+          firma_url?: string | null
+          firma_url_empleador?: string | null
+          id?: string
+          mes: string
+          nombre: string
+          profile_id: string
+          rut?: string | null
+          subtotal?: number
+          total_a_pagar?: number
+          total_descuentos?: number
+          total_facturado?: number
+          worker_id: string
+        }
+        Update: {
+          created_at?: string
+          descuentos_primarios?: Json
+          descuentos_secundarios?: Json
+          email?: string | null
+          enviado_por?: string | null
+          fecha?: string
+          file_url?: string | null
+          firma_completada_at?: string | null
+          firma_estado?: string
+          firma_id_documento?: string | null
+          firma_id_proceso?: string | null
+          firma_iniciada_at?: string | null
+          firma_url?: string | null
+          firma_url_empleador?: string | null
+          id?: string
+          mes?: string
+          nombre?: string
+          profile_id?: string
+          rut?: string | null
+          subtotal?: number
+          total_a_pagar?: number
+          total_descuentos?: number
+          total_facturado?: number
+          worker_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "liquidaciones_enviado_por_fkey"
+            columns: ["enviado_por"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "liquidaciones_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -330,78 +454,107 @@ export type Database = {
           },
         ]
       }
+      pendientes_pago: {
+        Row: {
+          created_at: string | null
+          estado_autopista: string
+          estado_seguro: string
+          estado_sueldo: string
+          fecha_pago_autopista: string | null
+          fecha_pago_seguro: string | null
+          fecha_pago_sueldo: string | null
+          id: string
+          liquidacion_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          estado_autopista?: string
+          estado_seguro?: string
+          estado_sueldo?: string
+          fecha_pago_autopista?: string | null
+          fecha_pago_seguro?: string | null
+          fecha_pago_sueldo?: string | null
+          id?: string
+          liquidacion_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          estado_autopista?: string
+          estado_seguro?: string
+          estado_sueldo?: string
+          fecha_pago_autopista?: string | null
+          fecha_pago_seguro?: string | null
+          fecha_pago_sueldo?: string | null
+          id?: string
+          liquidacion_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pendientes_pago_liquidacion_id_fkey"
+            columns: ["liquidacion_id"]
+            isOneToOne: true
+            referencedRelation: "liquidaciones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
-          apellido_materno: string
-          apellido_paterno: string
+          apellido_materno: string | null
+          apellido_paterno: string | null
           created_at: string
-          email: string
+          email: string | null
           estado_conductor: string
-          full_name: string
+          full_name: string | null
           id: string
-          nombres: string
+          nombres: string | null
           phone: string | null
           photo_url: string | null
           role: Database["public"]["Enums"]["app_role"]
-          rut: string
+          rut: string | null
           score: number | null
           updated_at: string
-          user_id: string
-          worker_id: string
+          user_id: string | null
+          worker_id: string | null
         }
         Insert: {
-          apellido_materno?: string
-          apellido_paterno?: string
+          apellido_materno?: string | null
+          apellido_paterno?: string | null
           created_at?: string
-          email?: string
+          email?: string | null
           estado_conductor?: string
-          full_name?: string
+          full_name?: string | null
           id?: string
-          nombres?: string
+          nombres?: string | null
           phone?: string | null
           photo_url?: string | null
           role?: Database["public"]["Enums"]["app_role"]
-          rut?: string
+          rut?: string | null
           score?: number | null
           updated_at?: string
-          user_id: string
-          worker_id?: string
+          user_id?: string | null
+          worker_id?: string | null
         }
         Update: {
-          apellido_materno?: string
-          apellido_paterno?: string
+          apellido_materno?: string | null
+          apellido_paterno?: string | null
           created_at?: string
-          email?: string
+          email?: string | null
           estado_conductor?: string
-          full_name?: string
+          full_name?: string | null
           id?: string
-          nombres?: string
+          nombres?: string | null
           phone?: string | null
           photo_url?: string | null
           role?: Database["public"]["Enums"]["app_role"]
-          rut?: string
+          rut?: string | null
           score?: number | null
           updated_at?: string
-          user_id?: string
-          worker_id?: string
-        }
-        Relationships: []
-      }
-      request_types: {
-        Row: {
-          id: string
-          min_score: number
-          name: string
-        }
-        Insert: {
-          id?: string
-          min_score?: number
-          name: string
-        }
-        Update: {
-          id?: string
-          min_score?: number
-          name?: string
+          user_id?: string | null
+          worker_id?: string | null
         }
         Relationships: []
       }
@@ -435,37 +588,67 @@ export type Database = {
         }
         Relationships: []
       }
+      request_types: {
+        Row: {
+          id: string
+          min_score: number
+          name: string
+        }
+        Insert: {
+          id?: string
+          min_score?: number
+          name: string
+        }
+        Update: {
+          id?: string
+          min_score?: number
+          name?: string
+        }
+        Relationships: []
+      }
       requests: {
         Row: {
           amount: number | null
           created_at: string
+          cuotas: number | null
           details: string | null
+          es_solicitud_especial: boolean | null
           id: string
           profile_id: string
+          recargo_porcentaje: number | null
           request_type_id: string
           status: string
+          total_con_recargo: number | null
           updated_at: string
           vehicle_id: string | null
         }
         Insert: {
           amount?: number | null
           created_at?: string
+          cuotas?: number | null
           details?: string | null
+          es_solicitud_especial?: boolean | null
           id?: string
           profile_id: string
+          recargo_porcentaje?: number | null
           request_type_id: string
           status?: string
+          total_con_recargo?: number | null
           updated_at?: string
           vehicle_id?: string | null
         }
         Update: {
           amount?: number | null
           created_at?: string
+          cuotas?: number | null
           details?: string | null
+          es_solicitud_especial?: boolean | null
           id?: string
           profile_id?: string
+          recargo_porcentaje?: number | null
           request_type_id?: string
           status?: string
+          total_con_recargo?: number | null
           updated_at?: string
           vehicle_id?: string | null
         }
@@ -489,81 +672,6 @@ export type Database = {
             columns: ["vehicle_id"]
             isOneToOne: false
             referencedRelation: "vehicles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      liquidaciones: {
-        Row: {
-          created_at: string
-          descuentos_primarios: Json
-          descuentos_secundarios: Json
-          email: string | null
-          enviado_por: string | null
-          fecha: string
-          file_url: string | null
-          id: string
-          mes: string
-          nombre: string
-          profile_id: string
-          rut: string | null
-          subtotal: number
-          total_a_pagar: number
-          total_descuentos: number
-          total_facturado: number
-          worker_id: string
-        }
-        Insert: {
-          created_at?: string
-          descuentos_primarios?: Json
-          descuentos_secundarios?: Json
-          email?: string | null
-          enviado_por?: string | null
-          fecha: string
-          file_url?: string | null
-          id?: string
-          mes: string
-          nombre: string
-          profile_id: string
-          rut?: string | null
-          subtotal?: number
-          total_a_pagar?: number
-          total_descuentos?: number
-          total_facturado?: number
-          worker_id: string
-        }
-        Update: {
-          created_at?: string
-          descuentos_primarios?: Json
-          descuentos_secundarios?: Json
-          email?: string | null
-          enviado_por?: string | null
-          fecha?: string
-          file_url?: string | null
-          id?: string
-          mes?: string
-          nombre?: string
-          profile_id?: string
-          rut?: string | null
-          subtotal?: number
-          total_a_pagar?: number
-          total_descuentos?: number
-          total_facturado?: number
-          worker_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "liquidaciones_enviado_por_fkey"
-            columns: ["enviado_por"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "liquidaciones_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -608,6 +716,7 @@ export type Database = {
         Row: {
           amount: number
           created_at: string
+          custom_insurance_name: string | null
           expiration_date: string
           id: string
           insurance_type: string
@@ -619,6 +728,7 @@ export type Database = {
         Insert: {
           amount?: number
           created_at?: string
+          custom_insurance_name?: string | null
           expiration_date: string
           id?: string
           insurance_type: string
@@ -630,6 +740,7 @@ export type Database = {
         Update: {
           amount?: number
           created_at?: string
+          custom_insurance_name?: string | null
           expiration_date?: string
           id?: string
           insurance_type?: string
@@ -642,7 +753,64 @@ export type Database = {
           {
             foreignKeyName: "vehicle_insurances_vehicle_id_fkey"
             columns: ["vehicle_id"]
-            isOneToOne: true
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vehicle_observations: {
+        Row: {
+          condition: string
+          created_at: string
+          description: string
+          id: string
+          issue_type: string
+          part_key: string
+          part_name: string
+          profile_id: string
+          status: string
+          updated_at: string
+          vehicle_id: string
+        }
+        Insert: {
+          condition?: string
+          created_at?: string
+          description: string
+          id?: string
+          issue_type?: string
+          part_key: string
+          part_name: string
+          profile_id: string
+          status?: string
+          updated_at?: string
+          vehicle_id: string
+        }
+        Update: {
+          condition?: string
+          created_at?: string
+          description?: string
+          id?: string
+          issue_type?: string
+          part_key?: string
+          part_name?: string
+          profile_id?: string
+          status?: string
+          updated_at?: string
+          vehicle_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicle_observations_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicle_observations_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
             referencedRelation: "vehicles"
             referencedColumns: ["id"]
           },
@@ -695,8 +863,8 @@ export type Database = {
           created_at: string
           id: string
           license_plate: string
-          make: string
-          model: string
+          make: string | null
+          model: string | null
           status: string
           updated_at: string
           year: number | null
@@ -706,8 +874,8 @@ export type Database = {
           created_at?: string
           id?: string
           license_plate: string
-          make?: string
-          model?: string
+          make?: string | null
+          model?: string | null
           status?: string
           updated_at?: string
           year?: number | null
@@ -717,8 +885,8 @@ export type Database = {
           created_at?: string
           id?: string
           license_plate?: string
-          make?: string
-          model?: string
+          make?: string | null
+          model?: string | null
           status?: string
           updated_at?: string
           year?: number | null
@@ -730,15 +898,57 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_create_conductor: {
+        Args: {
+          apellido_materno: string
+          apellido_paterno: string
+          email: string
+          full_name: string
+          nombres: string
+          password: string
+          phone: string
+          rut: string
+        }
+        Returns: undefined
+      }
+      can_access_profile: {
+        Args: { _profile_id: string; _user_id: string }
+        Returns: boolean
+      }
+      delete_auth_user: { Args: { user_id: string }; Returns: undefined }
+      get_conductor_del_mes: {
+        Args: { p_month?: number; p_year?: number }
+        Returns: Json
+      }
       has_vehicle_access: {
         Args: { _user_id: string; _vehicle_id: string }
         Returns: boolean
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
+      is_app_admin: { Args: never; Returns: boolean }
       is_conductor: { Args: { _user_id: string }; Returns: boolean }
+      mark_message_read: { Args: { msg_id: string }; Returns: undefined }
+      resolve_user_role: {
+        Args: { _user_id: string }
+        Returns: Database["public"]["Enums"]["app_role"]
+      }
+      set_profile_photo_url: {
+        Args: { new_photo_url: string }
+        Returns: undefined
+      }
+      update_own_profile: {
+        Args: {
+          p_apellido_materno: string
+          p_apellido_paterno: string
+          p_nombres: string
+          p_phone: string
+          p_rut: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
-      app_role: "admin" | "conductor"
+      app_role: "admin" | "conductor" | "super_admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -754,12 +964,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -783,11 +993,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -808,11 +1018,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -833,11 +1043,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -850,11 +1060,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -864,9 +1074,12 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
-      app_role: ["admin", "conductor"],
+      app_role: ["admin", "conductor", "super_admin"],
     },
   },
 } as const

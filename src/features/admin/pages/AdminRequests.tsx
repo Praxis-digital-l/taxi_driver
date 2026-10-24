@@ -333,10 +333,17 @@ export default function AdminRequests() {
                         <span className="text-xs text-muted-foreground">·</span>
                         <span className="text-sm font-semibold truncate">{typeName}</span>
                         <RequestPriorityBadge requestTypeName={typeName} />
+                        {request.es_solicitud_especial && (
+                          <span className="inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300">
+                            Solicitud Especial
+                          </span>
+                        )}
                       </div>
                       <p className="text-xs text-muted-foreground line-clamp-1">{request.details?.replace(/\n\n--- MOTIVO DEL RECHAZO .*/s, "") || "Sin detalles"}</p>
                       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
                         {request.amount != null && <span className="inline-flex items-center gap-1"><Wallet className="h-3 w-3" />{formatAmount(request.amount)}</span>}
+                        {request.cuotas != null && <span>({request.cuotas} cuotas)</span>}
+                        {request.total_con_recargo != null && <span>Total c/recargo: {formatAmount(request.total_con_recargo)}</span>}
                         {request.vehicles?.license_plate && <span className="inline-flex items-center gap-1"><Car className="h-3 w-3" />{request.vehicles.license_plate}</span>}
                         <span>{new Date(request.created_at).toLocaleDateString("es-CL")}</span>
                       </div>
@@ -387,7 +394,19 @@ export default function AdminRequests() {
                 <div className="min-w-0"><span className="text-muted-foreground">RUT:</span><p className="font-medium truncate">{detailReq.profiles?.rut ?? "—"}</p></div>
                 <div className="min-w-0"><span className="text-muted-foreground">Teléfono:</span><p className="font-medium truncate">{detailReq.profiles?.phone ?? "—"}</p></div>
                 <div className="min-w-0"><span className="text-muted-foreground">Patente:</span><p className="font-medium truncate">{detailReq.vehicles?.license_plate ?? "Sin vehículo"}</p></div>
-                <div className="min-w-0"><span className="text-muted-foreground">Monto:</span><p className="font-medium truncate">{detailReq.amount ? formatAmount(detailReq.amount) : "—"}</p></div>
+                <div className="min-w-0"><span className="text-muted-foreground">Monto Solicitado:</span><p className="font-medium truncate">{detailReq.amount ? formatAmount(detailReq.amount) : "—"}</p></div>
+                {detailReq.cuotas != null && (
+                  <div className="min-w-0"><span className="text-muted-foreground">Cuotas:</span><p className="font-medium truncate">{detailReq.cuotas} cuota(s){detailReq.total_con_recargo ? ` de ${formatAmount(Math.round(detailReq.total_con_recargo / detailReq.cuotas))}` : ""}</p></div>
+                )}
+                {detailReq.recargo_porcentaje != null && (
+                  <div className="min-w-0"><span className="text-muted-foreground">Recargo:</span><p className="font-medium truncate text-amber-600 dark:text-amber-400">{detailReq.recargo_porcentaje}%</p></div>
+                )}
+                {detailReq.total_con_recargo != null && (
+                  <div className="min-w-0"><span className="text-muted-foreground">Total c/recargo:</span><p className="font-semibold text-primary truncate">{formatAmount(detailReq.total_con_recargo)}</p></div>
+                )}
+                {detailReq.es_solicitud_especial && (
+                  <div className="min-w-0"><span className="text-muted-foreground">Categoría:</span><p className="font-medium text-purple-600 dark:text-purple-400 truncate">⭐ Solicitud Especial (Conductor Antiguo)</p></div>
+                )}
                 <div className="min-w-0"><span className="text-muted-foreground">Estado:</span><p className="flex items-center gap-2"><StatusBadge status={detailReq.status} />{detailReq.status === "aprobado" && (() => { const d = formatDateOnly(detailReq.updated_at); return d ? <span className="text-xs text-muted-foreground">· {d}</span> : null; })()}</p></div>
                 <div className="min-w-0"><span className="text-muted-foreground">Creado:</span><p className="font-medium truncate">{formatDateFull(detailReq.created_at)}</p></div>
                 {detailReq.status !== "pendiente" && (

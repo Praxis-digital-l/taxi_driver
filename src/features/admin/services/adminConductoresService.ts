@@ -246,7 +246,6 @@ export async function createConductorProfile(payload: {
   phone?: string;
   rut?: string;
   password?: string;
-  role?: "admin" | "conductor";
 }) {
   const nombresClean = (payload.nombres ?? "").trim();
   const paternoClean = (payload.apellidoPaterno ?? "").trim();
@@ -255,7 +254,6 @@ export async function createConductorProfile(payload: {
   const phoneClean = (payload.phone ?? "").trim();
   const rutClean = (payload.rut ?? "").trim();
   const passwordClean = (payload.password ?? "").trim();
-  const roleClean: "admin" | "conductor" = payload.role === "admin" ? "admin" : "conductor";
   const fullName = [nombresClean, paternoClean, maternoClean].filter(Boolean).join(" ");
 
   type ExistingProfileRow = {
@@ -299,7 +297,7 @@ export async function createConductorProfile(payload: {
     const effectiveEmail = emailClean || (existingProfile?.email ?? "").trim().toLowerCase();
     if (!effectiveEmail) {
       throw new Error(
-        "Para registrar contraseña y permitir el inicio de sesión, debes incluir el correo electrónico."
+        "Para registrar contraseña y permitir el inicio de sesión, debes incluir el correo electrónico del conductor."
       );
     }
 
@@ -316,7 +314,6 @@ export async function createConductorProfile(payload: {
         phone: phoneClean,
         rut: rutClean,
         worker_id: workerId,
-        role: roleClean,
         existing_user_id: existingProfile?.user_id || undefined,
       },
     });
@@ -361,16 +358,15 @@ export async function createConductorProfile(payload: {
           ...(phoneClean ? { phone: phoneClean } : {}),
           ...(rutClean ? { rut: rutClean } : {}),
           ...(workerId ? { worker_id: workerId } : {}),
-          role: roleClean,
         })
         .eq("id", finalProfileId);
       return finalProfileId;
     }
 
-    throw new Error("No se pudo obtener el perfil del usuario creado con contraseña.");
+    throw new Error("No se pudo obtener el perfil del conductor creado con contraseña.");
   }
 
-  // Si NO se proporcionó contraseña pero el perfil ya existe en profiles, actualizamos sus campos no vacíos
+  // Si NO se proporcionó contraseña pero el conductor ya existe en profiles, actualizamos sus campos no vacíos
   if (existingProfile?.id) {
     await supabase
       .from("profiles")
@@ -382,7 +378,6 @@ export async function createConductorProfile(payload: {
         ...(emailClean ? { email: emailClean } : {}),
         ...(phoneClean ? { phone: phoneClean } : {}),
         ...(rutClean ? { rut: rutClean } : {}),
-        ...(payload.role ? { role: roleClean } : {}),
       })
       .eq("id", existingProfile.id);
     return existingProfile.id;
@@ -401,14 +396,14 @@ export async function createConductorProfile(payload: {
       phone: phoneClean || null,
       rut: rutClean || null,
       worker_id: workerId,
-      role: roleClean,
+      role: "conductor",
     })
     .select("id")
     .single();
   assertNoError(error);
 
   const createdId = Array.isArray(data) ? (data[0] as { id: string } | undefined)?.id : (data as { id: string } | undefined)?.id;
-  if (!createdId) throw new Error("No se pudo obtener el id del perfil creado");
+  if (!createdId) throw new Error("No se pudo obtener el id del conductor creado");
   return createdId;
 }
 
