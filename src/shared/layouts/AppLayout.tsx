@@ -25,6 +25,7 @@ const baseAdminLinks = [
   { to: "/admin/bulk-upload", icon: Upload, label: "Carga Masiva" },
   { to: "/admin/pendientes", icon: Clock, label: "Pendientes" },
   { to: "/admin/finanzas", icon: ArrowLeftRight, label: "Ingresos y Egresos" },
+  { to: "/admin/rendimiento", icon: Truck, label: "Rendimiento de Activos" },
 ];
 
 const conductorLinks = [

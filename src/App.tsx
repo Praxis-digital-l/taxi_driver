@@ -26,6 +26,7 @@ import AdminConductores from "@/features/admin/pages/AdminConductores";
 import AdminNomina from "@/features/admin/pages/AdminNomina";
 import AdminBulkUpload from "@/features/admin/pages/AdminBulkUpload";
 import AdminFinanzas from "@/features/admin/pages/AdminFinanzas";
+import AdminRendimientoActivos from "@/features/admin/pages/AdminRendimientoActivos";
 import AdminPendientes from "@/features/admin/pages/AdminPendientes";
 import NotFound from "@/pages/NotFound";
 
@@ -98,6 +99,7 @@ const App = () => (
             <Route path="/admin/bulk-upload" element={<ProtectedRoute requiredRole="admin"><AppLayout><AdminBulkUpload /></AppLayout></ProtectedRoute>} />
             <Route path="/admin/pendientes" element={<ProtectedRoute requiredRole="admin"><AppLayout><AdminPendientes /></AppLayout></ProtectedRoute>} />
             <Route path="/admin/finanzas" element={<ProtectedRoute requiredRole="admin"><AppLayout><AdminFinanzas /></AppLayout></ProtectedRoute>} />
+            <Route path="/admin/rendimiento" element={<ProtectedRoute requiredRole="admin"><AppLayout><AdminRendimientoActivos /></AppLayout></ProtectedRoute>} />
             <Route path="/admin/users" element={<ProtectedRoute requiredRole="admin"><AppLayout><AdminUsers /></AppLayout></ProtectedRoute>} />
 
             <Route path="*" element={<Navigate to="/" replace />} />

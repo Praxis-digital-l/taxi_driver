@@ -27,6 +27,11 @@ export type LiquidacionRecord = {
   firma_url_empleador?: string | null;
   firma_iniciada_at?: string | null;
   firma_completada_at?: string | null;
+  vehicle_id?: string | null;
+  vehicle_plate?: string | null;
+  vehicle_make?: string | null;
+  vehicle_model?: string | null;
+  vehicle_year?: number | null;
 };
 
 const LIQUIDACIONES_BUCKET = "Liquidaciones";
@@ -95,6 +100,11 @@ function toRecord(row: Record<string, unknown>): LiquidacionRecord {
     firma_url_empleador: row.firma_url_empleador ? String(row.firma_url_empleador) : null,
     firma_iniciada_at: row.firma_iniciada_at ? String(row.firma_iniciada_at) : null,
     firma_completada_at: row.firma_completada_at ? String(row.firma_completada_at) : null,
+    vehicle_id: row.vehicle_id ? String(row.vehicle_id) : null,
+    vehicle_plate: row.vehicle_plate ? String(row.vehicle_plate) : null,
+    vehicle_make: row.vehicle_make ? String(row.vehicle_make) : null,
+    vehicle_model: row.vehicle_model ? String(row.vehicle_model) : null,
+    vehicle_year: row.vehicle_year != null ? Number(row.vehicle_year) : null,
   };
 }
 
@@ -166,6 +176,11 @@ export async function guardarLiquidacionPendiente(
       fecha,
       file_url: fileUrl,
       firma_estado: "sin_iniciar",
+      vehicle_id: resultado.vehicle_id || null,
+      vehicle_plate: resultado.vehicle_plate || null,
+      vehicle_make: resultado.vehicle_make || null,
+      vehicle_model: resultado.vehicle_model || null,
+      vehicle_year: resultado.vehicle_year || null,
     })
     .select(LIQUIDACION_COLUMNS)
     .single();
@@ -333,6 +348,11 @@ export async function subirYEnviarPdfFirmado(params: {
       file_url: fileUrl,
       firma_estado: "firmada",
       firma_completada_at: new Date().toISOString(),
+      vehicle_id: resultado.vehicle_id || null,
+      vehicle_plate: resultado.vehicle_plate || null,
+      vehicle_make: resultado.vehicle_make || null,
+      vehicle_model: resultado.vehicle_model || null,
+      vehicle_year: resultado.vehicle_year || null,
     })
     .select(LIQUIDACION_COLUMNS)
     .single();
@@ -404,6 +424,11 @@ export async function enviarLiquidacion(
       fecha,
       file_url: fileUrl,
       firma_estado: "firmada",
+      vehicle_id: resultado.vehicle_id || null,
+      vehicle_plate: resultado.vehicle_plate || null,
+      vehicle_make: resultado.vehicle_make || null,
+      vehicle_model: resultado.vehicle_model || null,
+      vehicle_year: resultado.vehicle_year || null,
     })
     .select(LIQUIDACION_COLUMNS)
     .single();

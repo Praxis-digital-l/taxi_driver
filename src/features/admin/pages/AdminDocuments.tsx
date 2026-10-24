@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import PageHeader from "@/components/PageHeader";
 import { FileText, Download, Eye, AlertCircle, Search } from "lucide-react";
 import { fetchAllDocuments, fetchDocumentTypes, type AdminDocument } from "@/features/admin/services/adminDocumentsService";
+import { formatMontoInput } from "@/lib/rendimientoActivos";
 import { downloadDocumentFile } from "@/shared/utils/storageFiles";
 import DocumentPreviewDialog from "@/features/admin/components/DocumentPreviewDialog";
 
@@ -155,6 +156,11 @@ export default function AdminDocuments() {
                   {document.expiration_date && (
                     <p className="text-xs text-muted-foreground">
                       Vence: {new Date(document.expiration_date).toLocaleDateString("es-CL")}
+                    </p>
+                  )}
+                  {Number(document.amount) > 0 && (
+                    <p className="text-xs text-muted-foreground font-mono">
+                      Monto: {formatMontoInput(Number(document.amount))}
                     </p>
                   )}
                 </div>

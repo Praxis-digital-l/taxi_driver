@@ -19,14 +19,21 @@ import {
   Clock,
   Bookmark,
   Info,
+  Truck,
 } from "lucide-react";
 import {
   type DatosNomina,
   type DescuentosTAG,
+  ARRIENDO_ESTANDAR,
   crearDescuentosTAG,
   validarDatosNomina,
 } from "@/lib/nomina";
 import { fetchAdminConductores, type ConductorRecord } from "@/features/admin/services/adminConductoresService";
+import {
+  fetchAdminVehiclesData,
+  type VehicleRecord,
+  type VehicleAssignmentRecord,
+} from "@/features/admin/services/adminVehiclesService";
 import {
   Dialog,
   DialogContent,
@@ -79,9 +86,14 @@ function formatPesos(digits: string): string {
 
 export default function NominaForm({ onCalcular }: NominaFormProps) {
   const [errores, setErrores] = useState<Record<string, string>>({});
-  const [values, setValues] = useState<Record<string, string>>({});
+  const [values, setValues] = useState<Record<string, string>>(() => ({
+    arriendo: formatPesos(String(ARRIENDO_ESTANDAR)),
+  }));
   const [conductores, setConductores] = useState<ConductorRecord[]>([]);
   const [selectedConductor, setSelectedConductor] = useState<ConductorRecord | null>(null);
+  const [vehicles, setVehicles] = useState<VehicleRecord[]>([]);
+  const [assignments, setAssignments] = useState<VehicleAssignmentRecord[]>([]);
+  const [selectedVehicle, setSelectedVehicle] = useState<VehicleRecord | null>(null);
   const [autopistas, setAutopistas] = useState<Array<{ key: string; label: string; recurrente: boolean }>>([]);
   const [agregando, setAgregando] = useState(false);
   const [nuevaAutopistaNombre, setNuevaAutopistaNombre] = useState("");
@@ -112,6 +124,12 @@ export default function NominaForm({ onCalcular }: NominaFormProps) {
   useEffect(() => {
     fetchAdminConductores()
       .then((data) => setConductores(data))
+      .catch(() => {});
+    fetchAdminVehiclesData()
+      .then((data) => {
+        setVehicles(data.vehicles || []);
+        setAssignments(data.assignments || []);
+      })
       .catch(() => {});
   }, []);
 
@@ -223,6 +241,11 @@ export default function NominaForm({ onCalcular }: NominaFormProps) {
       tag[label] = parseNum(key);
     }
 
+    if (!selectedVehicle) {
+      setErrores((prev) => ({ ...prev, vehiculo: "Debe seleccionar el vehículo con el cual se realizará esta liquidación." }));
+      return;
+    }
+
     const data: DatosNomina = {
       trabajadorId: selectedConductor?.worker_id || selectedConductor?.id || "",
       nombre: selectedConductor?.full_name || "",
@@ -244,6 +267,11 @@ export default function NominaForm({ onCalcular }: NominaFormProps) {
         }))
         .filter((d) => d.monto > 0 || d.descripcion.length > 0),
       efectivoMonto: parseNum("efectivoMonto"),
+      vehicle_id: selectedVehicle.id,
+      vehicle_plate: selectedVehicle.license_plate,
+      vehicle_make: selectedVehicle.make,
+      vehicle_model: selectedVehicle.model,
+      vehicle_year: selectedVehicle.year,
     };
 
     const validationErrors = validarDatosNomina(data);
@@ -342,6 +370,99 @@ export default function NominaForm({ onCalcular }: NominaFormProps) {
               ) : (
                 <div className="flex items-center justify-center rounded-lg bg-muted/20 h-[70px]">
                   <p className="text-xs text-muted-foreground italic">Seleccione un conductor</p>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center gap-2 text-lg text-slate-800 dark:text-slate-100">
+              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                <Truck className="h-4 w-4" />
+              </div>
+              Vehículo
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-1">
+              <Label htmlFor="vehiculo">Vehículo *</Label>
+              <Select
+                name="vehiculo"
+                value={selectedVehicle?.id || ""}
+                onValueChange={(value) => {
+                  if (!selectedConductor) {
+                    setErrores((prev) => ({ ...prev, vehiculo: "Primero debe seleccionar un conductor" }));
+                    return;
+                  }
+                  const condProfileId = (selectedConductor as any).id || (selectedConductor as any).profile_id;
+                  const assignment = assignments.find((a: any) => (a.profile_id === condProfileId || a.profiles?.id === condProfileId) && a.vehicle_id === value);
+                  if (!assignment) {
+                    // try match by vehicle id anyway
+                  }
+                  const veh = vehicles.find((v) => v.id === value) || null;
+                  setSelectedVehicle(veh);
+                  setErrores((prev) => {
+                    const next = { ...prev };
+                    delete next.vehiculo;
+                    return next;
+                  });
+                }}
+                disabled={!selectedConductor}
+              >
+                <SelectTrigger className={errores.vehiculo ? "border-destructive" : ""}>
+                  <SelectValue placeholder={selectedConductor ? "Seleccionar vehículo..." : "Primero seleccione un conductor"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {(() => {
+                    if (!selectedConductor) return null;
+                    const condProfileId = (selectedConductor as any).id || (selectedConductor as any).profile_id;
+                    const assignedVehicleIds = assignments
+                      .filter((a: any) => a.profile_id === condProfileId || a.profiles?.id === condProfileId)
+                      .map((a: any) => a.vehicle_id);
+                    const assigned = vehicles.filter((v) => assignedVehicleIds.includes(v.id));
+                    if (assigned.length === 0) {
+                      return <SelectItem value="none" disabled>Sin vehículos asignados</SelectItem>;
+                    }
+                    return assigned.map((v) => (
+                      <SelectItem key={v.id} value={v.id}>
+                        {v.license_plate} | {v.make} {v.model} {v.year ? v.year : ""}
+                      </SelectItem>
+                    ));
+                  })()}
+                </SelectContent>
+              </Select>
+              {errores.vehiculo && (
+                <p className="text-xs text-destructive">{errores.vehiculo}</p>
+              )}
+              {selectedConductor && (() => {
+                const condProfileId = (selectedConductor as any).id || (selectedConductor as any).profile_id;
+                const assignedVehicleIds = assignments
+                  .filter((a: any) => a.profile_id === condProfileId || a.profiles?.id === condProfileId)
+                  .map((a: any) => a.vehicle_id);
+                const assigned = vehicles.filter((v) => assignedVehicleIds.includes(v.id));
+                if (assigned.length === 0) {
+                  return <p className="text-xs text-amber-600">Este conductor no tiene vehículos asignados. Asignarle uno desde Gestión de Vehículos.</p>;
+                }
+                return null;
+              })()}
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs text-muted-foreground">Vista previa</Label>
+              {selectedVehicle ? (
+                <div className="flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3 h-[70px] dark:border-slate-700 dark:bg-slate-900">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-200 shrink-0">
+                    <Truck className="h-5 w-5" />
+                  </div>
+                  <div className="min-w-0 space-y-0.5">
+                    <p className="font-heading font-medium text-sm truncate text-slate-900 dark:text-slate-100">{selectedVehicle.license_plate}</p>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400">{selectedVehicle.make} {selectedVehicle.model} {selectedVehicle.year ? `(${selectedVehicle.year})` : ""}</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center justify-center rounded-lg bg-muted/20 h-[70px]">
+                  <p className="text-xs text-muted-foreground italic">Seleccione un vehículo</p>
                 </div>
               )}
             </div>

@@ -13,6 +13,7 @@ import { Plus, FileText, Trash2, Download, Eye, AlertCircle } from "lucide-react
 import { DOCUMENT_ACCEPT_ATTR, isAllowedDocumentFile } from "@/shared/utils/fileValidation";
 import { downloadDocumentFile } from "@/shared/utils/storageFiles";
 import DocumentPreviewDialog from "@/features/admin/components/DocumentPreviewDialog";
+import { documentoGeneraGasto, formatMontoInput, normalizarTexto, parseMontoInput } from "@/lib/rendimientoActivos";
 
 export default function ConductorDocuments() {
   const { profile, user } = useAuth();
@@ -23,6 +24,8 @@ export default function ConductorDocuments() {
   const [open, setOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [filterType, setFilterType] = useState("all");
+  const [monto, setMonto] = useState("");
+  const [selectedDocTypeId, setSelectedDocTypeId] = useState("");
 
   const [preview, setPreview] = useState<{ fileKey: string; name: string; type: string } | null>(null);
 
@@ -39,7 +42,12 @@ export default function ConductorDocuments() {
       supabase.from("vehicle_assignments").select("vehicle_id, vehicles(id, license_plate)").eq("profile_id", profile.id),
     ]);
     setDocuments(docsRes.data || []);
-    setDocTypes(typesRes.data || []);
+    const tiposFiltrados = (typesRes.data || []).filter((t: any) => {
+      const nombre = normalizarTexto(t.name);
+      if (nombre.includes("compra") && nombre.includes("repuesto")) return false;
+      return true;
+    });
+    setDocTypes(tiposFiltrados);
     setVehicles((vehRes.data || []).map((va: any) => va.vehicles));
   };
 
@@ -84,22 +92,27 @@ export default function ConductorDocuments() {
 
     const { data: urlData } = supabase.storage.from("Documents").getPublicUrl(fileKey);
     const vehicleId = form.get("vehicle_id") as string;
+    const documentTypeId = form.get("document_type_id") as string;
+    const documentTypeName = docTypes.find((t) => t.id === documentTypeId)?.name || "";
+    const amount = documentoGeneraGasto(documentTypeName) ? parseMontoInput(monto) : 0;
 
     const { error } = await supabase.from("documents").insert({
       profile_id: profile.id,
-      document_type_id: form.get("document_type_id") as string,
+      document_type_id: documentTypeId,
       vehicle_id: vehicleId === "none" ? null : vehicleId,
       file_url: urlData.publicUrl,
       file_key: fileKey,
       description: form.get("description") as string,
       expiration_date: (form.get("expiration_date") as string) || null,
-    });
+      amount,
+    } as any);
 
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
       toast({ title: "Documento subido correctamente" });
       setOpen(false);
+      setMonto("");
       load();
     }
     setUploading(false);
@@ -140,7 +153,16 @@ export default function ConductorDocuments() {
   return (
     <div>
       <PageHeader title="Mis Documentos" description={`${documents.length} documento(s) en total`}>
-        <Dialog open={open} onOpenChange={setOpen}>
+        <Dialog
+          open={open}
+          onOpenChange={(value) => {
+            setOpen(value);
+            if (!value) {
+              setMonto("");
+              setSelectedDocTypeId("");
+            }
+          }}
+        >
           <DialogTrigger asChild>
             <Button size="sm"><Plus className="mr-1.5 h-4 w-4" />Subir Documento</Button>
           </DialogTrigger>
@@ -149,7 +171,18 @@ export default function ConductorDocuments() {
             <form onSubmit={handleUpload} className="space-y-4">
               <div className="space-y-2">
                 <Label>Tipo de documento *</Label>
-                <Select name="document_type_id" required>
+                <Select
+                  name="document_type_id"
+                  required
+                  value={selectedDocTypeId}
+                  onValueChange={(value) => {
+                    setSelectedDocTypeId(value);
+                    const tipo = docTypes.find((t) => t.id === value)?.name || "";
+                    if (!documentoGeneraGasto(tipo)) {
+                      setMonto("");
+                    }
+                  }}
+                >
                   <SelectTrigger><SelectValue placeholder="Seleccionar tipo" /></SelectTrigger>
                   <SelectContent>
                     {docTypes.map((t) => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
@@ -157,15 +190,27 @@ export default function ConductorDocuments() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Vehículo asociado</Label>
+                <Label>Vehículo</Label>
                 <Select name="vehicle_id" defaultValue="none">
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder="Seleccionar vehículo" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">Sin vehículo</SelectItem>
-                    {vehicles.map((v: any) => <SelectItem key={v.id} value={v.id}>{v.license_plate}</SelectItem>)}
+                    {vehicles.map((v) => <SelectItem key={v.id} value={v.id}>{v.license_plate} {v.make && v.model ? `- ${v.make} ${v.model}` : ""}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
+              {documentoGeneraGasto(docTypes.find((t) => t.id === selectedDocTypeId)?.name || "") && (
+                <div className="space-y-2">
+                  <Label>Monto ($)</Label>
+                  <Input
+                    inputMode="numeric"
+                    placeholder="Ej: $ 50.000"
+                    value={monto}
+                    onChange={(e) => setMonto(formatMontoInput(e.target.value))}
+                  />
+                  <p className="text-[10px] text-muted-foreground">Se usa para Repuestos o Revisión Técnica.</p>
+                </div>
+              )}
               <div className="space-y-2">
                 <Label>Descripción</Label>
                 <Input name="description" placeholder="Ej: Liquidación marzo 2026" maxLength={200} />

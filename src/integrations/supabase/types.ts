@@ -175,6 +175,7 @@ export type Database = {
       }
       documents: {
         Row: {
+          amount: number | null
           created_at: string
           description: string | null
           document_type_id: string
@@ -188,6 +189,7 @@ export type Database = {
           vehicle_id: string | null
         }
         Insert: {
+          amount?: number | null
           created_at?: string
           description?: string | null
           document_type_id: string
@@ -201,6 +203,7 @@ export type Database = {
           vehicle_id?: string | null
         }
         Update: {
+          amount?: number | null
           created_at?: string
           description?: string | null
           document_type_id?: string
@@ -640,6 +643,47 @@ export type Database = {
             foreignKeyName: "vehicle_insurances_vehicle_id_fkey"
             columns: ["vehicle_id"]
             isOneToOne: true
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vehicle_prorrateos: {
+        Row: {
+          anio_rendimiento: number
+          created_at: string
+          fecha_registro: string
+          id: string
+          mes_rendimiento: number
+          monto: number
+          updated_at: string
+          vehicle_id: string
+        }
+        Insert: {
+          anio_rendimiento: number
+          created_at?: string
+          fecha_registro: string
+          id?: string
+          mes_rendimiento: number
+          monto?: number
+          updated_at?: string
+          vehicle_id: string
+        }
+        Update: {
+          anio_rendimiento?: number
+          created_at?: string
+          fecha_registro?: string
+          id?: string
+          mes_rendimiento?: number
+          monto?: number
+          updated_at?: string
+          vehicle_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicle_prorrateos_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
             referencedRelation: "vehicles"
             referencedColumns: ["id"]
           },
