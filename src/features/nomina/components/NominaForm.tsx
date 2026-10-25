@@ -42,12 +42,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useToast } from "@/hooks/use-toast";
 
 interface NominaFormProps {
   onCalcular: (data: DatosNomina) => void;
 }
 
 const SPINNER_HIDE = "[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none";
+const AUTOPISTAS_RECURRENTES_STORAGE_KEY = "nomina.autopistas-recurrentes";
 
 const CAMPOS_BASE = [
   { id: "totalFacturado", label: "Total facturado", placeholder: "Ej: 1.500.000" },
@@ -83,9 +85,32 @@ export default function NominaForm({ onCalcular }: NominaFormProps) {
   const [autopistas, setAutopistas] = useState<Array<{ key: string; label: string; recurrente: boolean }>>([]);
   const [agregando, setAgregando] = useState(false);
   const [nuevaAutopistaNombre, setNuevaAutopistaNombre] = useState("");
+  const [dialogAutopistaAbierto, setDialogAutopistaAbierto] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
+    try {
+      const storedAutopistas = window.localStorage.getItem(AUTOPISTAS_RECURRENTES_STORAGE_KEY);
+      if (storedAutopistas) {
+        const nombres = JSON.parse(storedAutopistas) as unknown;
+        if (!Array.isArray(nombres) || !nombres.every((nombre) => typeof nombre === "string")) {
+          throw new Error("El formato de las autopistas recurrentes no es válido.");
+        }
+        setAutopistas(nombres.map((label) => ({
+          key: `autopista_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+          label,
+          recurrente: true,
+        })));
+      }
+    } catch (error) {
+      toast({
+        title: "No se pudieron cargar las autopistas recurrentes",
+        description: error instanceof Error ? error.message : "Revisa el almacenamiento local del navegador.",
+        variant: "destructive",
+      });
+    }
+
     fetchAdminConductores()
       .then((data) => setConductores(data))
       .catch(() => {});
@@ -95,7 +120,7 @@ export default function NominaForm({ onCalcular }: NominaFormProps) {
         setAssignments(data.assignments || []);
       })
       .catch(() => {});
-  }, []);
+  }, [toast]);
 
   const handleCurrencyChange = (id: string, raw: string) => {
     const digits = raw.replace(/\D/g, "");
@@ -111,19 +136,67 @@ export default function NominaForm({ onCalcular }: NominaFormProps) {
   const confirmarAgregar = () => {
     const nombre = nuevaAutopistaNombre.trim();
     if (!nombre) return;
-    if (autopistas.some((a) => a.label === nombre)) return;
+    if (autopistas.some((a) => a.label.toLocaleLowerCase("es-CL") === nombre.toLocaleLowerCase("es-CL"))) {
+      toast({
+        title: "Autopista ya agregada",
+        description: `${nombre} ya está en el desglose TAG.`,
+      });
+      return;
+    }
+    setDialogAutopistaAbierto(true);
+  };
+
+  const agregarAutopista = (recurrente: boolean) => {
+    const nombre = nuevaAutopistaNombre.trim();
+    if (!nombre) return;
+    let guardarComoRecurrente = recurrente;
+    if (recurrente) {
+      try {
+        const nombresRecurrentes = autopistas.filter((autopista) => autopista.recurrente).map((autopista) => autopista.label);
+        window.localStorage.setItem(
+          AUTOPISTAS_RECURRENTES_STORAGE_KEY,
+          JSON.stringify([...nombresRecurrentes, nombre])
+        );
+      } catch (error) {
+        guardarComoRecurrente = false;
+        toast({
+          title: "No se pudo guardar como recurrente",
+          description: error instanceof Error ? error.message : "La autopista se agregará solo a este cálculo.",
+          variant: "destructive",
+        });
+      }
+    }
+
     const key = `autopista_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
-    setAutopistas((prev) => [...prev, { key, label: nombre }]);
+    setAutopistas((prev) => [...prev, { key, label: nombre, recurrente: guardarComoRecurrente }]);
+    setValues((prev) => ({ ...prev, [key]: "" }));
     setNuevaAutopistaNombre("");
     setAgregando(false);
+    setDialogAutopistaAbierto(false);
   };
 
   const cancelarAgregar = () => {
     setNuevaAutopistaNombre("");
     setAgregando(false);
+    setDialogAutopistaAbierto(false);
   };
 
   const eliminarAutopista = (key: string, label?: string) => {
+    const autopista = autopistas.find((item) => item.key === key);
+    if (autopista?.recurrente) {
+      try {
+        window.localStorage.setItem(
+          AUTOPISTAS_RECURRENTES_STORAGE_KEY,
+          JSON.stringify(autopistas.filter((item) => item.key !== key && item.recurrente).map((item) => item.label))
+        );
+      } catch (error) {
+        toast({
+          title: "No se pudo quitar la autopista recurrente",
+          description: error instanceof Error ? error.message : "La autopista podría volver a aparecer en el próximo cálculo.",
+          variant: "destructive",
+        });
+      }
+    }
     setAutopistas((prev) => prev.filter((a) => a.key !== key));
     setValues((prev) => {
       const { [key]: _, ...rest } = prev;
@@ -161,6 +234,7 @@ export default function NominaForm({ onCalcular }: NominaFormProps) {
       nombre: selectedConductor?.full_name || "",
       email: selectedConductor?.email || "",
       rut: selectedConductor?.rut || "",
+      estadoConductor: selectedConductor?.estado_conductor,
       totalFacturado: parseNum("totalFacturado"),
       gastoOperacional: parseNum("gastoOperacional"),
       diesel: parseNum("diesel"),
@@ -567,6 +641,25 @@ export default function NominaForm({ onCalcular }: NominaFormProps) {
           Calcular nómina
         </Button>
       </div>
+
+      <Dialog open={dialogAutopistaAbierto} onOpenChange={setDialogAutopistaAbierto}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>¿Mantener autopista recurrente?</DialogTitle>
+            <DialogDescription>
+              ¿Quieres guardar “{nuevaAutopistaNombre.trim()}” para que aparezca también en próximos cálculos de nómina?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => agregarAutopista(false)}>
+              No, solo esta vez
+            </Button>
+            <Button type="button" onClick={() => agregarAutopista(true)}>
+              Sí, mantener recurrente
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </form>
   );
 }

@@ -12,6 +12,7 @@ export type DatosNomina = {
   nombre: string;
   email: string;
   rut: string;
+  estadoConductor?: string;
   totalFacturado: number;
   gastoOperacional: number;
   diesel: number;
@@ -152,6 +153,7 @@ export function calcularNomina(data: DatosNomina): ResultadoNomina {
     data.efectivoMonto;
 
   const subtotal = data.totalFacturado;
+  const esConductorNuevo = data.estadoConductor?.trim().toLocaleLowerCase("es-CL") === "nuevo";
 
   // Descuentos extra (uno o varios, definidos solo para este cálculo; no se persisten)
   const descuentosExtra: DetalleDescuento[] = (data.descuentosExtra ?? [])
@@ -167,6 +169,12 @@ export function calcularNomina(data: DatosNomina): ResultadoNomina {
   );
 
   const descuentosSecundarios: DetalleDescuento[] = [
+    ...(esConductorNuevo
+      ? [{
+          concepto: "Conductor nuevo (50%)",
+          monto: (subtotal - totalDescuentosPrimarios) / 2,
+        }]
+      : []),
     { concepto: "Mantención", monto: data.mantencion },
     { concepto: "Anticipo", monto: data.anticipo },
     { concepto: "Préstamo", monto: data.prestamo },
@@ -174,6 +182,7 @@ export function calcularNomina(data: DatosNomina): ResultadoNomina {
   ];
 
   const totalDescuentosSecundarios =
+    (esConductorNuevo ? (subtotal - totalDescuentosPrimarios) / 2 : 0) +
     data.mantencion + data.anticipo + data.prestamo + totalDescuentosExtra;
   const totalDescuentos = totalDescuentosPrimarios + totalDescuentosSecundarios;
   const totalAPagar = subtotal - totalDescuentos;
