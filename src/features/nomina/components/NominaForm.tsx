@@ -269,9 +269,10 @@ export default function NominaForm({ onCalcular }: NominaFormProps) {
                     </span>
                   </div>
                 </div>
-              )}
-            </div>
-          </CardContent>
+              </div>
+            ) : null}
+          </div>
+        </CardContent>
         </Card>
 
         <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
@@ -367,20 +368,7 @@ export default function NominaForm({ onCalcular }: NominaFormProps) {
           </CardContent>
         </Card>
 
-        <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
-          <CardHeader className="pb-4">
-            <CardTitle className="flex items-center gap-2 text-lg text-slate-800 dark:text-slate-100">
-              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200">
-                <DollarSign className="h-4 w-4" />
-              </div>
-            ) : (
-              <div className="flex items-center justify-center rounded-lg bg-muted/20 h-[70px]">
-                <p className="text-xs text-muted-foreground italic">Seleccione un conductor</p>
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+
 
       <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
         <CardHeader className="pb-4">
