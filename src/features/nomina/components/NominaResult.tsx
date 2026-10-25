@@ -243,7 +243,7 @@ export default function NominaResult({ resultado }: NominaResultProps) {
         {/* PARTE SUPERIOR */}
         <div className="w-full m-0 p-0">
           {/* 1. ENCABEZADO OFICIAL OSCURO (Edge to edge full bleed) */}
-          <div className="w-full bg-[#0e131f] text-white px-10 py-7 rounded-none m-0 border-0">
+          <div className="w-full bg-slate-700 text-white px-10 py-7 rounded-none m-0 border-0">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               {/* Logo Login modo claro + Nombre Empresa */}
               <div className="flex items-center gap-4">
@@ -253,10 +253,10 @@ export default function NominaResult({ resultado }: NominaResultProps) {
                   className="h-12 w-12 rounded-xl object-contain shrink-0 shadow-md"
                 />
                 <div>
-                  <h2 className="text-2xl font-black tracking-wider uppercase text-white leading-none font-heading">
+                  <h2 className="text-2xl font-bold tracking-wide uppercase text-white leading-none font-body">
                     TRANSPORTES EL MONTAÑEZ
                   </h2>
-                  <p className="text-[11px] font-bold tracking-[0.25em] text-amber-400 uppercase mt-1 font-heading">
+                  <p className="text-[11px] font-semibold tracking-wider text-slate-300 uppercase mt-1 font-body">
                     LIQUIDACIÓN DE NÓMINA
                   </p>
                 </div>
@@ -264,10 +264,10 @@ export default function NominaResult({ resultado }: NominaResultProps) {
 
               {/* Documento Oficial + Mes */}
               <div className="text-left sm:text-right">
-                <span className="text-[10px] font-bold tracking-[0.22em] text-amber-400 uppercase block font-heading">
+                <span className="text-[10px] font-semibold tracking-wider text-slate-300 uppercase block font-body">
                   DOCUMENTO OFICIAL
                 </span>
-                <span className="text-3xl font-black capitalize text-white tracking-tight block leading-tight font-heading">
+                <span className="text-3xl font-bold capitalize text-white tracking-tight block leading-tight font-body">
                   {mes}
                 </span>
                 <span className="text-[11px] text-slate-400 block mt-0.5">
@@ -282,7 +282,7 @@ export default function NominaResult({ resultado }: NominaResultProps) {
             <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 sm:p-5">
               <div className="grid grid-cols-2 md:grid-cols-5 gap-4 sm:gap-6 items-start">
                 <div>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block font-heading">
+                  <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide block font-body">
                     TRABAJADOR
                   </span>
                   <span className="text-xs font-bold text-slate-900 block mt-1 leading-snug">
@@ -290,7 +290,7 @@ export default function NominaResult({ resultado }: NominaResultProps) {
                   </span>
                 </div>
                 <div>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block font-heading">
+                  <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide block font-body">
                     ID DE TRABAJADOR
                   </span>
                   <span className="text-xs font-bold text-slate-900 block mt-1 font-mono">
@@ -298,7 +298,7 @@ export default function NominaResult({ resultado }: NominaResultProps) {
                   </span>
                 </div>
                 <div>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block font-heading">
+                  <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide block font-body">
                     RUT
                   </span>
                   <span className="text-xs font-bold text-slate-900 block mt-1 font-mono">
@@ -306,7 +306,7 @@ export default function NominaResult({ resultado }: NominaResultProps) {
                   </span>
                 </div>
                 <div>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block font-heading">
+                  <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide block font-body">
                     CORREO
                   </span>
                   <span className="text-xs font-bold text-slate-900 block mt-1 truncate">
@@ -314,7 +314,7 @@ export default function NominaResult({ resultado }: NominaResultProps) {
                   </span>
                 </div>
                 <div>
-                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block font-heading">
+                  <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide block font-body">
                     VEHÍCULO
                   </span>
                   <span className="text-xs font-bold text-slate-900 block mt-1 leading-normal">
@@ -326,9 +326,8 @@ export default function NominaResult({ resultado }: NominaResultProps) {
 
             {/* 3. SECCIÓN: INGRESOS */}
             <div className="border border-slate-200/80 rounded-xl overflow-hidden bg-white shadow-sm">
-              <div className="bg-[#fef9ee] border-b border-amber-100/80 px-4 py-2 flex items-center gap-2">
-                <div className="w-1.5 h-3.5 bg-amber-500 rounded-sm"></div>
-                <span className="text-xs font-bold uppercase tracking-wider text-amber-800 font-heading">
+              <div className="bg-slate-100 border-b border-slate-200 px-4 py-2 flex items-center gap-2">
+                <span className="text-xs font-semibold uppercase tracking-wide text-slate-700 font-body">
                   INGRESOS
                 </span>
               </div>
@@ -345,8 +344,7 @@ export default function NominaResult({ resultado }: NominaResultProps) {
             {/* 4. SECCIÓN: DESCUENTOS */}
             <div className="border border-slate-200/80 rounded-xl overflow-hidden bg-white shadow-sm">
               <div className="bg-[#f8fafc] border-b border-slate-200/80 px-4 py-2 flex items-center gap-2">
-                <div className="w-1.5 h-3.5 bg-amber-500 rounded-sm"></div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-700 font-heading">
+                <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-700 font-body">
                   DESCUENTOS
                 </span>
               </div>
@@ -354,7 +352,7 @@ export default function NominaResult({ resultado }: NominaResultProps) {
                 {resultado.descuentosPrimarios.map((d, i) => (
                   <div key={`prim-${i}`} className="flex justify-between items-center text-xs">
                     <span className="text-slate-600 font-medium">{d.concepto}</span>
-                    <span className="font-semibold text-rose-500 font-mono">
+                    <span className="font-semibold text-slate-700 font-mono">
                       $-{Math.abs(d.monto).toLocaleString("es-CL")}
                     </span>
                   </div>
@@ -366,7 +364,7 @@ export default function NominaResult({ resultado }: NominaResultProps) {
                     {resultado.descuentosSecundarios.map((d, i) => (
                       <div key={`sec-${i}`} className="flex justify-between items-center text-xs">
                         <span className="text-slate-600 font-medium">{d.concepto}</span>
-                        <span className="font-semibold text-rose-500 font-mono">
+                        <span className="font-semibold text-slate-700 font-mono">
                           $-{Math.abs(d.monto).toLocaleString("es-CL")}
                         </span>
                       </div>
@@ -376,28 +374,28 @@ export default function NominaResult({ resultado }: NominaResultProps) {
               </div>
             </div>
 
-            {/* 5. TARJETA TOTALES OSCURA */}
-            <div className="bg-[#0e131f] text-white rounded-2xl p-6 shadow-md">
+            {/* 5. RESUMEN DE TOTALES */}
+            <div className="rounded-2xl border border-slate-300 bg-slate-100 p-6 text-slate-900 shadow-sm">
               <div className="space-y-2 pb-3.5">
-                <div className="flex justify-between text-xs text-slate-400">
+                <div className="flex justify-between text-xs text-slate-600">
                   <span>Subtotal</span>
-                  <span className="font-mono font-medium text-slate-200">
+                  <span className="font-mono font-medium text-slate-800">
                     ${resultado.subtotal.toLocaleString("es-CL")}
                   </span>
                 </div>
                 <div className="flex justify-between text-xs">
-                  <span className="text-slate-400">Total descuentos</span>
-                  <span className="font-mono font-medium text-rose-400">
+                  <span className="text-slate-600">Total descuentos</span>
+                  <span className="font-mono font-medium text-slate-700">
                     -${resultado.totalDescuentos.toLocaleString("es-CL")}
                   </span>
                 </div>
               </div>
 
-              <div className="border-t border-slate-800 my-3.5 pt-3.5 flex justify-between items-center">
-                <span className="text-xs font-black uppercase tracking-widest text-amber-400 font-heading">
+              <div className="border-t border-slate-300 my-3.5 pt-3.5 flex justify-between items-center">
+                <span className="text-xs font-bold uppercase tracking-wide text-slate-600 font-body">
                   TOTAL A PAGAR
                 </span>
-                <span className="text-3xl font-black text-white font-mono tracking-tight">
+                <span className="text-3xl font-black text-slate-900 font-mono tracking-tight">
                   {resultado.totalAPagar < 0
                     ? `$-${Math.abs(resultado.totalAPagar).toLocaleString("es-CL")}`
                     : `$${resultado.totalAPagar.toLocaleString("es-CL")}`}
@@ -411,7 +409,7 @@ export default function NominaResult({ resultado }: NominaResultProps) {
         <div className="px-8 pb-8 sm:px-10 sm:pb-10 pt-6">
           <div className="flex justify-between items-end text-[10px] text-slate-400">
             <div className="space-y-1">
-              <span className="font-bold text-slate-700 block uppercase text-xs font-heading">
+              <span className="font-semibold text-slate-700 block uppercase text-xs font-body">
                 TRANSPORTES EL MONTAÑEZ
               </span>
               <span className="block">

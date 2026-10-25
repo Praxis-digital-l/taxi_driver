@@ -7,6 +7,8 @@ const BASE: DatosNomina = {
   nombre: "Ana Gómez",
   email: "ana@test.com",
   rut: "11.111.111-1",
+  vehicle_id: "vehicle-1",
+  vehicle_plate: "AA-BB-11",
   totalFacturado: 1_000_000,
   gastoOperacional: 0,
   diesel: 0,
@@ -61,6 +63,51 @@ describe("calcularNomina", () => {
     });
 
     expect(r.descuentosSecundarios).toContainEqual({ concepto: "Descuento extra", monto: 5_000 });
+  });
+
+  it("paga el 50% del saldo después de los descuentos primarios a conductores nuevos", () => {
+    const r = calcularNomina({
+      ...BASE,
+      estadoConductor: "Nuevo",
+      totalFacturado: 5_000_000,
+      gastoOperacional: 200_000,
+      diesel: 150_000,
+      arriendo: 700_000,
+      seguro: 100_000,
+      efectivoMonto: 100_000,
+      mantencion: 200_000,
+      anticipo: 350_000,
+      prestamo: 150_000,
+    });
+
+    expect(r.descuentosSecundarios).toContainEqual({
+      concepto: "Conductor nuevo (50%)",
+      monto: 1_875_000,
+    });
+    expect(r.totalDescuentos).toBe(3_825_000);
+    expect(r.totalAPagar).toBe(1_175_000);
+  });
+
+  it("mantiene el cálculo tradicional cuando el conductor deja de ser nuevo", () => {
+    const r = calcularNomina({
+      ...BASE,
+      estadoConductor: "antiguo",
+      totalFacturado: 5_000_000,
+      gastoOperacional: 200_000,
+      diesel: 150_000,
+      arriendo: 700_000,
+      seguro: 100_000,
+      efectivoMonto: 100_000,
+      mantencion: 200_000,
+      anticipo: 350_000,
+      prestamo: 150_000,
+    });
+
+    expect(r.descuentosSecundarios).not.toContainEqual(
+      expect.objectContaining({ concepto: "Conductor nuevo (50%)" })
+    );
+    expect(r.totalDescuentos).toBe(1_950_000);
+    expect(r.totalAPagar).toBe(3_050_000);
   });
 });
 
