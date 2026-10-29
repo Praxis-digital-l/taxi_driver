@@ -19,6 +19,7 @@
     "migrate:request-benefits": "node scripts/apply-migration.mjs supabase/migrations/20261017010000_add_request_benefits_min_score.sql",
     "migrate:worker-id-auto": "node scripts/apply-migration.mjs supabase/worker_id_auto.sql",
     "migrate:seguros": "node scripts/apply-migration.mjs supabase/vehicle_insurances.sql",
+    "migrate:security-hardening": "node scripts/apply-migration.mjs supabase/migrations/20261029120000_security_hardening.sql",
     "test:firmaweb": "node --env-file=.env scripts/test-firmaweb.mjs",
     "deploy": "npm run build && npx gh-pages -d dist"
   },

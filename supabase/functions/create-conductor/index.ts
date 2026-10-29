@@ -51,6 +51,36 @@ serve(async (req) => {
       "Authorization": `Bearer ${serviceRoleKey}`,
     };
 
+    // --- Autorización ---------------------------------------------------------
+    // Esta función usa la service_role key, así que hay que comprobar que quien
+    // llama sea realmente un administrador. Sin esto, cualquier persona con la
+    // anon key pública podría crear/modificar usuarios de Auth.
+    const accessToken = (req.headers.get("Authorization") ?? "")
+      .replace(/^Bearer\s+/i, "")
+      .trim();
+    if (!accessToken) {
+      return json({ error: "No autenticado" }, 401);
+    }
+
+    const callerRes = await fetch(`${gotrueUrl}/user`, {
+      headers: { "apikey": serviceRoleKey, "Authorization": `Bearer ${accessToken}` },
+    });
+    if (!callerRes.ok) {
+      return json({ error: "No autenticado" }, 401);
+    }
+    const caller = await callerRes.json();
+    const callerUserId = caller?.id ?? null;
+
+    const callerRoleRes = await fetch(
+      `${restUrl}/profiles?user_id=eq.${callerUserId}&select=role&limit=1`,
+      { headers: authHeaders }
+    );
+    const callerRoleRows = await callerRoleRes.json();
+    const callerRole = Array.isArray(callerRoleRows) ? callerRoleRows[0]?.role : null;
+    if (callerRole !== "admin" && callerRole !== "super_admin") {
+      return json({ error: "No autorizado: se requiere rol de administrador" }, 403);
+    }
+
     const metadata = {
       full_name: full_name ?? "",
       nombres: nombres ?? "",
