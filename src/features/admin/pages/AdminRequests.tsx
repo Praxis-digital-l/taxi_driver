@@ -7,6 +7,14 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import StatusBadge from "@/components/StatusBadge";
@@ -15,7 +23,7 @@ import RequestTypeIcon from "@/components/RequestTypeIcon";
 import PageHeader from "@/components/PageHeader";
 import { buildRequestPriorityBreakdown, getRequestWaitingDays, resolveRequestTypeName } from "@/lib/requestPriority";
 import { supabase } from "@/integrations/supabase/client";
-import { Car, CheckCircle2, ClipboardList, Pencil, Trash2, Wallet, XCircle } from "lucide-react";
+import { Car, CheckCircle2, ChevronDown, ClipboardList, Pencil, Percent, Trash2, Wallet, XCircle } from "lucide-react";
 import {
   fetchAdminRequests,
   type AdminRequest,
@@ -24,6 +32,11 @@ import {
   updateRequest,
   deleteRequest,
 } from "@/features/admin/services/adminRequestsService";
+import {
+  DEFAULT_LOAN_SURCHARGE_PERCENT,
+  fetchLoanSurchargePercent,
+  updateLoanSurchargePercent,
+} from "@/shared/services/loanSettingsService";
 
 const TERMINAL_STATUSES = ["aprobado", "rechazado", "completado"];
 const FILTER_STATUSES = ["pendiente", "aprobado", "rechazado"];
@@ -73,6 +86,12 @@ export default function AdminRequests() {
   const [rejectOpen, setRejectOpen] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
   const [rejectLoading, setRejectLoading] = useState(false);
+
+  const [loanSurchargePercent, setLoanSurchargePercent] = useState(DEFAULT_LOAN_SURCHARGE_PERCENT);
+  const [percentInput, setPercentInput] = useState(String(DEFAULT_LOAN_SURCHARGE_PERCENT));
+  const [percentDialogOpen, setPercentDialogOpen] = useState(false);
+  const [percentConfirmOpen, setPercentConfirmOpen] = useState(false);
+  const [savingPercent, setSavingPercent] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -148,6 +167,18 @@ export default function AdminRequests() {
     initRequestTypes();
   }, []);
 
+  useEffect(() => {
+    let active = true;
+    fetchLoanSurchargePercent().then((value) => {
+      if (!active) return;
+      setLoanSurchargePercent(value);
+      setPercentInput(String(value));
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
+
   const isTerminal = (status: string) => TERMINAL_STATUSES.includes(status);
 
   const handleApprove = async () => {
@@ -196,6 +227,54 @@ export default function AdminRequests() {
   const openDetail = (req: AdminRequest) => {
     setDetailReq(req);
     setDetailOpen(true);
+  };
+
+  const handlePercentInputChange = (value: string) => {
+    setPercentInput(value.replace(/\D/g, "").slice(0, 3));
+  };
+
+  const handleOpenPercentConfirm = () => {
+    const parsed = Number(percentInput);
+    if (percentInput.trim() === "" || !Number.isInteger(parsed) || parsed < 0 || parsed > 100) {
+      toast({
+        title: "Porcentaje inválido",
+        description: "Ingresa un número entero entre 0 y 100.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (parsed === loanSurchargePercent) {
+      toast({
+        title: "El porcentaje no cambió",
+        description: `El recargo ya está en ${loanSurchargePercent}%.`,
+      });
+      return;
+    }
+    setPercentDialogOpen(false);
+    setPercentConfirmOpen(true);
+  };
+
+  const handleConfirmPercent = async () => {
+    const parsed = Number(percentInput);
+    setSavingPercent(true);
+    try {
+      const saved = await updateLoanSurchargePercent(parsed);
+      setLoanSurchargePercent(saved);
+      setPercentInput(String(saved));
+      setPercentConfirmOpen(false);
+      toast({
+        title: "Porcentaje actualizado",
+        description: `El recargo de préstamos ahora es del ${saved}%.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error al cambiar el porcentaje",
+        description: error instanceof Error ? error.message : "Ocurrió un error inesperado",
+        variant: "destructive",
+      });
+    } finally {
+      setSavingPercent(false);
+    }
   };
 
   const openEdit = (req: AdminRequest) => {
@@ -275,15 +354,41 @@ export default function AdminRequests() {
   return (
     <div>
       <PageHeader title="Gestión de Solicitudes" description={`${requests.length} resultado(s)`}>
-        <Select value={filter} onValueChange={setFilter}>
-          <SelectTrigger className="w-[160px] h-8 text-xs"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todas</SelectItem>
-            {FILTER_STATUSES.map((status) => (
-              <SelectItem key={status} value={status} className="capitalize">{status.replace("_", " ")}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="flex flex-wrap items-center gap-2">
+          <Select value={filter} onValueChange={setFilter}>
+            <SelectTrigger className="w-[160px] h-8 text-xs"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas</SelectItem>
+              {FILTER_STATUSES.map((status) => (
+                <SelectItem key={status} value={status} className="capitalize">{status.replace("_", " ")}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button type="button" variant="outline" size="sm" className="h-8 gap-1.5 text-xs">
+                <Percent className="h-3.5 w-3.5" />
+                Recargo {loanSurchargePercent}%
+                <ChevronDown className="h-3.5 w-3.5 opacity-60" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-60">
+              <DropdownMenuLabel className="text-xs">
+                Recargo de préstamos: {loanSurchargePercent}%
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={() => {
+                  setPercentInput(String(loanSurchargePercent));
+                  setPercentDialogOpen(true);
+                }}
+              >
+                <Percent className="mr-2 h-4 w-4" />
+                Cambiar porcentaje de recargo
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </PageHeader>
 
       {prioritySummary.length > 0 && (
@@ -568,6 +673,75 @@ export default function AdminRequests() {
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete} disabled={deleteLoading} className="bg-destructive hover:bg-destructive/90">
               {deleteLoading ? "Eliminando..." : "Eliminar"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Loan Surcharge Edit */}
+      <Dialog open={percentDialogOpen} onOpenChange={setPercentDialogOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Cambiar porcentaje de recargo</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="loan-surcharge-percent" className="text-xs">
+                Nuevo porcentaje (0-100)
+              </Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  id="loan-surcharge-percent"
+                  type="text"
+                  inputMode="numeric"
+                  value={percentInput}
+                  onChange={(e) => handlePercentInputChange(e.target.value)}
+                  className="w-24"
+                  autoFocus
+                />
+                <span className="text-sm text-muted-foreground">%</span>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Porcentaje actual: {loanSurchargePercent}%. Solo se permiten números enteros.
+              </p>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setPercentDialogOpen(false)}
+                disabled={savingPercent}
+              >
+                Cancelar
+              </Button>
+              <Button type="button" onClick={handleOpenPercentConfirm} disabled={savingPercent}>
+                Continuar
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Loan Surcharge Confirmation */}
+      <AlertDialog open={percentConfirmOpen} onOpenChange={setPercentConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Estás seguro de cambiar el porcentaje?</AlertDialogTitle>
+            <AlertDialogDescription>
+              El recargo de los préstamos pasará de {loanSurchargePercent}% a {percentInput}%.
+              No se recalcularán las solicitudes ya existentes.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={savingPercent}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                handleConfirmPercent();
+              }}
+              disabled={savingPercent}
+            >
+              {savingPercent ? "Guardando..." : "Sí, cambiar porcentaje"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -118,6 +118,7 @@ export async function updateRequest(requestId: string, updates: {
   vehicle_id?: string | null;
   amount?: number | null;
   details?: string;
+  updated_at?: string;
 }) {
   const { data, error } = await supabase.from("requests").update(updates).eq("id", requestId).select();
   assertNoError(error);

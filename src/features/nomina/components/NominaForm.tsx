@@ -72,11 +72,26 @@ function formatPesos(digits: string): string {
   return `$ ${Number(digits).toLocaleString("es-CL")}`;
 }
 
+type OtroDescuento = {
+  key: string;
+  descripcion: string;
+  monto: string;
+};
+
+function crearOtroDescuento(): OtroDescuento {
+  return {
+    key: `descuento_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+    descripcion: "",
+    monto: "",
+  };
+}
+
 export default function NominaForm({ onCalcular }: NominaFormProps) {
   const [errores, setErrores] = useState<Record<string, string>>({});
   const [values, setValues] = useState<Record<string, string>>(() => ({
     arriendo: formatPesos(String(ARRIENDO_ESTANDAR)),
   }));
+  const [otrosDescuentos, setOtrosDescuentos] = useState<OtroDescuento[]>(() => [crearOtroDescuento()]);
   const [conductores, setConductores] = useState<ConductorRecord[]>([]);
   const [selectedConductor, setSelectedConductor] = useState<ConductorRecord | null>(null);
   const [vehicles, setVehicles] = useState<VehicleRecord[]>([]);
@@ -125,6 +140,27 @@ export default function NominaForm({ onCalcular }: NominaFormProps) {
   const handleCurrencyChange = (id: string, raw: string) => {
     const digits = raw.replace(/\D/g, "");
     setValues((prev) => ({ ...prev, [id]: digits ? formatPesos(digits) : "" }));
+  };
+
+  const agregarOtroDescuento = () => {
+    setOtrosDescuentos((prev) => [...prev, crearOtroDescuento()]);
+  };
+
+  const eliminarOtroDescuento = (key: string) => {
+    setOtrosDescuentos((prev) => (prev.length <= 1 ? prev : prev.filter((d) => d.key !== key)));
+  };
+
+  const actualizarOtroDescuento = (key: string, campo: "descripcion" | "monto", value: string) => {
+    setOtrosDescuentos((prev) =>
+      prev.map((d) => {
+        if (d.key !== key) return d;
+        if (campo === "monto") {
+          const digits = value.replace(/\D/g, "");
+          return { ...d, monto: digits ? formatPesos(digits) : "" };
+        }
+        return { ...d, descripcion: value };
+      })
+    );
   };
 
   const iniciarAgregar = () => {
@@ -219,6 +255,11 @@ export default function NominaForm({ onCalcular }: NominaFormProps) {
       return digits ? parseInt(digits, 10) : 0;
     };
 
+    const parseMonto = (raw: string): number => {
+      const digits = (raw || "").replace(/\D/g, "");
+      return digits ? parseInt(digits, 10) : 0;
+    };
+
     const tag = crearDescuentosTAG();
     for (const { key, label } of autopistas) {
       tag[label] = parseNum(key);
@@ -244,8 +285,10 @@ export default function NominaForm({ onCalcular }: NominaFormProps) {
       mantencion: parseNum("mantencion"),
       anticipo: parseNum("anticipo"),
       prestamo: parseNum("prestamo"),
-      otroDescuentoDescripcion: (values.otroDescuentoDescripcion || "").trim(),
-      otroDescuentoMonto: parseNum("otroDescuentoMonto"),
+      descuentosExtra: otrosDescuentos.map(({ descripcion, monto }) => ({
+        descripcion: descripcion.trim(),
+        monto: parseMonto(monto),
+      })),
       efectivoMonto: parseNum("efectivoMonto"),
       vehicle_id: selectedVehicle.id,
       vehicle_plate: selectedVehicle.license_plate,
@@ -467,21 +510,57 @@ export default function NominaForm({ onCalcular }: NominaFormProps) {
             Otros descuentos
           </CardTitle>
         </CardHeader>
-        <CardContent className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-1">
-            <Label htmlFor="otroDescuentoDescripcion">Descripción</Label>
-            <Input
-              id="otroDescuentoDescripcion"
-              name="otroDescuentoDescripcion"
-              type="text"
-              value={values.otroDescuentoDescripcion || ""}
-              onChange={(e) =>
-                setValues((prev) => ({ ...prev, otroDescuentoDescripcion: e.target.value }))
-              }
-              placeholder="Ej: Multa, cobro administrativo"
-            />
-          </div>
-          {renderCurrencyInput({ id: "otroDescuentoMonto", label: "Monto", placeholder: "Ej: 20.000" })}
+        <CardContent className="space-y-4">
+          {otrosDescuentos.map(({ key, descripcion, monto }) => (
+            <div key={key} className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-1">
+                <Label htmlFor={`${key}-descripcion`}>Descripción</Label>
+                <Input
+                  id={`${key}-descripcion`}
+                  type="text"
+                  value={descripcion}
+                  onChange={(e) => actualizarOtroDescuento(key, "descripcion", e.target.value)}
+                  placeholder="Ej: Multa, cobro administrativo"
+                />
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-center justify-between gap-2">
+                  <Label htmlFor={`${key}-monto`}>Monto</Label>
+                  {otrosDescuentos.length > 1 && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-5 w-5 text-muted-foreground hover:text-destructive"
+                      aria-label="Eliminar descuento"
+                      onClick={() => eliminarOtroDescuento(key)}
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </Button>
+                  )}
+                </div>
+                <Input
+                  id={`${key}-monto`}
+                  type="text"
+                  inputMode="numeric"
+                  value={monto}
+                  onChange={(e) => actualizarOtroDescuento(key, "monto", e.target.value)}
+                  placeholder="Ej: 20.000"
+                  className={SPINNER_HIDE}
+                />
+              </div>
+            </div>
+          ))}
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="w-full gap-2"
+            onClick={agregarOtroDescuento}
+          >
+            <Plus className="h-4 w-4" />
+            Agregar descuento
+          </Button>
         </CardContent>
       </Card>
 

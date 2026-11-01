@@ -759,6 +759,47 @@ export type Database = {
           },
         ]
       }
+      vehicle_manual_repuestos: {
+        Row: {
+          anio_rendimiento: number
+          created_at: string
+          fecha_registro: string
+          id: string
+          mes_rendimiento: number
+          monto: number
+          updated_at: string
+          vehicle_id: string
+        }
+        Insert: {
+          anio_rendimiento: number
+          created_at?: string
+          fecha_registro: string
+          id?: string
+          mes_rendimiento: number
+          monto?: number
+          updated_at?: string
+          vehicle_id: string
+        }
+        Update: {
+          anio_rendimiento?: number
+          created_at?: string
+          fecha_registro?: string
+          id?: string
+          mes_rendimiento?: number
+          monto?: number
+          updated_at?: string
+          vehicle_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicle_manual_repuestos_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vehicle_observations: {
         Row: {
           condition: string
@@ -920,6 +961,7 @@ export type Database = {
         Args: { p_month?: number; p_year?: number }
         Returns: Json
       }
+      get_prestamo_recargo_porcentaje: { Args: never; Returns: number }
       has_vehicle_access: {
         Args: { _user_id: string; _vehicle_id: string }
         Returns: boolean
@@ -931,6 +973,10 @@ export type Database = {
       resolve_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
+      }
+      set_prestamo_recargo_porcentaje: {
+        Args: { p_porcentaje: number }
+        Returns: number
       }
       set_profile_photo_url: {
         Args: { new_photo_url: string }

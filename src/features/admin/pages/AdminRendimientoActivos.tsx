@@ -22,9 +22,12 @@ import {
   obtenerNominaVehiculoPeriodo,
   obtenerPeriodoLiquidacion,
   obtenerProrrateoVehiculoPeriodo,
+  obtenerRepuestoManualVehiculoPeriodo,
   upsertVehicleProrrateo,
+  upsertVehicleManualRepuesto,
   type AssetDocument,
   type ProrrateoRecord,
+  type RepuestoManualRecord,
 } from "@/features/admin/services/rendimientoActivosService";
 import {
   ARRIENDO_ESTANDAR,
@@ -92,8 +95,10 @@ export default function AdminRendimientoActivos() {
   const [liquidaciones, setLiquidaciones] = useState<LiquidacionRecord[]>([]);
   const [documentos, setDocumentos] = useState<AssetDocument[]>([]);
   const [prorrateos, setProrrateos] = useState<ProrrateoRecord[]>([]);
+  const [repuestosManuales, setRepuestosManuales] = useState<RepuestoManualRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [guardando, setGuardando] = useState(false);
+  const [guardandoRepuestos, setGuardandoRepuestos] = useState(false);
 
   const [selectedVehicleId, setSelectedVehicleId] = useState("");
   const [periodo, setPeriodo] = useState<PeriodoRendimiento & { todos?: boolean }>(() => ({
@@ -102,6 +107,10 @@ export default function AdminRendimientoActivos() {
   }));
   const [fechaRegistro, setFechaRegistro] = useState(() => fechaLocalISO(new Date()));
   const [prorrateoInput, setProrrateoInput] = useState("");
+  const [fechaRegistroRepuestos, setFechaRegistroRepuestos] = useState(() =>
+    fechaLocalISO(new Date())
+  );
+  const [repuestosManualInput, setRepuestosManualInput] = useState("");
 
   const cargar = async () => {
     setLoading(true);
@@ -111,6 +120,7 @@ export default function AdminRendimientoActivos() {
       setLiquidaciones(data.liquidaciones);
       setDocumentos(data.documentos);
       setProrrateos(data.prorrateos);
+      setRepuestosManuales(data.repuestosManuales);
       setSelectedVehicleId((prev) => prev || data.vehicles[0]?.id || "");
     } catch (error) {
       toast({
@@ -141,6 +151,11 @@ export default function AdminRendimientoActivos() {
     [fechaRegistro]
   );
 
+  const periodoAplicadoRepuestos = useMemo(
+    () => periodoDesdeFechaRegistro(fechaRegistroRepuestos),
+    [fechaRegistroRepuestos]
+  );
+
   const prorrateoRecord = useMemo(
     () =>
       selectedVehicleId
@@ -152,6 +167,20 @@ export default function AdminRendimientoActivos() {
   useEffect(() => {
     setProrrateoInput(prorrateoRecord ? formatMontoInput(prorrateoRecord.monto) : "");
   }, [prorrateoRecord]);
+
+  const repuestoManualRecord = useMemo(
+    () =>
+      selectedVehicleId
+        ? obtenerRepuestoManualVehiculoPeriodo(repuestosManuales, selectedVehicleId, periodo)
+        : null,
+    [repuestosManuales, selectedVehicleId, periodo]
+  );
+
+  useEffect(() => {
+    setRepuestosManualInput(
+      repuestoManualRecord ? formatMontoInput(repuestoManualRecord.monto) : ""
+    );
+  }, [repuestoManualRecord]);
 
   const nominaAcumulada = useMemo(() => {
     if (!selectedVehicleId) return null;
@@ -225,6 +254,21 @@ export default function AdminRendimientoActivos() {
     return prorrateoRecord?.monto || 0;
   }, [prorrateos, selectedVehicleId, periodo, prorrateoRecord]);
 
+  const repuestosManualAcumulado = useMemo(() => {
+    if (!selectedVehicleId) return 0;
+    if (periodo.todos) {
+      let total = 0;
+      for (let i = 0; i < repuestosManuales.length; i++) {
+        const r = repuestosManuales[i];
+        if (r.vehicle_id === selectedVehicleId && r.anio_rendimiento === periodo.anio) {
+          total += Number(r.monto) || 0;
+        }
+      }
+      return total;
+    }
+    return repuestoManualRecord?.monto || 0;
+  }, [repuestosManuales, selectedVehicleId, periodo, repuestoManualRecord]);
+
   const resultado = useMemo(
     () =>
       calcularRendimientoActivo({
@@ -234,8 +278,9 @@ export default function AdminRendimientoActivos() {
         prorrateo: prorrateoAcumulado,
         revisionTecnica: documentosPeriodo.revisionTecnica,
         repuestos: documentosPeriodo.repuestos,
+        repuestosManual: repuestosManualAcumulado,
       }),
-    [nomina, prorrateoAcumulado, documentosPeriodo]
+    [nomina, prorrateoAcumulado, documentosPeriodo, repuestosManualAcumulado]
   );
 
   const aniosDisponibles = useMemo(() => {
@@ -252,8 +297,9 @@ export default function AdminRendimientoActivos() {
       const fecha = new Date(doc.created_at);
       if (!Number.isNaN(fecha.getTime())) anios.add(fecha.getFullYear());
     });
+    repuestosManuales.forEach((item) => anios.add(item.anio_rendimiento));
     return Array.from(anios).sort((a, b) => b - a);
-  }, [liquidaciones, documentos, periodo.anio, periodoAplicado.anio]);
+  }, [liquidaciones, documentos, repuestosManuales, periodo.anio, periodoAplicado.anio]);
 
   const handleGuardarProrrateo = async () => {
     if (!selectedVehicleId) return;
@@ -293,6 +339,47 @@ export default function AdminRendimientoActivos() {
       });
     } finally {
       setGuardando(false);
+    }
+  };
+
+  const handleGuardarRepuestos = async () => {
+    if (!selectedVehicleId) return;
+
+    setGuardandoRepuestos(true);
+    try {
+      const guardado = await upsertVehicleManualRepuesto({
+        vehicleId: selectedVehicleId,
+        monto: parseMontoInput(repuestosManualInput),
+        fechaRegistro: fechaRegistroRepuestos,
+        periodo: periodoAplicadoRepuestos,
+      });
+
+      setRepuestosManuales((prev) => [
+        ...prev.filter(
+          (item) =>
+            !(
+              item.vehicle_id === guardado.vehicle_id &&
+              item.anio_rendimiento === guardado.anio_rendimiento &&
+              item.mes_rendimiento === guardado.mes_rendimiento
+            )
+        ),
+        guardado,
+      ]);
+      setPeriodo(periodoAplicadoRepuestos);
+      setRepuestosManualInput(formatMontoInput(guardado.monto));
+
+      toast({
+        title: "Repuestos de compra directa guardados",
+        description: `Aplicado al rendimiento de ${formatearPeriodo(periodoAplicadoRepuestos)}.`,
+      });
+    } catch (error) {
+      toast({
+        title: "No se pudieron guardar los repuestos",
+        description: error instanceof Error ? error.message : "Intenta nuevamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setGuardandoRepuestos(false);
     }
   };
 
@@ -468,7 +555,7 @@ export default function AdminRendimientoActivos() {
                 />
                 <FilaValor
                   label="Repuestos"
-                  detalle="Documentos del vehículo en el período"
+                  detalle={`Documentos: ${formatCLP(resultado.repuestosDocumentos)} · Compra directa: ${formatCLP(resultado.repuestosManual)}`}
                   valor={resultado.repuestos}
                 />
               </div>
@@ -590,6 +677,78 @@ export default function AdminRendimientoActivos() {
                     <Save className="h-3.5 w-3.5" />
                   )}
                   {guardando ? "Guardando..." : "Guardar Prorrateo Permiso de circulacion"}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="shadow-sm">
+            <CardHeader className="border-b pb-3.5">
+              <CardTitle className="text-base font-heading flex items-center gap-2">
+                <Wrench className="h-4 w-4" />
+                Repuestos comprados directamente
+              </CardTitle>
+              <CardDescription className="text-xs">
+                Registra solo el monto total de repuestos adquiridos por el administrador. Se suma
+                a los repuestos ingresados como documentos; no los reemplaza.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="pt-4 space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label htmlFor="repuestosManual">Monto total de repuestos (compra directa)</Label>
+                  <Input
+                    id="repuestosManual"
+                    inputMode="numeric"
+                    value={repuestosManualInput}
+                    onChange={(event) =>
+                      setRepuestosManualInput(formatMontoInput(event.target.value))
+                    }
+                    placeholder="Ej: $ 120.000"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="fechaRegistroRepuestos">Fecha de registro</Label>
+                  <Input
+                    id="fechaRegistroRepuestos"
+                    type="date"
+                    value={fechaRegistroRepuestos}
+                    onChange={(event) => setFechaRegistroRepuestos(event.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-lg border bg-muted/20 p-3 text-xs">
+                <span className="text-muted-foreground flex items-center gap-1.5">
+                  <ShieldCheck className="h-3.5 w-3.5" />
+                  Se aplicará al rendimiento de{" "}
+                  <strong className="text-foreground capitalize">
+                    {formatearPeriodo(periodoAplicadoRepuestos)}
+                  </strong>
+                </span>
+                {repuestoManualRecord && (
+                  <span className="text-muted-foreground">
+                    Valor registrado:{" "}
+                    <strong className="text-foreground font-mono">
+                      {formatCLP(repuestoManualRecord.monto)}
+                    </strong>
+                  </span>
+                )}
+              </div>
+
+              <div className="flex justify-end">
+                <Button
+                  size="sm"
+                  className="gap-1.5"
+                  onClick={handleGuardarRepuestos}
+                  disabled={guardandoRepuestos}
+                >
+                  {guardandoRepuestos ? (
+                    <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Save className="h-3.5 w-3.5" />
+                  )}
+                  {guardandoRepuestos ? "Guardando..." : "Guardar repuestos"}
                 </Button>
               </div>
             </CardContent>

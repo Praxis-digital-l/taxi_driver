@@ -28,6 +28,17 @@ describe("loanRules", () => {
       const b = calculateLoanBreakdown(100000, 0);
       expect(b.cuotas).toBe(1);
     });
+
+    it("usa un porcentaje de recargo personalizado y lo limita a 0-100", () => {
+      const b = calculateLoanBreakdown(200000, 2, 35);
+      expect(b.recargoPorcentaje).toBe(35);
+      expect(b.recargoMonto).toBe(70000);
+      expect(b.totalConRecargo).toBe(270000);
+      expect(b.valorCuota).toBe(135000);
+
+      expect(calculateLoanBreakdown(100000, 1, 150).recargoPorcentaje).toBe(100);
+      expect(calculateLoanBreakdown(100000, 1, -5).recargoPorcentaje).toBe(0);
+    });
   });
 
   describe("hasActiveLoanRequest", () => {
@@ -175,6 +186,13 @@ describe("loanRules", () => {
       expect(text).toContain("• Total a pagar: $240.000");
       expect(text).toContain("4 cuota(s) de $60.000");
       expect(text).toContain("Emergencia médica");
+    });
+
+    it("refleja el porcentaje de recargo personalizado", () => {
+      const breakdown = calculateLoanBreakdown(200000, 4, 35);
+      const text = buildLoanDetails({ breakdown, motivo: "Viaje" });
+      expect(text).toContain("• Recargo (35%): +$70.000");
+      expect(text).toContain("• Total a pagar: $270.000");
     });
   });
 });
