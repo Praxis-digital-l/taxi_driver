@@ -3,7 +3,8 @@
  *
  * Requerimientos:
  * 1. Solo pueden solicitar préstamos conductores con 8 o más estrellas (score >= 8).
- * 2. El Préstamo tiene un recargo del 20%, resaltado con confirmación explícita.
+ * 2. El Préstamo tiene un recargo (20% por defecto, configurable por el administrador),
+ *    resaltado con confirmación explícita.
  * 3. Máximo hasta 6 cuotas (1 a 6).
  * 4. Bloqueo si existen cuotas pendientes o un préstamo en curso (status 'pendiente', 'en_proceso', 'aprobado').
  * 5. Rangos según antigüedad:
@@ -14,6 +15,7 @@
 
 export const MIN_LOAN_SCORE = 8;
 export const LOAN_SURCHARGE_PERCENT = 20;
+export const MAX_LOAN_SURCHARGE_PERCENT = 100;
 export const MIN_LOAN_CUOTAS = 1;
 export const MAX_LOAN_CUOTAS = 6;
 
@@ -55,16 +57,24 @@ export function isLoanRequestType(typeName?: string | null): boolean {
   return normalized.includes("prestamo");
 }
 
-export function calculateLoanBreakdown(amount: number, cuotas: number): LoanBreakdown {
+export function calculateLoanBreakdown(
+  amount: number,
+  cuotas: number,
+  recargoPorcentaje: number = LOAN_SURCHARGE_PERCENT
+): LoanBreakdown {
   const montoSolicitado = Math.max(0, Number(amount) || 0);
   const safeCuotas = Math.min(MAX_LOAN_CUOTAS, Math.max(MIN_LOAN_CUOTAS, Number(cuotas) || 1));
-  const recargoMonto = Math.round(montoSolicitado * (LOAN_SURCHARGE_PERCENT / 100));
+  const safePorcentaje = Math.min(
+    MAX_LOAN_SURCHARGE_PERCENT,
+    Math.max(0, Number(recargoPorcentaje) || 0)
+  );
+  const recargoMonto = Math.round(montoSolicitado * (safePorcentaje / 100));
   const totalConRecargo = montoSolicitado + recargoMonto;
   const valorCuota = safeCuotas > 0 ? Math.round(totalConRecargo / safeCuotas) : totalConRecargo;
 
   return {
     montoSolicitado,
-    recargoPorcentaje: LOAN_SURCHARGE_PERCENT,
+    recargoPorcentaje: safePorcentaje,
     recargoMonto,
     totalConRecargo,
     cuotas: safeCuotas,
@@ -180,7 +190,7 @@ export function buildLoanDetails(params: {
 
   lines.push(`• Conductor: ${estadoConductor === "antiguo" ? "Antiguo" : "Nuevo"}`);
   lines.push(`• Monto solicitado: $${breakdown.montoSolicitado.toLocaleString("es-CL")}`);
-  lines.push(`• Recargo (20%): +$${breakdown.recargoMonto.toLocaleString("es-CL")}`);
+  lines.push(`• Recargo (${breakdown.recargoPorcentaje}%): +$${breakdown.recargoMonto.toLocaleString("es-CL")}`);
   lines.push(`• Total a pagar: $${breakdown.totalConRecargo.toLocaleString("es-CL")}`);
   lines.push(`• Cuotas: ${breakdown.cuotas} cuota(s) de $${breakdown.valorCuota.toLocaleString("es-CL")}`);
 

@@ -25,6 +25,10 @@ import {
   calculateLoanBreakdown,
   buildLoanDetails,
 } from "@/lib/loanRules";
+import {
+  DEFAULT_LOAN_SURCHARGE_PERCENT,
+  fetchLoanSurchargePercent,
+} from "@/shared/services/loanSettingsService";
 import { Car, ClipboardList, Pencil, Plus, Trash2, Wallet, XCircle, CheckCircle2, AlertTriangle, Star, Palmtree } from "lucide-react";
 
 const TERMINAL_STATUSES = ["aprobado", "rechazado", "completado"];
@@ -85,6 +89,9 @@ export default function ConductorRequests() {
   const [loanCuotas, setLoanCuotas] = useState<number>(1);
   const [isSpecialRequest, setIsSpecialRequest] = useState<boolean>(false);
   const [loanConfirmOpen, setLoanConfirmOpen] = useState<boolean>(false);
+  const [loanSurchargePercent, setLoanSurchargePercent] = useState<number>(
+    DEFAULT_LOAN_SURCHARGE_PERCENT
+  );
 
   const [detailReq, setDetailReq] = useState<any>(null);
   const [detailOpen, setDetailOpen] = useState(false);
@@ -112,6 +119,7 @@ export default function ConductorRequests() {
     setRequests(rRes.data || []);
     setReqTypes(tRes.data || []);
     setVehicles((vRes.data || []).map((va: any) => va.vehicles));
+    fetchLoanSurchargePercent().then(setLoanSurchargePercent).catch(() => {});
     return rRes.data || [];
   };
 
@@ -188,7 +196,8 @@ export default function ConductorRequests() {
 
   const currentLoanBreakdown = calculateLoanBreakdown(
     Math.max(0, parseInt(loanAmount, 10) || 0),
-    loanCuotas
+    loanCuotas,
+    loanSurchargePercent
   );
 
   const handleCreate = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -230,7 +239,7 @@ export default function ConductorRequests() {
         return;
       }
 
-      // Requisito: Mensaje resaltado de recargo del 20% con opción para continuar o no
+      // Requisito: Mensaje resaltado del recargo vigente con opción para continuar o no
       setLoanConfirmOpen(true);
       return;
     }
@@ -264,7 +273,7 @@ export default function ConductorRequests() {
     setLoanConfirmOpen(false);
 
     const parsedAmount = parseInt(loanAmount, 10) || 0;
-    const breakdown = calculateLoanBreakdown(parsedAmount, loanCuotas);
+    const breakdown = calculateLoanBreakdown(parsedAmount, loanCuotas, loanSurchargePercent);
     const formattedDetails = buildLoanDetails({
       breakdown,
       motivo: newDetails.trim(),
@@ -278,7 +287,7 @@ export default function ConductorRequests() {
       vehicle_id: newVehicleId === "none" ? null : newVehicleId,
       amount: breakdown.montoSolicitado,
       cuotas: breakdown.cuotas,
-      recargo_porcentaje: 20,
+      recargo_porcentaje: loanSurchargePercent,
       total_con_recargo: breakdown.totalConRecargo,
       es_solicitud_especial: isSpecialRequest && isEstadoAntiguo,
       details: formattedDetails,
@@ -473,14 +482,14 @@ export default function ConductorRequests() {
 
                   {isScoreEligible && !hasActiveLoan && (
                     <>
-                      {/* Cartel resaltado obligatorio: Recargo del 20% */}
+                      {/* Cartel resaltado obligatorio: Recargo vigente */}
                       <div className="rounded-xl border-2 border-amber-500 bg-amber-500/10 p-4 space-y-2.5 shadow-sm">
                         <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 font-bold text-sm sm:text-base">
                           <AlertTriangle className="h-5 w-5 shrink-0" />
-                          <span>El Préstamo tiene un recargo del 20%</span>
+                          <span>El Préstamo tiene un recargo del {loanSurchargePercent}%</span>
                         </div>
                         <p className="text-xs text-muted-foreground leading-relaxed">
-                          Ten muy en cuenta que todo préstamo solicitado incluye un recargo administrativo obligatorio del 20% sobre el monto original.
+                          Ten muy en cuenta que todo préstamo solicitado incluye un recargo administrativo obligatorio del {loanSurchargePercent}% sobre el monto original.
                         </p>
 
                         {parseInt(loanAmount, 10) > 0 && (
@@ -490,7 +499,7 @@ export default function ConductorRequests() {
                               <span className="font-semibold">{formatAmount(currentLoanBreakdown.montoSolicitado)}</span>
                             </div>
                             <div className="flex justify-between text-amber-600 dark:text-amber-400 font-semibold">
-                              <span>Recargo del 20%:</span>
+                              <span>Recargo del {loanSurchargePercent}%:</span>
                               <span>+{formatAmount(currentLoanBreakdown.recargoMonto)}</span>
                             </div>
                             <div className="flex justify-between border-t pt-1 font-bold text-foreground">
@@ -709,7 +718,7 @@ export default function ConductorRequests() {
                 {loading
                   ? "Procesando..."
                   : isLoanSelected
-                  ? "Solicitar Préstamo (con 20% de recargo)"
+                  ? `Solicitar Préstamo (con ${loanSurchargePercent}% de recargo)`
                   : "Enviar Solicitud"}
               </Button>
             </form>
@@ -717,18 +726,18 @@ export default function ConductorRequests() {
         </Dialog>
       </PageHeader>
 
-      {/* DIÁLOGO OBLIGATORIO DE CONFIRMACIÓN DE RECARGO DEL 20% */}
+      {/* DIÁLOGO OBLIGATORIO DE CONFIRMACIÓN DEL RECARGO VIGENTE */}
       <AlertDialog open={loanConfirmOpen} onOpenChange={setLoanConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2 text-amber-600 dark:text-amber-400">
               <AlertTriangle className="h-5 w-5 shrink-0" />
-              <span>Confirmación de Préstamo con Recargo del 20%</span>
+              <span>Confirmación de Préstamo con Recargo del {loanSurchargePercent}%</span>
             </AlertDialogTitle>
             <AlertDialogDescription asChild>
               <div className="space-y-3 text-left pt-2 text-sm text-foreground">
                 <p className="font-semibold text-amber-800 dark:text-amber-200">
-                  ⚠️ El Préstamo tiene un recargo del 20%.
+                  ⚠️ El Préstamo tiene un recargo del {loanSurchargePercent}%.
                 </p>
                 <div className="rounded-lg bg-muted/60 border p-3 text-xs space-y-1.5">
                   <div className="flex justify-between">
@@ -736,7 +745,7 @@ export default function ConductorRequests() {
                     <span className="font-semibold">{formatAmount(currentLoanBreakdown.montoSolicitado)}</span>
                   </div>
                   <div className="flex justify-between text-amber-600 dark:text-amber-400 font-bold">
-                    <span>Recargo obligatorio (20%):</span>
+                    <span>Recargo obligatorio ({loanSurchargePercent}%):</span>
                     <span>+{formatAmount(currentLoanBreakdown.recargoMonto)}</span>
                   </div>
                   <div className="flex justify-between border-t pt-1 font-bold">
@@ -755,7 +764,7 @@ export default function ConductorRequests() {
                   )}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  El conductor debe tener total claridad de que este monto incluye el recargo del 20%. ¿Deseas continuar con el envío de la solicitud?
+                  El conductor debe tener total claridad de que este monto incluye el recargo del {loanSurchargePercent}%. ¿Deseas continuar con el envío de la solicitud?
                 </p>
               </div>
             </AlertDialogDescription>

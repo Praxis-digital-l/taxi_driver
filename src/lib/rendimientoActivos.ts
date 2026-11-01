@@ -29,6 +29,7 @@ export type RendimientoActivoInput = {
   prorrateo: number;
   revisionTecnica: number;
   repuestos: number;
+  repuestosManual?: number;
 };
 
 export type RendimientoActivoResultado = {
@@ -38,6 +39,8 @@ export type RendimientoActivoResultado = {
   mantencion: number;
   prorrateo: number;
   revisionTecnica: number;
+  repuestosDocumentos: number;
+  repuestosManual: number;
   repuestos: number;
   totalDescuentos: number;
   rendimiento: number;
@@ -51,7 +54,9 @@ export function calcularRendimientoActivo(
   const mantencion = Number(input.mantencion) || 0;
   const prorrateo = Number(input.prorrateo) || 0;
   const revisionTecnica = Number(input.revisionTecnica) || 0;
-  const repuestos = Number(input.repuestos) || 0;
+  const repuestosDocumentos = Number(input.repuestos) || 0;
+  const repuestosManual = Number(input.repuestosManual) || 0;
+  const repuestos = repuestosDocumentos + repuestosManual;
 
   const seguroDescontado = Math.round(seguroTotal * 0.5);
   const totalDescuentos =
@@ -64,6 +69,8 @@ export function calcularRendimientoActivo(
     mantencion,
     prorrateo,
     revisionTecnica,
+    repuestosDocumentos,
+    repuestosManual,
     repuestos,
     totalDescuentos,
     rendimiento: arriendo - totalDescuentos,

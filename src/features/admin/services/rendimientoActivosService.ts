@@ -34,6 +34,17 @@ export type ProrrateoRecord = {
   updated_at: string;
 };
 
+export type RepuestoManualRecord = {
+  id: string;
+  vehicle_id: string;
+  monto: number;
+  anio_rendimiento: number;
+  mes_rendimiento: number;
+  fecha_registro: string;
+  created_at: string;
+  updated_at: string;
+};
+
 export type NominaVehiculoPeriodo = {
   arriendo: number;
   seguroTotal: number;
@@ -196,6 +207,21 @@ export function obtenerProrrateoVehiculoPeriodo(
   );
 }
 
+export function obtenerRepuestoManualVehiculoPeriodo(
+  repuestos: RepuestoManualRecord[],
+  vehicleId: string,
+  periodo: PeriodoRendimiento
+): RepuestoManualRecord | null {
+  return (
+    repuestos.find(
+      (item) =>
+        item.vehicle_id === vehicleId &&
+        item.anio_rendimiento === periodo.anio &&
+        item.mes_rendimiento === periodo.mes
+    ) || null
+  );
+}
+
 export async function fetchAssetDocuments(): Promise<AssetDocument[]> {
   const { data, error } = await supabase
     .from("documents")
@@ -275,13 +301,72 @@ export async function upsertVehicleProrrateo(params: {
   };
 }
 
+export async function fetchVehicleManualRepuestos(): Promise<RepuestoManualRecord[]> {
+  const { data, error } = await supabase
+    .from("vehicle_manual_repuestos")
+    .select("*")
+    .order("anio_rendimiento", { ascending: false })
+    .order("mes_rendimiento", { ascending: false });
+
+  assertNoError(error);
+
+  return (data ?? []).map((row) => ({
+    id: String(row.id),
+    vehicle_id: String(row.vehicle_id),
+    monto: Number(row.monto) || 0,
+    anio_rendimiento: Number(row.anio_rendimiento),
+    mes_rendimiento: Number(row.mes_rendimiento),
+    fecha_registro: String(row.fecha_registro),
+    created_at: String(row.created_at),
+    updated_at: String(row.updated_at),
+  }));
+}
+
+export async function upsertVehicleManualRepuesto(params: {
+  vehicleId: string;
+  monto: number;
+  fechaRegistro: string;
+  periodo: PeriodoRendimiento;
+}): Promise<RepuestoManualRecord> {
+  const { data, error } = await supabase
+    .from("vehicle_manual_repuestos")
+    .upsert(
+      {
+        vehicle_id: params.vehicleId,
+        monto: params.monto,
+        fecha_registro: params.fechaRegistro,
+        anio_rendimiento: params.periodo.anio,
+        mes_rendimiento: params.periodo.mes,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "vehicle_id,anio_rendimiento,mes_rendimiento" }
+    )
+    .select()
+    .single();
+
+  assertNoError(error);
+  const row = data;
+
+  return {
+    id: String(row.id),
+    vehicle_id: String(row.vehicle_id),
+    monto: Number(row.monto) || 0,
+    anio_rendimiento: Number(row.anio_rendimiento),
+    mes_rendimiento: Number(row.mes_rendimiento),
+    fecha_registro: String(row.fecha_registro),
+    created_at: String(row.created_at),
+    updated_at: String(row.updated_at),
+  };
+}
+
 export async function fetchRendimientoActivosData() {
-  const [vehiculosData, liquidaciones, documentos, prorrateos] =
+  const [vehiculosData, liquidaciones, documentos, prorrateos, repuestosManuales] =
     await Promise.all([
       fetchAdminVehiclesData(),
       fetchAllLiquidaciones(),
       fetchAssetDocuments(),
       fetchVehicleProrrateos(),
+      fetchVehicleManualRepuestos(),
     ]);
 
   return {
@@ -289,5 +374,6 @@ export async function fetchRendimientoActivosData() {
     liquidaciones,
     documentos,
     prorrateos,
+    repuestosManuales,
   };
 }

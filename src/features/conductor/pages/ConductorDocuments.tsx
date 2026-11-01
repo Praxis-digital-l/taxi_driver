@@ -14,6 +14,7 @@ import { DOCUMENT_ACCEPT_ATTR, isAllowedDocumentFile } from "@/shared/utils/file
 import { downloadDocumentFile } from "@/shared/utils/storageFiles";
 import DocumentPreviewDialog from "@/features/admin/components/DocumentPreviewDialog";
 import { documentoGeneraGasto, formatMontoInput, normalizarTexto, parseMontoInput } from "@/lib/rendimientoActivos";
+import { requiresExpirationDate } from "@/lib/documentRules";
 
 export default function ConductorDocuments() {
   const { profile, user } = useAuth();
@@ -82,7 +83,7 @@ export default function ConductorDocuments() {
       return;
     }
 
-    const docTypeId = (form.get("document_type_id") as string) || selectedTypeId;
+    const docTypeId = (form.get("document_type_id") as string) || selectedDocTypeId;
     const selectedType = docTypes.find((t) => t.id === docTypeId);
     const needsExp = requiresExpirationDate(selectedType?.name);
     const expDateValue = (form.get("expiration_date") as string) || "";
@@ -164,7 +165,7 @@ export default function ConductorDocuments() {
     return diff > 0 && diff < 30 * 86400000;
   };
 
-  const selectedType = docTypes.find((t) => t.id === selectedTypeId);
+  const selectedType = docTypes.find((t) => t.id === selectedDocTypeId);
   const showExpirationInput = selectedType ? requiresExpirationDate(selectedType.name) : false;
 
   return (
