@@ -31,6 +31,7 @@ serve(async (req) => {
       rut,
       full_name,
       worker_id,
+      role,
       existing_user_id,
     } = await req.json();
 
@@ -39,6 +40,9 @@ serve(async (req) => {
     if (!email || (!password && !userId)) {
       return json({ error: "Faltan campos requeridos (Email y Contraseña)" }, 400);
     }
+
+    const rawRole = String(role ?? "conductor").trim().toLowerCase();
+    const userRole = (rawRole === "admin" || rawRole === "super_admin") ? rawRole : "conductor";
 
     const supabaseUrl = (Deno.env.get("SUPABASE_URL") ?? "").replace(/\/$/, "");
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
@@ -89,6 +93,7 @@ serve(async (req) => {
       phone: phone ?? "",
       rut: rut ?? "",
       worker_id: worker_id ?? "",
+      role: userRole,
     };
 
     if (userId) {
@@ -171,27 +176,30 @@ serve(async (req) => {
 
     let profileId: string | null = null;
     if (userId) {
-      // Verificar perfil vinculado a userId
+      // Verificar perfil vinculado a userId y asegurar sincronización de worker_id y role
       const profRes = await fetch(
-        `${restUrl}/profiles?user_id=eq.${userId}&select=id,worker_id&limit=1`,
+        `${restUrl}/profiles?user_id=eq.${userId}&select=id,worker_id,role&limit=1`,
         { headers: authHeaders }
       );
       const profRows = await profRes.json();
       if (Array.isArray(profRows) && profRows[0]?.id) {
         profileId = profRows[0].id;
+        const patchBody: Record<string, unknown> = {
+          role: userRole,
+        };
         if (worker_id && !profRows[0].worker_id) {
-          await fetch(`${restUrl}/profiles?id=eq.${profileId}`, {
-            method: "PATCH",
-            headers: { ...authHeaders, "Prefer": "return=minimal" },
-            body: JSON.stringify({ worker_id }),
-          });
+          patchBody.worker_id = worker_id;
         }
+        await fetch(`${restUrl}/profiles?id=eq.${profileId}`, {
+          method: "PATCH",
+          headers: { ...authHeaders, "Prefer": "return=minimal" },
+          body: JSON.stringify(patchBody),
+        });
       }
     }
 
-    return json({ success: true, user_id: userId, profile_id: profileId });
+    return json({ success: true, user_id: userId, profile_id: profileId, role: userRole });
   } catch (err: any) {
     return json({ error: err.message || "Error interno en create-conductor" }, 500);
   }
 });
-

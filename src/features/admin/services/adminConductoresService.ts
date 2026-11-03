@@ -181,6 +181,7 @@ export async function createConductor(payload: CreateConductorPayload) {
       .from("profiles")
       .select("id")
       .eq("rut", rutTrim)
+      .eq("role", "conductor")
       .maybeSingle();
     if (existingRut) throw new Error("Ya existe un conductor con este RUT");
   }
@@ -190,6 +191,7 @@ export async function createConductor(payload: CreateConductorPayload) {
       .from("profiles")
       .select("id")
       .eq("phone", phoneTrim)
+      .eq("role", "conductor")
       .maybeSingle();
     if (existingPhone) throw new Error("Ya existe un conductor con este teléfono");
   }
@@ -209,6 +211,7 @@ export async function createConductor(payload: CreateConductorPayload) {
       phone: phoneTrim,
       rut: rutTrim,
       worker_id: workerId,
+      role: "conductor",
     },
   });
 
@@ -246,6 +249,7 @@ export async function createConductorProfile(payload: {
   phone?: string;
   rut?: string;
   password?: string;
+  role?: "admin" | "conductor";
 }) {
   const nombresClean = (payload.nombres ?? "").trim();
   const paternoClean = (payload.apellidoPaterno ?? "").trim();
@@ -254,6 +258,7 @@ export async function createConductorProfile(payload: {
   const phoneClean = (payload.phone ?? "").trim();
   const rutClean = (payload.rut ?? "").trim();
   const passwordClean = (payload.password ?? "").trim();
+  const targetRole = payload.role ?? "conductor";
   const fullName = [nombresClean, paternoClean, maternoClean].filter(Boolean).join(" ");
 
   type ExistingProfileRow = {
@@ -261,33 +266,41 @@ export async function createConductorProfile(payload: {
     user_id: string | null;
     email: string | null;
     worker_id: string | null;
+    role: "admin" | "conductor" | "super_admin";
   };
 
   let existingProfile: ExistingProfileRow | null = null;
 
-  if (rutClean) {
+  // 1. Prioridad: Buscar por correo electrónico (la identidad única de la cuenta)
+  if (emailClean) {
     const { data } = await supabase
       .from("profiles")
-      .select("id, user_id, email, worker_id")
-      .eq("rut", rutClean)
-      .maybeSingle();
-    if (data?.id) existingProfile = data as ExistingProfileRow;
-  }
-
-  if (!existingProfile && emailClean) {
-    const { data } = await supabase
-      .from("profiles")
-      .select("id, user_id, email, worker_id")
+      .select("id, user_id, email, worker_id, role")
       .ilike("email", emailClean)
       .maybeSingle();
     if (data?.id) existingProfile = data as ExistingProfileRow;
   }
 
+  // 2. Si no se encontró por email, buscar por RUT + MISMO ROL (solo si user_id es null, para no pisar cuentas ya creadas)
+  if (!existingProfile && rutClean) {
+    const { data } = await supabase
+      .from("profiles")
+      .select("id, user_id, email, worker_id, role")
+      .eq("rut", rutClean)
+      .eq("role", targetRole)
+      .is("user_id", null)
+      .maybeSingle();
+    if (data?.id) existingProfile = data as ExistingProfileRow;
+  }
+
+  // 3. Buscar por teléfono + MISMO ROL (solo si user_id es null)
   if (!existingProfile && phoneClean) {
     const { data } = await supabase
       .from("profiles")
-      .select("id, user_id, email, worker_id")
+      .select("id, user_id, email, worker_id, role")
       .eq("phone", phoneClean)
+      .eq("role", targetRole)
+      .is("user_id", null)
       .maybeSingle();
     if (data?.id) existingProfile = data as ExistingProfileRow;
   }
@@ -297,7 +310,7 @@ export async function createConductorProfile(payload: {
     const effectiveEmail = emailClean || (existingProfile?.email ?? "").trim().toLowerCase();
     if (!effectiveEmail) {
       throw new Error(
-        "Para registrar contraseña y permitir el inicio de sesión, debes incluir el correo electrónico del conductor."
+        `Para registrar contraseña y permitir el inicio de sesión, debes incluir el correo electrónico del ${targetRole === "admin" ? "administrador" : "conductor"}.`
       );
     }
 
@@ -314,6 +327,7 @@ export async function createConductorProfile(payload: {
         phone: phoneClean,
         rut: rutClean,
         worker_id: workerId,
+        role: targetRole,
         existing_user_id: existingProfile?.user_id || undefined,
       },
     });
@@ -358,15 +372,16 @@ export async function createConductorProfile(payload: {
           ...(phoneClean ? { phone: phoneClean } : {}),
           ...(rutClean ? { rut: rutClean } : {}),
           ...(workerId ? { worker_id: workerId } : {}),
+          role: targetRole,
         })
         .eq("id", finalProfileId);
       return finalProfileId;
     }
 
-    throw new Error("No se pudo obtener el perfil del conductor creado con contraseña.");
+    throw new Error(`No se pudo obtener el perfil del ${targetRole === "admin" ? "administrador" : "conductor"} creado con contraseña.`);
   }
 
-  // Si NO se proporcionó contraseña pero el conductor ya existe en profiles, actualizamos sus campos no vacíos
+  // Si NO se proporcionó contraseña pero el perfil ya existe en profiles, actualizamos sus campos no vacíos
   if (existingProfile?.id) {
     await supabase
       .from("profiles")
@@ -378,6 +393,7 @@ export async function createConductorProfile(payload: {
         ...(emailClean ? { email: emailClean } : {}),
         ...(phoneClean ? { phone: phoneClean } : {}),
         ...(rutClean ? { rut: rutClean } : {}),
+        role: targetRole,
       })
       .eq("id", existingProfile.id);
     return existingProfile.id;
@@ -396,14 +412,14 @@ export async function createConductorProfile(payload: {
       phone: phoneClean || null,
       rut: rutClean || null,
       worker_id: workerId,
-      role: "conductor",
+      role: targetRole,
     })
     .select("id")
     .single();
   assertNoError(error);
 
   const createdId = Array.isArray(data) ? (data[0] as { id: string } | undefined)?.id : (data as { id: string } | undefined)?.id;
-  if (!createdId) throw new Error("No se pudo obtener el id del conductor creado");
+  if (!createdId) throw new Error(`No se pudo obtener el id del ${targetRole === "admin" ? "administrador" : "conductor"} creado`);
   return createdId;
 }
 
@@ -459,6 +475,7 @@ export async function updateConductor(id: string, payload: UpdateConductorPayloa
         phone: updateData.phone ? String(updateData.phone) : "",
         rut: updateData.rut ? String(updateData.rut) : "",
         worker_id: updateData.worker_id ? String(updateData.worker_id) : undefined,
+        role: "conductor",
         existing_user_id: payload.existing_user_id || undefined,
       },
     });
