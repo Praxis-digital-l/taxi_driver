@@ -271,6 +271,7 @@ export type Database = {
       liquidaciones: {
         Row: {
           created_at: string
+          datos_nomina: Json | null
           descuentos_primarios: Json
           descuentos_secundarios: Json
           email: string | null
@@ -293,10 +294,16 @@ export type Database = {
           total_a_pagar: number
           total_descuentos: number
           total_facturado: number
+          vehicle_id: string | null
+          vehicle_make: string | null
+          vehicle_model: string | null
+          vehicle_plate: string | null
+          vehicle_year: number | null
           worker_id: string
         }
         Insert: {
           created_at?: string
+          datos_nomina?: Json | null
           descuentos_primarios?: Json
           descuentos_secundarios?: Json
           email?: string | null
@@ -319,10 +326,16 @@ export type Database = {
           total_a_pagar?: number
           total_descuentos?: number
           total_facturado?: number
+          vehicle_id?: string | null
+          vehicle_make?: string | null
+          vehicle_model?: string | null
+          vehicle_plate?: string | null
+          vehicle_year?: number | null
           worker_id: string
         }
         Update: {
           created_at?: string
+          datos_nomina?: Json | null
           descuentos_primarios?: Json
           descuentos_secundarios?: Json
           email?: string | null
@@ -345,6 +358,11 @@ export type Database = {
           total_a_pagar?: number
           total_descuentos?: number
           total_facturado?: number
+          vehicle_id?: string | null
+          vehicle_make?: string | null
+          vehicle_model?: string | null
+          vehicle_plate?: string | null
+          vehicle_year?: number | null
           worker_id?: string
         }
         Relationships: [

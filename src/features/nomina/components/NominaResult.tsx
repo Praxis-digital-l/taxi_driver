@@ -6,7 +6,12 @@ import { Badge } from "@/components/ui/badge";
 import { Mail, Fingerprint, FileDown, Send, SendToBack, PenTool, CheckCircle2, Copy, ExternalLink, ShieldCheck, Truck } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { type ResultadoNomina } from "@/lib/nomina";
-import { enviarLiquidacion } from "@/features/nomina/services/liquidacionesService";
+import {
+  actualizarFirmaIniciada,
+  blobToBase64,
+  enviarLiquidacion,
+  guardarLiquidacionPendiente,
+} from "@/features/nomina/services/liquidacionesService";
 import { consultarSaldoFirmaWeb, enviarAFirmaWeb, type FirmanteUrlInfo } from "@/features/firmaweb/services/supabaseFirmawebClient";
 import {
   Dialog,
@@ -29,6 +34,9 @@ const MONEDA = new Intl.NumberFormat("es-CL", {
 
 interface NominaResultProps {
   resultado: ResultadoNomina;
+  idLiquidacion?: string | null;
+  onGuardadoPendiente?: () => void;
+  onActualizadoPendientes?: () => void;
 }
 
 function Fila({ concepto, monto, esTotal = false }: { concepto: string; monto: number; esTotal?: boolean }) {
@@ -40,7 +48,12 @@ function Fila({ concepto, monto, esTotal = false }: { concepto: string; monto: n
   );
 }
 
-export default function NominaResult({ resultado }: NominaResultProps) {
+export default function NominaResult({
+  resultado,
+  idLiquidacion,
+  onGuardadoPendiente,
+  onActualizadoPendientes,
+}: NominaResultProps) {
   const cardRef = useRef<HTMLDivElement>(null);
   const [descargando, setDescargando] = useState(false);
   const [enviando, setEnviando] = useState(false);
@@ -108,7 +121,7 @@ export default function NominaResult({ resultado }: NominaResultProps) {
     setEnviando(true);
     try {
       const blob = await generarPDF();
-      await enviarLiquidacion(resultado, mes, fecha, blob);
+      await enviarLiquidacion(resultado, mes, fecha, blob, idLiquidacion);
       toast({
         title: "Liquidación enviada",
         description: `Se envió la liquidación a ${resultado.nombre} (${resultado.trabajadorId}).`,
@@ -152,25 +165,42 @@ export default function NominaResult({ resultado }: NominaResultProps) {
     try {
       const blob = await generarPDF();
       if (!blob) throw new Error("No se pudo compilar el PDF de la liquidación.");
+      const pdfBase64 = await blobToBase64(blob);
 
-      const reader = new FileReader();
-      const base64Promise = new Promise<string>((resolve, reject) => {
-        reader.onloadend = () => {
-          const res = reader.result as string;
-          const base64 = res.split(",")[1] || "";
-          resolve(base64);
-        };
-        reader.onerror = reject;
-      });
-      reader.readAsDataURL(blob);
-      const pdfBase64 = await base64Promise;
+      let idLiquidacionActual = idLiquidacion ?? null;
+      if (!idLiquidacionActual) {
+        const guardada = await guardarLiquidacionPendiente(resultado, mes, fecha, blob);
+        idLiquidacionActual = guardada.id;
+        onGuardadoPendiente?.();
+      }
 
-      const res = await enviarAFirmaWeb(resultado, pdfBase64, mes);
+      const res = await enviarAFirmaWeb(
+        resultado,
+        pdfBase64,
+        mes,
+        undefined,
+        idLiquidacionActual,
+      );
+
+      const urlEmpleador = res.firmantes?.[0]?.Url ?? "";
+      if (urlEmpleador) {
+        try {
+          await actualizarFirmaIniciada(idLiquidacionActual, {
+            idProceso: res.idProceso,
+            idDocumento: res.idDocumento,
+            urlEmpleador,
+          });
+        } catch (err) {
+          console.warn("No se pudo actualizar el estado local de la firma:", err);
+        }
+      }
+      onActualizadoPendientes?.();
+
       setProcesoIdExitoso(res.idProceso);
       setFirmantesResultado(res.firmantes);
       toast({
         title: "¡Proceso creado en FirmaWeb!",
-        description: `Proceso #${res.idProceso} iniciado exitosamente. Ya visible en tu escritorio de FirmaWeb.`,
+        description: `Proceso #${res.idProceso} iniciado exitosamente. La liquidación quedó pendiente de firma.`,
       });
     } catch (error) {
       toast({

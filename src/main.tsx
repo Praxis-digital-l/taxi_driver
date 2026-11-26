@@ -19,7 +19,7 @@ if (import.meta.env.DEV) {
     logDevInteraction("runtime.unhandled_rejection", { reason });
   });
 }
-
+// cambio prueba commit 
 createRoot(document.getElementById("root")!).render(
   <ThemeProvider>
     <App />
