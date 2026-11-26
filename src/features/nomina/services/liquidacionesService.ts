@@ -1,5 +1,10 @@
 import { supabase } from "@/integrations/supabase/client";
-import { type ResultadoNomina, type DetalleDescuento } from "@/lib/nomina";
+import {
+  type ResultadoNomina,
+  type DetalleDescuento,
+  type DatosNomina,
+  calcularNomina,
+} from "@/lib/nomina";
 import type { Json } from "@/integrations/supabase/types";
 import { PdfLiquidacionService } from "@/features/firmaweb/services/PdfLiquidacionService";
 
@@ -32,6 +37,7 @@ export type LiquidacionRecord = {
   vehicle_make?: string | null;
   vehicle_model?: string | null;
   vehicle_year?: number | null;
+  datos_nomina?: DatosNomina | null;
 };
 
 const LIQUIDACIONES_BUCKET = "Liquidaciones";
@@ -75,6 +81,69 @@ function parseDescuentos(value: Json | null | undefined): DetalleDescuento[] {
   });
 }
 
+function parseDatosNomina(value: Json | null | undefined): DatosNomina | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const obj = value as Record<string, unknown>;
+  if (typeof obj.trabajadorId !== "string" || typeof obj.vehicle_id !== "string") return null;
+
+  const numero = (valor: unknown): number => {
+    const n = Number(valor);
+    return Number.isFinite(n) ? n : 0;
+  };
+  const tag: Record<string, number> = {};
+  if (obj.tag && typeof obj.tag === "object" && !Array.isArray(obj.tag)) {
+    for (const [label, monto] of Object.entries(obj.tag)) {
+      tag[label] = numero(monto);
+    }
+  }
+  const descuentosExtra = Array.isArray(obj.descuentosExtra)
+    ? obj.descuentosExtra
+        .filter((item): item is Record<string, unknown> => !!item && typeof item === "object")
+        .map((item) => ({
+          descripcion: String(item.descripcion ?? ""),
+          monto: numero(item.monto),
+        }))
+    : [];
+
+  return {
+    trabajadorId: obj.trabajadorId,
+    nombre: String(obj.nombre ?? ""),
+    email: String(obj.email ?? ""),
+    rut: String(obj.rut ?? ""),
+    estadoConductor: obj.estadoConductor == null ? undefined : String(obj.estadoConductor),
+    totalFacturado: numero(obj.totalFacturado),
+    gastoOperacional: numero(obj.gastoOperacional),
+    diesel: numero(obj.diesel),
+    tag,
+    arriendo: numero(obj.arriendo),
+    seguro: numero(obj.seguro),
+    mantencion: numero(obj.mantencion),
+    anticipo: numero(obj.anticipo),
+    prestamo: numero(obj.prestamo),
+    descuentosExtra,
+    efectivoMonto: numero(obj.efectivoMonto),
+    vehicle_id: obj.vehicle_id,
+    vehicle_plate: String(obj.vehicle_plate ?? ""),
+    vehicle_make: obj.vehicle_make == null ? null : String(obj.vehicle_make),
+    vehicle_model: obj.vehicle_model == null ? null : String(obj.vehicle_model),
+    vehicle_year: obj.vehicle_year == null ? null : numero(obj.vehicle_year),
+  };
+}
+
+async function subirPdfLiquidacion(profileId: string, blob: Blob): Promise<string | null> {
+  const fileKey = `${profileId}/liquidacion-${Date.now()}.pdf`;
+  const { error } = await supabase.storage
+    .from(LIQUIDACIONES_BUCKET)
+    .upload(fileKey, blob, { upsert: true, contentType: "application/pdf" });
+
+  if (error) {
+    throw new Error(`No se pudo subir el PDF: ${error.message}`);
+  }
+
+  const { data } = supabase.storage.from(LIQUIDACIONES_BUCKET).getPublicUrl(fileKey);
+  return normalizeStorageUrl(data?.publicUrl ?? null);
+}
+
 function toRecord(row: Record<string, unknown>): LiquidacionRecord {
   return {
     id: String(row.id),
@@ -105,6 +174,7 @@ function toRecord(row: Record<string, unknown>): LiquidacionRecord {
     vehicle_make: row.vehicle_make ? String(row.vehicle_make) : null,
     vehicle_model: row.vehicle_model ? String(row.vehicle_model) : null,
     vehicle_year: row.vehicle_year != null ? Number(row.vehicle_year) : null,
+    datos_nomina: parseDatosNomina(row.datos_nomina as Json),
   };
 }
 
@@ -145,16 +215,10 @@ export async function guardarLiquidacionPendiente(
 
   let fileUrl: string | null = null;
   if (pdfBlob) {
-    const fileKey = `${profileId}/liquidacion-${Date.now()}.pdf`;
-    const { error: uploadError } = await supabase.storage
-      .from(LIQUIDACIONES_BUCKET)
-      .upload(fileKey, pdfBlob, { upsert: true, contentType: "application/pdf" });
-
-    if (uploadError) {
-      console.warn(`No se pudo subir PDF preliminar: ${uploadError.message}`);
-    } else {
-      const { data: publicUrlData } = supabase.storage.from(LIQUIDACIONES_BUCKET).getPublicUrl(fileKey);
-      fileUrl = normalizeStorageUrl(publicUrlData?.publicUrl ?? null);
+    try {
+      fileUrl = await subirPdfLiquidacion(profileId, pdfBlob);
+    } catch (err) {
+      console.warn("No se pudo subir PDF preliminar:", err);
     }
   }
 
@@ -187,6 +251,142 @@ export async function guardarLiquidacionPendiente(
 
   assertNoError(error);
   return toRecord(data as Record<string, unknown>);
+}
+
+export async function guardarPreliquidacion(
+  datos: DatosNomina,
+  mes: string,
+  fecha: string,
+): Promise<LiquidacionRecord> {
+  const profileId = await resolveProfileId(datos.trabajadorId);
+  const resultado = calcularNomina(datos);
+
+  const { data, error } = await supabase
+    .from("liquidaciones")
+    .insert({
+      profile_id: profileId,
+      worker_id: datos.trabajadorId,
+      nombre: datos.nombre,
+      email: datos.email,
+      rut: datos.rut,
+      total_facturado: resultado.totalFacturado,
+      descuentos_primarios: resultado.descuentosPrimarios as unknown as Json,
+      subtotal: resultado.subtotal,
+      descuentos_secundarios: resultado.descuentosSecundarios as unknown as Json,
+      total_descuentos: resultado.totalDescuentos,
+      total_a_pagar: resultado.totalAPagar,
+      mes,
+      fecha,
+      file_url: null,
+      firma_estado: "preliquidacion",
+      datos_nomina: datos as unknown as Json,
+      vehicle_id: datos.vehicle_id || null,
+      vehicle_plate: datos.vehicle_plate || null,
+      vehicle_make: datos.vehicle_make || null,
+      vehicle_model: datos.vehicle_model || null,
+      vehicle_year: datos.vehicle_year || null,
+    })
+    .select(LIQUIDACION_COLUMNS)
+    .single();
+
+  assertNoError(error);
+  return toRecord(data as Record<string, unknown>);
+}
+
+export async function actualizarPreliquidacion(
+  id: string,
+  datos: DatosNomina,
+  mes: string,
+  fecha: string,
+): Promise<LiquidacionRecord> {
+  const profileId = await resolveProfileId(datos.trabajadorId);
+  const resultado = calcularNomina(datos);
+
+  const { data, error } = await supabase
+    .from("liquidaciones")
+    .update({
+      profile_id: profileId,
+      worker_id: datos.trabajadorId,
+      nombre: datos.nombre,
+      email: datos.email,
+      rut: datos.rut,
+      total_facturado: resultado.totalFacturado,
+      descuentos_primarios: resultado.descuentosPrimarios as unknown as Json,
+      subtotal: resultado.subtotal,
+      descuentos_secundarios: resultado.descuentosSecundarios as unknown as Json,
+      total_descuentos: resultado.totalDescuentos,
+      total_a_pagar: resultado.totalAPagar,
+      mes,
+      fecha,
+      firma_estado: "preliquidacion",
+      datos_nomina: datos as unknown as Json,
+      vehicle_id: datos.vehicle_id || null,
+      vehicle_plate: datos.vehicle_plate || null,
+      vehicle_make: datos.vehicle_make || null,
+      vehicle_model: datos.vehicle_model || null,
+      vehicle_year: datos.vehicle_year || null,
+    })
+    .eq("id", id)
+    .select(LIQUIDACION_COLUMNS)
+    .single();
+
+  assertNoError(error);
+  return toRecord(data as Record<string, unknown>);
+}
+
+export async function completarPreliquidacion(
+  id: string,
+  resultado: ResultadoNomina,
+  mes: string,
+  fecha: string,
+): Promise<LiquidacionRecord> {
+  const { data, error } = await supabase
+    .from("liquidaciones")
+    .update({
+      nombre: resultado.nombre,
+      email: resultado.email,
+      rut: resultado.rut,
+      total_facturado: resultado.totalFacturado,
+      descuentos_primarios: resultado.descuentosPrimarios as unknown as Json,
+      subtotal: resultado.subtotal,
+      descuentos_secundarios: resultado.descuentosSecundarios as unknown as Json,
+      total_descuentos: resultado.totalDescuentos,
+      total_a_pagar: resultado.totalAPagar,
+      mes,
+      fecha,
+      firma_estado: "sin_iniciar",
+      vehicle_id: resultado.vehicle_id || null,
+      vehicle_plate: resultado.vehicle_plate || null,
+      vehicle_make: resultado.vehicle_make || null,
+      vehicle_model: resultado.vehicle_model || null,
+      vehicle_year: resultado.vehicle_year || null,
+    })
+    .eq("id", id)
+    .select(LIQUIDACION_COLUMNS)
+    .single();
+
+  assertNoError(error);
+  return toRecord(data as Record<string, unknown>);
+}
+
+export async function fetchPreliquidaciones(): Promise<LiquidacionRecord[]> {
+  try {
+    const { data, error } = await supabase
+      .from("liquidaciones")
+      .select(LIQUIDACION_COLUMNS)
+      .eq("firma_estado", "preliquidacion")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.warn("Error consultando preliquidaciones:", error.message);
+      return [];
+    }
+
+    return ((data ?? []) as Record<string, unknown>[]).map(toRecord);
+  } catch (error) {
+    console.warn("Excepción al consultar preliquidaciones:", error);
+    return [];
+  }
 }
 
 export async function actualizarFirmaIniciada(
@@ -375,7 +575,10 @@ export async function fetchLiquidacionesPendientesFirma(): Promise<LiquidacionRe
 
     const todos = ((data ?? []) as Record<string, unknown>[]).map(toRecord);
     return todos.filter(
-      (liq) => liq.firma_estado !== "firmada" && String(liq.firma_estado) !== "1"
+      (liq) =>
+        liq.firma_estado !== "preliquidacion" &&
+        liq.firma_estado !== "firmada" &&
+        String(liq.firma_estado) !== "1"
     );
   } catch (error) {
     console.warn("Excepción al consultar liquidaciones pendientes de firma:", error);
@@ -388,48 +591,49 @@ export async function enviarLiquidacion(
   mes: string,
   fecha: string,
   pdfBlob: Blob | null,
+  idLiquidacion?: string | null,
 ) {
   const profileId = await resolveProfileId(resultado.trabajadorId);
+  const fileUrl = pdfBlob ? await subirPdfLiquidacion(profileId, pdfBlob) : null;
 
-  let fileUrl: string | null = null;
-  if (pdfBlob) {
-    const fileKey = `${profileId}/liquidacion-${Date.now()}.pdf`;
-    const { error: uploadError } = await supabase.storage
-      .from(LIQUIDACIONES_BUCKET)
-      .upload(fileKey, pdfBlob, { upsert: true, contentType: "application/pdf" });
+  const valores = {
+    profile_id: profileId,
+    worker_id: resultado.trabajadorId,
+    nombre: resultado.nombre,
+    email: resultado.email,
+    rut: resultado.rut,
+    total_facturado: resultado.totalFacturado,
+    descuentos_primarios: resultado.descuentosPrimarios as unknown as Json,
+    subtotal: resultado.subtotal,
+    descuentos_secundarios: resultado.descuentosSecundarios as unknown as Json,
+    total_descuentos: resultado.totalDescuentos,
+    total_a_pagar: resultado.totalAPagar,
+    mes,
+    fecha,
+    file_url: fileUrl,
+    firma_estado: "firmada",
+    vehicle_id: resultado.vehicle_id || null,
+    vehicle_plate: resultado.vehicle_plate || null,
+    vehicle_make: resultado.vehicle_make || null,
+    vehicle_model: resultado.vehicle_model || null,
+    vehicle_year: resultado.vehicle_year || null,
+  };
 
-    if (uploadError) {
-      throw new Error(`No se pudo subir el PDF: ${uploadError.message}`);
-    }
+  if (idLiquidacion) {
+    const { data, error } = await supabase
+      .from("liquidaciones")
+      .update(valores)
+      .eq("id", idLiquidacion)
+      .select(LIQUIDACION_COLUMNS)
+      .single();
 
-    const { data: publicUrlData } = supabase.storage.from(LIQUIDACIONES_BUCKET).getPublicUrl(fileKey);
-    fileUrl = normalizeStorageUrl(publicUrlData?.publicUrl ?? null);
+    assertNoError(error);
+    return toRecord(data as Record<string, unknown>);
   }
 
   const { data, error } = await supabase
     .from("liquidaciones")
-    .insert({
-      profile_id: profileId,
-      worker_id: resultado.trabajadorId,
-      nombre: resultado.nombre,
-      email: resultado.email,
-      rut: resultado.rut,
-      total_facturado: resultado.totalFacturado,
-      descuentos_primarios: resultado.descuentosPrimarios as unknown as Json,
-      subtotal: resultado.subtotal,
-      descuentos_secundarios: resultado.descuentosSecundarios as unknown as Json,
-      total_descuentos: resultado.totalDescuentos,
-      total_a_pagar: resultado.totalAPagar,
-      mes,
-      fecha,
-      file_url: fileUrl,
-      firma_estado: "firmada",
-      vehicle_id: resultado.vehicle_id || null,
-      vehicle_plate: resultado.vehicle_plate || null,
-      vehicle_make: resultado.vehicle_make || null,
-      vehicle_model: resultado.vehicle_model || null,
-      vehicle_year: resultado.vehicle_year || null,
-    })
+    .insert(valores)
     .select(LIQUIDACION_COLUMNS)
     .single();
 
@@ -461,7 +665,9 @@ export async function fetchAllLiquidaciones(): Promise<LiquidacionRecord[]> {
       return [];
     }
 
-    return ((data ?? []) as Record<string, unknown>[]).map(toRecord);
+    return ((data ?? []) as Record<string, unknown>[])
+      .map(toRecord)
+      .filter((liq) => liq.firma_estado !== "preliquidacion");
   } catch (error) {
     console.warn("Excepción al consultar liquidaciones:", error);
     return [];

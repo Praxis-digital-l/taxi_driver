@@ -256,7 +256,6 @@ serve(async (req) => {
 
       const firmantes: Array<{ Email: string; Url: string; Notificado: string }> = inicioData.Firmantes || [];
       const urlEmpleador = firmantes[0]?.Url ?? "";
-      const urlEmpleado = firmantes[1]?.Url ?? "";
 
       // 7. Si se proporcionó idLiquidacion, registrar en la base de datos Supabase
       if (idLiquidacion && supabaseUrl) {
@@ -276,7 +275,6 @@ serve(async (req) => {
               firma_id_documento: idDocumento,
               firma_estado: "pendiente",
               firma_url_empleador: urlEmpleador,
-              firma_url_empleado: urlEmpleado,
               firma_iniciada_at: new Date().toISOString(),
             }),
           });

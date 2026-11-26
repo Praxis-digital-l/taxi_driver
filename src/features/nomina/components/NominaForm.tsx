@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -46,6 +46,11 @@ import { useToast } from "@/hooks/use-toast";
 
 interface NominaFormProps {
   onCalcular: (data: DatosNomina) => void;
+  onGuardarPreliquidacion: (data: DatosNomina) => void;
+  datosIniciales?: DatosNomina | null;
+  idPreliquidacion?: string | null;
+  guardandoPreliquidacion?: boolean;
+  onCancelarEdicion?: () => void;
 }
 
 const SPINNER_HIDE = "[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none";
@@ -86,22 +91,114 @@ function crearOtroDescuento(): OtroDescuento {
   };
 }
 
-export default function NominaForm({ onCalcular }: NominaFormProps) {
-  const [errores, setErrores] = useState<Record<string, string>>({});
-  const [values, setValues] = useState<Record<string, string>>(() => ({
-    arriendo: formatPesos(String(ARRIENDO_ESTANDAR)),
+function leerAutopistasRecurrentes(): string[] {
+  try {
+    const raw = window.localStorage.getItem(AUTOPISTAS_RECURRENTES_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as unknown;
+    return Array.isArray(parsed) && parsed.every((item) => typeof item === "string")
+      ? (parsed as string[])
+      : [];
+  } catch {
+    return [];
+  }
+}
+
+function conductorDesdeDatos(datos: DatosNomina): ConductorRecord {
+  return {
+    id: datos.trabajadorId,
+    user_id: "",
+    nombres: datos.nombre,
+    apellido_paterno: "",
+    apellido_materno: "",
+    full_name: datos.nombre || datos.trabajadorId,
+    email: datos.email,
+    phone: null,
+    rut: datos.rut,
+    worker_id: datos.trabajadorId,
+    score: null,
+    estado_conductor: datos.estadoConductor || "",
+    photo_url: null,
+    role: "conductor",
+    created_at: "",
+    updated_at: "",
+  };
+}
+
+function vehiculoDesdeDatos(datos: DatosNomina): VehicleRecord | null {
+  if (!datos.vehicle_id) return null;
+  return {
+    id: datos.vehicle_id,
+    license_plate: datos.vehicle_plate || "",
+    make: datos.vehicle_make ?? null,
+    model: datos.vehicle_model ?? null,
+    year: datos.vehicle_year ?? null,
+    color: null,
+    status: "",
+  };
+}
+
+function inicializarEstadoForm(datos: DatosNomina | null | undefined) {
+  const values: Record<string, string> = {};
+  const monto = (valor: number | undefined) => (valor && valor > 0 ? formatPesos(String(valor)) : "");
+
+  if (datos) {
+    values.totalFacturado = monto(datos.totalFacturado);
+    values.gastoOperacional = monto(datos.gastoOperacional);
+    values.diesel = monto(datos.diesel);
+    values.arriendo = monto(datos.arriendo);
+    values.seguro = monto(datos.seguro);
+    values.efectivoMonto = monto(datos.efectivoMonto);
+    values.mantencion = monto(datos.mantencion);
+    values.anticipo = monto(datos.anticipo);
+    values.prestamo = monto(datos.prestamo);
+  } else {
+    values.arriendo = formatPesos(String(ARRIENDO_ESTANDAR));
+  }
+
+  const recurrentes = leerAutopistasRecurrentes();
+  const autopistas = Object.entries(datos?.tag ?? {}).map(([label, valor]) => {
+    const key = `autopista_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+    values[key] = monto(valor);
+    return { key, label, recurrente: recurrentes.includes(label) };
+  });
+
+  const descuentosGuardados = (datos?.descuentosExtra ?? []).map((descuento) => ({
+    key: crearOtroDescuento().key,
+    descripcion: descuento.descripcion,
+    monto: monto(descuento.monto),
   }));
-  const [otrosDescuentos, setOtrosDescuentos] = useState<OtroDescuento[]>(() => [crearOtroDescuento()]);
+
+  return {
+    values,
+    autopistas,
+    otrosDescuentos: descuentosGuardados.length > 0 ? descuentosGuardados : [crearOtroDescuento()],
+  };
+}
+
+export default function NominaForm({
+  onCalcular,
+  onGuardarPreliquidacion,
+  datosIniciales,
+  idPreliquidacion,
+  guardandoPreliquidacion = false,
+  onCancelarEdicion,
+}: NominaFormProps) {
+  const estadoInicial = useMemo(() => inicializarEstadoForm(datosIniciales), [datosIniciales]);
+  const [errores, setErrores] = useState<Record<string, string>>({});
+  const [values, setValues] = useState<Record<string, string>>(estadoInicial.values);
+  const [otrosDescuentos, setOtrosDescuentos] = useState<OtroDescuento[]>(estadoInicial.otrosDescuentos);
   const [conductores, setConductores] = useState<ConductorRecord[]>([]);
   const [selectedConductor, setSelectedConductor] = useState<ConductorRecord | null>(null);
   const [vehicles, setVehicles] = useState<VehicleRecord[]>([]);
   const [assignments, setAssignments] = useState<VehicleAssignmentRecord[]>([]);
   const [selectedVehicle, setSelectedVehicle] = useState<VehicleRecord | null>(null);
-  const [autopistas, setAutopistas] = useState<Array<{ key: string; label: string; recurrente: boolean }>>([]);
+  const [autopistas, setAutopistas] = useState<Array<{ key: string; label: string; recurrente: boolean }>>(estadoInicial.autopistas);
   const [agregando, setAgregando] = useState(false);
   const [nuevaAutopistaNombre, setNuevaAutopistaNombre] = useState("");
   const [dialogAutopistaAbierto, setDialogAutopistaAbierto] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const datosInicialesAplicadosRef = useRef(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -112,11 +209,18 @@ export default function NominaForm({ onCalcular }: NominaFormProps) {
         if (!Array.isArray(nombres) || !nombres.every((nombre) => typeof nombre === "string")) {
           throw new Error("El formato de las autopistas recurrentes no es válido.");
         }
-        setAutopistas(nombres.map((label) => ({
-          key: `autopista_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
-          label,
-          recurrente: true,
-        })));
+        if (datosIniciales) {
+          setAutopistas((prev) => prev.map((autopista) => ({
+            ...autopista,
+            recurrente: nombres.includes(autopista.label),
+          })));
+        } else {
+          setAutopistas(nombres.map((label) => ({
+            key: `autopista_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+            label,
+            recurrente: true,
+          })));
+        }
       }
     } catch (error) {
       toast({
@@ -135,7 +239,34 @@ export default function NominaForm({ onCalcular }: NominaFormProps) {
         setAssignments(data.assignments || []);
       })
       .catch(() => {});
-  }, [toast]);
+  }, [toast, datosIniciales]);
+
+  useEffect(() => {
+    if (!datosIniciales) return;
+
+    if (!datosInicialesAplicadosRef.current) {
+      datosInicialesAplicadosRef.current = true;
+      setSelectedConductor(conductorDesdeDatos(datosIniciales));
+      const vehiculoInicial = vehiculoDesdeDatos(datosIniciales);
+      if (vehiculoInicial) setSelectedVehicle(vehiculoInicial);
+    }
+
+    const conductorCatalogo = conductores.find(
+      (item) => item.id === datosIniciales.trabajadorId || item.worker_id === datosIniciales.trabajadorId
+    );
+    if (conductorCatalogo) {
+      setSelectedConductor((prev) => (
+        prev && prev.id !== datosIniciales.trabajadorId ? prev : conductorCatalogo
+      ));
+    }
+
+    const vehiculoCatalogo = vehicles.find((item) => item.id === datosIniciales.vehicle_id);
+    if (vehiculoCatalogo) {
+      setSelectedVehicle((prev) => (
+        prev && prev.id !== datosIniciales.vehicle_id ? prev : vehiculoCatalogo
+      ));
+    }
+  }, [datosIniciales, conductores, vehicles]);
 
   const handleCurrencyChange = (id: string, raw: string) => {
     const digits = raw.replace(/\D/g, "");
@@ -246,17 +377,9 @@ export default function NominaForm({ onCalcular }: NominaFormProps) {
     });
   };
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-
+  const construirDatosNomina = (): DatosNomina => {
     const parseNum = (key: string): number => {
-      const raw = values[key] || "";
-      const digits = raw.replace(/\D/g, "");
-      return digits ? parseInt(digits, 10) : 0;
-    };
-
-    const parseMonto = (raw: string): number => {
-      const digits = (raw || "").replace(/\D/g, "");
+      const digits = (values[key] || "").replace(/\D/g, "");
       return digits ? parseInt(digits, 10) : 0;
     };
 
@@ -265,12 +388,7 @@ export default function NominaForm({ onCalcular }: NominaFormProps) {
       tag[label] = parseNum(key);
     }
 
-    if (!selectedVehicle) {
-      setErrores((prev) => ({ ...prev, vehiculo: "Debe seleccionar el vehículo con el cual se realizará esta liquidación." }));
-      return;
-    }
-
-    const data: DatosNomina = {
+    return {
       trabajadorId: selectedConductor?.worker_id || selectedConductor?.id || "",
       nombre: selectedConductor?.full_name || "",
       email: selectedConductor?.email || "",
@@ -287,17 +405,22 @@ export default function NominaForm({ onCalcular }: NominaFormProps) {
       prestamo: parseNum("prestamo"),
       descuentosExtra: otrosDescuentos.map(({ descripcion, monto }) => ({
         descripcion: descripcion.trim(),
-        monto: parseMonto(monto),
+        monto: parseNum(monto),
       })),
       efectivoMonto: parseNum("efectivoMonto"),
-      vehicle_id: selectedVehicle.id,
-      vehicle_plate: selectedVehicle.license_plate,
-      vehicle_make: selectedVehicle.make,
-      vehicle_model: selectedVehicle.model,
-      vehicle_year: selectedVehicle.year,
+      vehicle_id: selectedVehicle?.id || "",
+      vehicle_plate: selectedVehicle?.license_plate || "",
+      vehicle_make: selectedVehicle?.make || null,
+      vehicle_model: selectedVehicle?.model || null,
+      vehicle_year: selectedVehicle?.year || null,
     };
+  };
 
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const data = construirDatosNomina();
     const validationErrors = validarDatosNomina(data);
+
     if (validationErrors.length > 0) {
       const errorMap: Record<string, string> = {};
       for (const err of validationErrors) {
@@ -309,6 +432,31 @@ export default function NominaForm({ onCalcular }: NominaFormProps) {
 
     setErrores({});
     onCalcular(data);
+  };
+
+  const handleGuardarPreliquidacion = () => {
+    const datos = construirDatosNomina();
+    const erroresBasicos: Record<string, string> = {};
+
+    if (!datos.trabajadorId) {
+      erroresBasicos.trabajadorId = "Selecciona un conductor para identificar la preliquidación.";
+    }
+    if (!datos.vehicle_id) {
+      erroresBasicos.vehiculo = "Selecciona un vehículo para identificar la preliquidación.";
+    }
+
+    if (Object.keys(erroresBasicos).length > 0) {
+      setErrores((prev) => ({ ...prev, ...erroresBasicos }));
+      toast({
+        title: "No se pudo guardar la preliquidación",
+        description: "Necesitas seleccionar conductor y vehículo; el resto de los datos puede quedar incompleto.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setErrores({});
+    onGuardarPreliquidacion(datos);
   };
 
   const renderCurrencyInput = (campo: { id: string; label: string; placeholder: string }) => (
@@ -332,6 +480,25 @@ export default function NominaForm({ onCalcular }: NominaFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {idPreliquidacion && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs text-amber-900 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
+          <div className="flex items-center gap-2.5">
+            <Bookmark className="h-4 w-4 shrink-0" />
+            <div>
+              <p className="font-semibold">Preliquidación en edición</p>
+              <p className="mt-0.5">
+                Puedes completar los datos faltantes y luego firmarla o dejarla pendiente de firma.
+              </p>
+            </div>
+          </div>
+          {onCancelarEdicion && (
+            <Button type="button" variant="ghost" size="sm" onClick={onCancelarEdicion}>
+              Salir de la edición
+            </Button>
+          )}
+        </div>
+      )}
+
       <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
         <CardHeader className="pb-4">
           <CardTitle className="flex items-center gap-2 text-lg text-slate-800 dark:text-slate-100">
@@ -348,19 +515,27 @@ export default function NominaForm({ onCalcular }: NominaFormProps) {
               name="trabajadorId"
               value={selectedConductor?.id || ""}
               onValueChange={(value) => {
-                const cond = conductores.find((c) => c.id === value);
-                setSelectedConductor(cond || null);
+                if (!value) return;
+                const cond = conductores.find((c) => c.id === value)
+                  ?? (selectedConductor?.id === value ? selectedConductor : null);
+                setSelectedConductor(cond);
               }}
             >
               <SelectTrigger className={errores.trabajadorId ? "border-destructive" : ""}>
                 <SelectValue placeholder="Seleccionar conductor..." />
               </SelectTrigger>
               <SelectContent>
-                {conductores.map((c) => (
-                  <SelectItem key={c.id} value={c.id}>
-                    {c.worker_id ? `${c.worker_id} — ` : ""}{c.full_name}
-                  </SelectItem>
-                ))}
+                {(() => {
+                  const opciones = selectedConductor ? [selectedConductor] : [];
+                  conductores.forEach((conductor) => {
+                    if (!opciones.some((item) => item.id === conductor.id)) opciones.push(conductor);
+                  });
+                  return opciones.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.worker_id ? `${c.worker_id} — ` : ""}{c.full_name}
+                    </SelectItem>
+                  ));
+                })()}
               </SelectContent>
             </Select>
             {errores.trabajadorId && (
@@ -408,16 +583,13 @@ export default function NominaForm({ onCalcular }: NominaFormProps) {
                 name="vehiculo"
                 value={selectedVehicle?.id || ""}
                 onValueChange={(value) => {
+                  if (!value) return;
                   if (!selectedConductor) {
                     setErrores((prev) => ({ ...prev, vehiculo: "Primero debe seleccionar un conductor" }));
                     return;
                   }
-                  const condProfileId = (selectedConductor as any).id || (selectedConductor as any).profile_id;
-                  const assignment = assignments.find((a: any) => (a.profile_id === condProfileId || a.profiles?.id === condProfileId) && a.vehicle_id === value);
-                  if (!assignment) {
-                    // try match by vehicle id anyway
-                  }
-                  const veh = vehicles.find((v) => v.id === value) || null;
+                  const veh = vehicles.find((v) => v.id === value)
+                    ?? (selectedVehicle?.id === value ? selectedVehicle : null);
                   setSelectedVehicle(veh);
                   setErrores((prev) => {
                     const next = { ...prev };
@@ -432,16 +604,22 @@ export default function NominaForm({ onCalcular }: NominaFormProps) {
                 </SelectTrigger>
                 <SelectContent>
                   {(() => {
-                    if (!selectedConductor) return null;
-                    const condProfileId = (selectedConductor as any).id || (selectedConductor as any).profile_id;
-                    const assignedVehicleIds = assignments
-                      .filter((a: any) => a.profile_id === condProfileId || a.profiles?.id === condProfileId)
-                      .map((a: any) => a.vehicle_id);
-                    const assigned = vehicles.filter((v) => assignedVehicleIds.includes(v.id));
-                    if (assigned.length === 0) {
+                    const opciones: VehicleRecord[] = [];
+                    if (selectedVehicle) opciones.push(selectedVehicle);
+                    if (selectedConductor) {
+                      const assignedVehicleIds = assignments
+                        .filter((a) => a.profile_id === selectedConductor.id)
+                        .map((a) => a.vehicle_id);
+                      vehicles.forEach((vehiculo) => {
+                        if (assignedVehicleIds.includes(vehiculo.id) && !opciones.some((item) => item.id === vehiculo.id)) {
+                          opciones.push(vehiculo);
+                        }
+                      });
+                    }
+                    if (opciones.length === 0) {
                       return <SelectItem value="none" disabled>Sin vehículos asignados</SelectItem>;
                     }
-                    return assigned.map((v) => (
+                    return opciones.map((v) => (
                       <SelectItem key={v.id} value={v.id}>
                         {v.license_plate} | {v.make} {v.model} {v.year ? v.year : ""}
                       </SelectItem>
@@ -452,11 +630,10 @@ export default function NominaForm({ onCalcular }: NominaFormProps) {
               {errores.vehiculo && (
                 <p className="text-xs text-destructive">{errores.vehiculo}</p>
               )}
-              {selectedConductor && (() => {
-                const condProfileId = (selectedConductor as any).id || (selectedConductor as any).profile_id;
+              {selectedConductor && !selectedVehicle && (() => {
                 const assignedVehicleIds = assignments
-                  .filter((a: any) => a.profile_id === condProfileId || a.profiles?.id === condProfileId)
-                  .map((a: any) => a.vehicle_id);
+                  .filter((a) => a.profile_id === selectedConductor.id)
+                  .map((a) => a.vehicle_id);
                 const assigned = vehicles.filter((v) => assignedVehicleIds.includes(v.id));
                 if (assigned.length === 0) {
                   return <p className="text-xs text-amber-600">Este conductor no tiene vehículos asignados. Asignarle uno desde Gestión de Vehículos.</p>;
@@ -714,10 +891,25 @@ export default function NominaForm({ onCalcular }: NominaFormProps) {
 
       <Separator />
 
-      <div className="flex justify-end">
+      <div className="flex flex-wrap justify-end gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          size="lg"
+          onClick={handleGuardarPreliquidacion}
+          disabled={guardandoPreliquidacion || (!!datosIniciales && !selectedConductor)}
+          className="gap-2"
+        >
+          <Bookmark className="h-4 w-4" />
+          {guardandoPreliquidacion
+            ? "Guardando..."
+            : idPreliquidacion
+              ? "Actualizar preliquidación"
+              : "Guardar preliquidación"}
+        </Button>
         <Button type="submit" size="lg" className="gap-2 bg-slate-900 text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-200">
           <Calculator className="h-5 w-5" />
-          Calcular nómina
+          {idPreliquidacion ? "Completar preliquidación" : "Calcular nómina"}
         </Button>
       </div>
 
